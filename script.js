@@ -1,22 +1,86 @@
-// Characters for ASCII art, ordered by visual density
-const chars = [' ', '.', ':', '-', '=', '+', '*', '#', '%', '@'];
+// Define cell dimensions
+const cellWidth = 20; // characters
+const cellHeight = 10; // rows
 
-// Hash function for deterministic randomness based on (x, y)
+// Hash function to create consistent randomness based on coordinates
 function hash(x, y) {
     let n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-    return n - Math.floor(n); // Returns a value between 0 and 1
+    return n - Math.floor(n);
 }
 
-// Get an ASCII character for a given (x, y) position
-function getChar(x, y) {
-    const value = hash(x, y);
-    const index = Math.floor(value * chars.length);
-    return chars[index];
+// Generate a face with random features
+function generateFace(x, y) {
+    const eyesIndex = Math.floor(hash(x + 1, y) * 5);
+    const eyes = ['o', 'O', '*', '0', '^'][eyesIndex];
+    const noseIndex = Math.floor(hash(x + 2, y) * 4);
+    const nose = ['|', '-', '~', ''][noseIndex];
+    const mouthIndex = Math.floor(hash(x + 3, y) * 4);
+    const mouth = ['___', '---', '~~~', '==='][mouthIndex];
+    return [
+        "                    ",
+        "                    ",
+        "                    ",
+        "      .--.          ",
+        `     / ${eyes} ${eyes} \\        `,
+        `     |   ${nose}   |        `,
+        `     \\  ${mouth}  /        `,
+        "      '--'          ",
+        "                    ",
+        "                    "
+    ].map(line => line.padEnd(cellWidth, ' '));
+}
+
+// Generate a flower with random petals and center
+function generateFlower(x, y) {
+    const petalIndex = Math.floor(hash(x + 1, y) * 4);
+    const petal = ['*', '+', 'x', 'o'][petalIndex];
+    const centerIndex = Math.floor(hash(x + 2, y) * 3);
+    const center = ['o', '*', '+'][centerIndex];
+    return [
+        "                    ",
+        "                    ",
+        `         ${petal}         `,
+        `        ${petal} ${petal}        `,
+        `       ${petal} ${center} ${petal}       `,
+        `        ${petal} ${petal}        `,
+        `         ${petal}         `,
+        "                    ",
+        "                    ",
+        "                    "
+    ].map(line => line.padEnd(cellWidth, ' '));
+}
+
+// Generate an object (a house in this case)
+function generateObject(x, y) {
+    return [
+        "                    ",
+        "         /\\         ",
+        "        /  \\        ",
+        "       /____\\       ",
+        "       |    |       ",
+        "       | [] |       ",
+        "       |____|       ",
+        "                    ",
+        "                    ",
+        "                    "
+    ].map(line => line.padEnd(cellWidth, ' '));
+}
+
+// Decide which template to use for a cell
+function getTemplate(x, y) {
+    const typeSeed = hash(x, y);
+    if (typeSeed < 0.33) {
+        return generateFace(x, y);
+    } else if (typeSeed < 0.66) {
+        return generateFlower(x, y);
+    } else {
+        return generateObject(x, y);
+    }
 }
 
 const container = document.getElementById('container');
 
-// Measure character width
+// Measure character width and row height
 const tempSpan = document.createElement('span');
 tempSpan.style.fontFamily = 'monospace';
 tempSpan.style.fontSize = '16px';
@@ -27,7 +91,6 @@ document.body.appendChild(tempSpan);
 const charWidth = tempSpan.getBoundingClientRect().width;
 document.body.removeChild(tempSpan);
 
-// Measure row height
 const tempRow = document.createElement('div');
 tempRow.className = 'row';
 tempRow.textContent = 'a';
@@ -35,31 +98,36 @@ container.appendChild(tempRow);
 const rowHeight = tempRow.getBoundingClientRect().height;
 container.removeChild(tempRow);
 
-// Calculate initial number of columns and rows
+// Calculate initial number of cells to cover the viewport plus a buffer
 const viewportWidth = container.clientWidth;
 const viewportHeight = container.clientHeight;
-const initialNumCols = Math.ceil(viewportWidth / charWidth) + 20; // Extra for scrolling
-const initialNumRows = Math.ceil(viewportHeight / rowHeight) + 20; // Extra for scrolling
+const cellPixelWidth = cellWidth * charWidth;
+const cellPixelHeight = cellHeight * rowHeight;
+const initialCellXCount = Math.ceil(viewportWidth / cellPixelWidth) + 2;
+const initialCellYCount = Math.ceil(viewportHeight / cellPixelHeight) + 2;
 
-// Initialize bounds of the generated content
-let minX = 0;
-let maxX = initialNumCols - 1;
-let minY = 0;
-let maxY = initialNumRows - 1;
+// Set initial bounds of generated cells
+let cellXMin = 0;
+let cellXMax = initialCellXCount - 1;
+let cellYMin = 0;
+let cellYMax = initialCellYCount - 1;
 
 // Generate initial rows
-for (let y = minY; y <= maxY; y++) {
+for (let r = 0; r < (cellYMax - cellYMin + 1) * cellHeight; r++) {
+    const cellY = Math.floor(r / cellHeight) + cellYMin;
+    const lineIndex = r % cellHeight;
+    let rowText = '';
+    for (let cellX = cellXMin; cellX <= cellXMax; cellX++) {
+        const template = getTemplate(cellX, cellY);
+        rowText += template[lineIndex];
+    }
     const row = document.createElement('div');
     row.className = 'row';
-    let rowText = '';
-    for (let x = minX; x <= maxX; x++) {
-        rowText += getChar(x, y);
-    }
     row.textContent = rowText;
     container.appendChild(row);
 }
 
-// Scroll event listener
+// Handle scrolling to add new content
 container.addEventListener('scroll', () => {
     const scrollLeft = container.scrollLeft;
     const scrollTop = container.scrollTop;
@@ -67,73 +135,71 @@ container.addEventListener('scroll', () => {
     const scrollHeight = container.scrollHeight;
     const clientWidth = container.clientWidth;
     const clientHeight = container.clientHeight;
-    const threshold = 200; // Pixels from edge to trigger new content
+    const threshold = 200; // Distance from edge to trigger new content
 
-    if (scrollLeft < threshold) addColumnsLeft();
-    if (scrollTop < threshold) addRowsAbove();
-    if (scrollLeft > scrollWidth - clientWidth - threshold) addColumnsRight();
-    if (scrollTop > scrollHeight - clientHeight - threshold) addRowsBelow();
+    if (scrollLeft < threshold) addCellLeft();
+    if (scrollTop < threshold) addCellAbove();
+    if (scrollLeft > scrollWidth - clientWidth - threshold) addCellRight();
+    if (scrollTop > scrollHeight - clientHeight - threshold) addCellBelow();
 });
 
-// Functions to add new content
-function addColumnsLeft() {
-    const numToAdd = 10;
-    const newMinX = minX - numToAdd;
-    for (let y = minY; y <= maxY; y++) {
-        let newLeft = '';
-        for (let x = newMinX; x < minX; x++) {
-            newLeft += getChar(x, y);
-        }
-        const row = container.children[y - minY];
-        row.textContent = newLeft + row.textContent;
+// Add a new column of cells to the left
+function addCellLeft() {
+    const newCellXMin = cellXMin - 1;
+    for (let r = 0; r < container.children.length; r++) {
+        const cellY = Math.floor(r / cellHeight) + cellYMin;
+        const lineIndex = r % cellHeight;
+        const template = getTemplate(newCellXMin, cellY);
+        container.children[r].textContent = template[lineIndex] + container.children[r].textContent;
     }
-    minX = newMinX;
-    container.scrollLeft += numToAdd * charWidth; // Keep view stable
+    cellXMin = newCellXMin;
+    container.scrollLeft += cellWidth * charWidth;
 }
 
-function addColumnsRight() {
-    const numToAdd = 10;
-    const newMaxX = maxX + numToAdd;
-    for (let y = minY; y <= maxY; y++) {
-        let newRight = '';
-        for (let x = maxX + 1; x <= newMaxX; x++) {
-            newRight += getChar(x, y);
-        }
-        const row = container.children[y - minY];
-        row.textContent += newRight;
+// Add a new column of cells to the right
+function addCellRight() {
+    const newCellXMax = cellXMax + 1;
+    for (let r = 0; r < container.children.length; r++) {
+        const cellY = Math.floor(r / cellHeight) + cellYMin;
+        const lineIndex = r % cellHeight;
+        const template = getTemplate(newCellXMax, cellY);
+        container.children[r].textContent += template[lineIndex];
     }
-    maxX = newMaxX;
+    cellXMax = newCellXMax;
 }
 
-function addRowsAbove() {
-    const numToAdd = 10;
-    const newMinY = minY - numToAdd;
-    for (let y = newMinY; y < minY; y++) {
-        const row = document.createElement('div');
-        row.className = 'row';
+// Add a new row of cells above
+function addCellAbove() {
+    const newCellYMin = cellYMin - 1;
+    const firstChild = container.firstChild;
+    for (let i = 0; i < cellHeight; i++) {
         let rowText = '';
-        for (let x = minX; x <= maxX; x++) {
-            rowText += getChar(x, y);
+        for (let cellX = cellXMin; cellX <= cellXMax; cellX++) {
+            const template = getTemplate(cellX, newCellYMin);
+            rowText += template[i];
         }
-        row.textContent = rowText;
-        container.insertBefore(row, container.firstChild);
+        const newRow = document.createElement('div');
+        newRow.className = 'row';
+        newRow.textContent = rowText;
+        container.insertBefore(newRow, firstChild);
     }
-    minY = newMinY;
-    container.scrollTop += numToAdd * rowHeight; // Keep view stable
+    cellYMin = newCellYMin;
+    container.scrollTop += cellHeight * rowHeight;
 }
 
-function addRowsBelow() {
-    const numToAdd = 10;
-    const newMaxY = maxY + numToAdd;
-    for (let y = maxY + 1; y <= newMaxY; y++) {
-        const row = document.createElement('div');
-        row.className = 'row';
+// Add a new row of cells below
+function addCellBelow() {
+    const newCellYMax = cellYMax + 1;
+    for (let i = 0; i < cellHeight; i++) {
         let rowText = '';
-        for (let x = minX; x <= maxX; x++) {
-            rowText += getChar(x, y);
+        for (let cellX = cellXMin; cellX <= cellXMax; cellX++) {
+            const template = getTemplate(cellX, newCellYMax);
+            rowText += template[i];
         }
-        row.textContent = rowText;
-        container.appendChild(row);
+        const newRow = document.createElement('div');
+        newRow.className = 'row';
+        newRow.textContent = rowText;
+        container.appendChild(newRow);
     }
-    maxY = newMaxY;
+    cellYMax = newCellYMax;
 }
