@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Infinite ASCII Art Canvas</title>
+  <style>
+    /* Remove default margins and set a dark background with a monospace font */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: auto;
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+    }
+    /* Canvas styling */
+    #canvas {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 20px;
+    }
+    /* Each line maintains its formatting */
+    .line {
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas"></div>
+  <script>
+    // Generates a single line of random ASCII characters.
+    function generateAsciiLine(length) {
+      // Characters to use – feel free to adjust this set.
+      const chars = "!@#$%^&*()-_=+[]{};:'\",.<>/?\\|";
+      let line = "";
+      for (let i = 0; i < length; i++) {
+        line += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return line;
+    }
+
+    const canvas = document.getElementById("canvas");
+
+    // Append a given number of ASCII art lines to the canvas.
+    function addLines(count) {
+      // Calculate approximate number of characters per line based on viewport width.
+      // Adjust the divisor as needed for your design.
+      const lineLength = Math.floor(window.innerWidth / 10);
+      for (let i = 0; i < count; i++) {
+        const line = document.createElement("div");
+        line.className = "line";
+        line.textContent = generateAsciiLine(lineLength);
+        canvas.appendChild(line);
+      }
+    }
+
+    // Initially populate the canvas with a batch of lines.
+    addLines(50);
+
+    // Listen for scroll events to add more lines when near the bottom.
+    window.addEventListener("scroll", () => {
+      // If the user is within 100 pixels of the bottom, add more lines.
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        addLines(20);
+      }
+    });
+  </script>
+</body>
+</html>
