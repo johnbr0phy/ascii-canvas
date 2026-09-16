@@ -125,7 +125,15 @@ of the review passes the other two did. Specifically:
   much variety in how the light crosses it.
 - The cloud silhouette is better than the thought-balloon it started as, but the
   lobes are still legibly lobes in places.
-- I did not verify the loop seam numerically the way I did for 01 and 02.
+- Its rain still reads as somewhat mechanical — the individual marks are
+  randomly placed but they are all the same kind of mark.
+
+Two defects found in film 03 on video review and since fixed: the second line of
+the title fell off the bottom edge of the square, and the loop hard-cut back to
+an empty bench because every element held to the last frame and then vanished.
+The weather now clears the way it arrived, by scrubbing the bare kitchen back
+over the top, so the last frame is the first frame (seam measured at max 16 /
+mean 0.001 per channel).
 
 **Across all three:**
 

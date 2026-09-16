@@ -1455,6 +1455,31 @@ function hand(x, str, X, Y, size, o) {
   })();
   var frontRev = new Reveal(W, H, frontStrokes);
 
+  var backStrokes = (function () {
+    var s2 = [], r = rnd(1601), bands = 24, per = 7;
+    for (var b = 0; b < bands; b++) {
+      var base = 1640 - (b / (bands - 1)) * 1720;
+      var ys = [];
+      for (var k = 0; k < per; k++) ys.push(-120 + (k / (per - 1)) * 1320 + (r() - 0.5) * 170);
+      for (var k2 = ys.length - 1; k2 > 0; k2--) {
+        var sw = (r() * (k2 + 1)) | 0, tmp = ys[k2]; ys[k2] = ys[sw]; ys[sw] = tmp;
+      }
+      ys.forEach(function (y0) {
+        var x0 = base + (r() - 0.5) * 80;
+        var ang = Math.PI / 2 + (r() - 0.5) * 0.55;
+        var L = 440 + r() * 340;
+        s2.push({
+          pts: [[x0 - Math.cos(ang) * L / 2, y0 - Math.sin(ang) * L / 2],
+            [x0 + (r() - 0.5) * 50, y0 + (r() - 0.5) * 40],
+            [x0 + Math.cos(ang) * L / 2, y0 + Math.sin(ang) * L / 2]],
+          w: 155 + r() * 95
+        });
+      });
+    }
+    return s2;
+  })();
+  var backRev = new Reveal(W, H, backStrokes);
+
   /* the belly holds the other weather, blurred in as reflection not decal */
   var BELLY = blobPts(KX - 18, KY + 46, 128, 150, 1401, 15, 0.1);
 
@@ -1498,11 +1523,13 @@ function hand(x, str, X, Y, size, o) {
   var wordsP = plate(W, H);
   (function () {
     var x = wordsP.x;
-    hand(x, 'showers later,', 96, 1000, 52, {
-      col: mix(P.cream, P.amber, 0.28), seed: 1501, w: 0.085, bristles: 2, alpha: 0.82
+    /* Both lines sat too low: at this size the descenders of the second one
+       fell off the bottom of the square and it read as half a word. */
+    hand(x, 'showers later,', 92, 952, 47, {
+      col: mix(P.cream, P.amber, 0.34), seed: 1501, w: 0.09, bristles: 2, alpha: 0.9
     });
-    hand(x, 'mainly in the cup', 150, 1062, 52, {
-      col: mix(P.cream, P.amber, 0.28), seed: 1502, w: 0.085, bristles: 2, alpha: 0.82
+    hand(x, 'mainly in the cup', 142, 1010, 47, {
+      col: mix(P.cream, P.amber, 0.34), seed: 1502, w: 0.09, bristles: 2, alpha: 0.9
     });
   })();
 
@@ -1515,10 +1542,9 @@ function hand(x, str, X, Y, size, o) {
 
     /* --- ground, and the front that changes it --- */
     var fp = clamp01((u - 7.2) / 1.25);
-    var back = clamp01((u - 10.75) / 0.75);
     X.drawImage(gRoom.c, 0, 0);
-    if (fp > 0 && back < 1) {
-      var m = frontRev.mask(back > 0 ? fp * (1 - back) : fp);
+    if (fp > 0) {
+      var m = frontRev.mask(fp);
       X.save();
       X.globalCompositeOperation = 'source-over';
       var tmp = cloudP;
@@ -1542,8 +1568,8 @@ function hand(x, str, X, Y, size, o) {
         }
       }
     }
-    var storm = fp > 0.45 && back < 0.6;
-    var dark = clamp01((u - 6.4) / 1.6) * (1 - back * 0.7);
+    var storm = fp > 0.45;
+    var dark = clamp01((u - 6.4) / 1.6);
 
     /* --- the heat: on from 3.7, and the last thing the storm takes --- */
     var hf = clamp01((u - 3.7) / 0.9);
@@ -1591,30 +1617,55 @@ function hand(x, str, X, Y, size, o) {
     }
 
     /* --- the belly reflection: whichever weather the room is not in --- */
-    var bf = clamp01((u - 6.1) / 0.9) * (1 - clamp01((u - 10.4) / 0.6));
+    var bf = clamp01((u - 6.1) / 0.9);
     if (kp >= 1) belly(X, storm ? gRoom : gStorm, bf);
 
     /* --- steam, gathering --- */
-    var sf = clamp01((u - 4.6) / 0.8) * (1 - clamp01((u - 9.9) / 1.2) * 0.55);
+    var sf = clamp01((u - 4.6) / 0.8);
     steam(X, u, sf, dark);
 
     /* --- the cloud it becomes --- */
     var cf = clamp01((u - 5.0) / 1.5);
-    if (back > 0) cf *= 1 - back * 0.9;
     paintCloud(X, dark, cf);
 
     /* --- and what it does --- */
-    var rf = clamp01((u - 8.4) / 0.8) * (1 - clamp01((u - 10.7) / 0.7));
+    var rf = clamp01((u - 8.4) / 0.8);
     rain(X, u, rf);
     tea(X, clamp01((u - 8.7) / 1.9));
 
     /* --- the forecast, in her hand --- */
-    var wf = clamp01((u - 9.8) / 0.8) * (1 - clamp01((u - 11.1) / 0.4));
+    var wf = clamp01((u - 9.3) / 0.7);
     if (wf > 0) {
       X.save();
       X.globalAlpha = wf;
       X.drawImage(wordsP.c, 0, 0);
       X.restore();
+    }
+
+    /* Closing the loop. Every element used to hold to the last frame and then
+       vanish, so the restart was a hard cut back to an empty bench. The
+       weather clears the same way it arrived: the bare kitchen is scrubbed
+       back over the top, and the last frame is the first frame. */
+    var tb = clamp01((u - 10.45) / 1.05);
+    if (tb > 0) {
+      var bm = backRev.mask(tb);
+      var bt = cloudP;
+      bt.x.clearRect(0, 0, W, H);
+      bt.x.drawImage(gRoom.c, 0, 0);
+      bt.x.globalCompositeOperation = 'destination-in';
+      bt.x.drawImage(bm.plate.c, 0, 0);
+      bt.x.globalCompositeOperation = 'source-over';
+      X.drawImage(bt.c, 0, 0);
+      if (bm.cur) {
+        var bc = [P.putty, P.clay, P.plaster, '#d8c9ae', '#c2b49c'];
+        for (var z = 0; z < 3; z++) {
+          brush(X, partial(bm.cur.pts, clamp01(bm.f * 1.3)), {
+            col: bc[(bm.i + z) % bc.length], w: bm.cur.w * (0.5 + z * 0.2),
+            alpha: 0.24 - z * 0.06, bristles: 4, seed: bm.i * 41 + z,
+            dens: 5, taper: 0.85, spread: 0.6, thick: 2.6
+          });
+        }
+      }
     }
 
     applyGrain(X, grain, 0.1, W, H);
