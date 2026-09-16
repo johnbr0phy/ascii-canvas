@@ -1,153 +1,146 @@
-# Adversarial review — what v1 got wrong and what this pass changed
+# ADVERSARIAL.md — motion v3
 
-John's verdict on v1 was "sticker-pack hexes on diagram doodles. Not her hand."
-That is an accurate diagnosis and it names two separate failures, so it is worth
-keeping them apart.
+John's verdict on the previous remakes: the paint craft had come up, the
+*animation* had not. Stills looked painted; the loop felt like a slideshow.
+This pass was scored on motion first and paint second, and where the two
+competed, motion won.
 
-**Sticker-pack** is a rendering failure. Flat fills, uniform outlines, no
-surface. Every form looks like it was die-cut and laid on the background rather
-than painted into it.
+Written honestly, including what is still weak.
 
-**Diagram doodle** is a composition failure. Leader lines, evenly-spaced rays,
-tally bars, arrows, labelled callouts. The image explains itself instead of
-being looked at.
+---
 
-Both had to be attacked separately, and the second one keeps coming back,
-because the temptation with a "dual-mode" structure is to make the second mode a
-chart.
+## What failed on **motion** in v2, and what was done about it
 
-## What was rebuilt
+**1. Nothing had a cut time.** v2 was built out of eased phases: a form drifted
+in, held, drifted out. Any two adjacent frames looked almost identical, so the
+loop had no pulse — the definition of the painted-slideshow failure.
 
-Everything. v1 had no paint machinery, so the three films now sit on a shared
-engine (inlined into each page, since each film has to be one file):
+*Fixed:* every film is now built from a shot table (`T`) of explicit cut times,
+and `motion.js` has a hard rule that **nothing in it fades**. `held(u, keys)`
+returns the value in force and holds it until the next key. Fades survive only
+in the two closing scrubs, where a rag actually is being dragged over a surface.
 
-- **Bristle brush** — pressure, bristle spread, colour drift per bristle,
-  run-length dry-brush, and arc modulation so a contour swells where the hand
-  pressed and drops out where it lifted.
-- **Ribbon fill** for solid forms (see below).
-- **Impasto** — knife strokes with a shaded and a lit side, stipple, and a
-  crumpled-tissue crease pass.
-- **Charcoal contour** — soot bleed, one continuous weight-varied core, and two
-  or three short overdrawn passages.
-- **Crumpled-tissue craze plate**, **torn paper collage** with buried newsprint,
-  **worked grounds**, drips, spatter, sgraffito.
-- **Stroke-font handwriting** — a real single-stroke alphabet with wobble and
-  pressure, not stick zigzags standing in for writing.
-- **Reveal** — paints a form on in stroke order behind a brushed mask, so things
-  arrive as marks rather than fading up.
+**2. The two poles were a colour grade, not two shots.** v2 crossfaded between a
+warm and a cool version of the same picture. That is a filter, not a heartbeat.
 
-## The specific tells, and the fixes
+*Fixed:* each film opens on a four-snap heartbeat inside the first second
+(01 @0.45, 02 @0.40, 03 @0.36) with the subject at identical coordinates in both
+poles, so the toggle reads as two shots of the same thing rather than one shot
+changing temperature. In 01 the words sit at `LX` in both; in 02 the two feet
+`RB`/`BB` are constants for the whole film; in 03 the kettle never leaves
+`KX, KY`, including inside every close-up.
 
-### Outlines read as stitching round a patch
-The worst single tell. A contour drawn with four spread bristles and dry gaps
-gives each bristle its own gap phase, so the outline lands as four parallel
-dashed tracks — literally stitching round a sticker. Replaced with a dedicated
-contour: a wide faint bleed either side, one continuous core whose weight rides
-a slow wave, then short passages gone back over. This is the change that did the
-most work in all three films.
+**3. There was no lens.** v2 had a soft vignette that brightened. The Fable
+device is a *hole in one pole with the other pole inside it*, and it has to move.
 
-### Solid forms came out as chains of translucent beads
-The brush stroked every segment separately at partial alpha with round caps, so
-overlaps stacked and the caps scalloped the edge. An umbrella cane looked like a
-caterpillar. Added a ribbon mode that collects a bristle into one filled band of
-varying width and lays it down once. Scumble and wash still want the stacking,
-so they kept the old path.
+*Fixed:* three different lenses, one per film, so they do not read as the same
+trick three times — a pendulum hung from above the top edge on a drawn string
+(01), a hole dragged across the square at head height (02), and an iris opened
+at the mouth of the spout and grown until it swallows the frame (03). Each is
+sooted on the inside and beaded in gold on the outside; each has a two-frame
+**iris flash** earlier in the film so the device is planted before it is used.
 
-### Long strokes were banded into even segments
-Pressure wobble was keyed to sample index, so its period was set by the sampling
-density. On a long stroke that reads as bamboo. Now keyed to travelled distance.
+**4. The close-ups were zooms.** v2 scaled the wide-shot sprites up. A zoom has
+*less* surface than the shot it came from, which is exactly the tell that it is
+not a close-up.
 
-### Wide soft passes tiled into rows of lozenges
-Six bristles at wide spread, each tapered at both ends, become six separate
-lozenges per stroke — and ninety of them tile a whole ground into what looks
-like machine hatching. Worse, it prints through anything translucent laid on
-top: the cloud in film 03 was covered in little grey blocks that had nothing to
-do with the cloud. Fixed by widening each bristle so they merge into one mass.
+*Fixed:* every macro plate is painted natively at the size it is shown, with
+knife count, stipple density and craze scale raised to match the area — the
+close-up has more surface than the wide shot, not less. The word in 01 is
+lettered at 176px with the paper fibre at its own scale; the biscuit is a fresh
+388px form with crumb, docker holes that have a wall and a floor, and a bite
+whose shade follows the bitten silhouette; 02 repaints both canopies at ~2.6×
+so only one shoulder of each is in frame; 03 paints the spout mouth as a
+chipped enamel tube with the bore dark behind it.
 
-### Dry-brush gaps were a dash pattern
-`dry` was a per-sample coin flip, which at a fixed sampling step is a regular
-dash. The bottle in film 01 had a barcode down it. Reworked as run-lengths in
-real distance.
+**5. Chaos read as an arrangement.** In v2 the scattered forms were placed, not
+travelling. A still of a fast-moving form with hard edges looks posed.
 
-### Pale lead-line round every object
-Every form in film 01 had a bright cream outline. Uniform treatment applied to
-everything is the sticker-pack look even when each piece is well painted. Now
-they get charcoal contours and the gold relief is held back for the tomato
-alone, which is how she concentrates it.
+*Fixed:* the chaos passes render **two earlier exposures** at 0.14 and 0.28
+alpha behind the live one, so a form crossing the square smears. Add
+`shake()` on the camera at amplitude 5–9 for the dense passages.
 
-### Radiating rays, leader lines, tally bars
-- Film 01's constellation was drawn with gold lines joining item to item. That is
-  a wiring diagram. Replaced with struck star marks and spatter in the ground
-  between the objects: the constellation is made by the arrangement.
-- The heat round the biscuit was sixteen evenly-spaced rays — clip-art sunburst.
-  Replaced with scumble bloomed into the ground behind the form, as in the dog
-  reference.
-- Film 02's rain count was a row of tally bars reading as a bar chart. Now a
-  small irregular hand-struck cluster in a corner.
-- Film 03's rain converged on the cup, which turned the square into a ray
-  diagram. Rain now falls; only the column over the cup falls harder.
+**6. There was no strike.** v2's densest second had maybe two events in it.
 
-### The "denim / slate" second pole was the diagram the brief forbade
-Film 02's second mode was denim panels with dashed stitching and stark white
-outlines. Cut entirely. The second pole is now the same street at night —
-the same objects repainted under a sodium lamp, wet reflections, one warm
-source in the navy. Same idea, still paint. Film 03 does the same thing with a
-weather front coming through the kitchen rather than a forecast chart.
+*Fixed:* each film now has 8–10 cuts inside about 1.3 seconds, and framing is
+part of the cut: `T.strikeCuts` carries `[t, mode, z, x, y]`, so mode, scale and
+position all change on the same frame. Eight cuts that share one framing read as
+one shot flickering; eight cuts that reframe read as eight shots.
 
-### Transitions looked like a sheet of plastic sliding over the picture
-A paint-on wipe revealed in stroke order has a straight advancing edge, which
-sliced the umbrellas in half like a blind coming down. All three transitions now
-advance in bands of short overlapping scrub passes, strokes ordered so the front
-never gaps but stays torn.
+**7. Overlays were drawn but had nothing to say.** Fixed by making each overlay a
+count or a measurement of the actual subject: seven groceries counted in tallies,
+the *angle of each umbrella's lean* ticked off at its own foot, the pressure
+round the bore of the spout, and one film's tally going from 6 to 7 in vermilion
+because the seventh item was crossed off.
 
-### Things floated
-Forms with no contact shadow hover, which is the sticker complaint in another
-form. Added pools of shade and ripples where objects meet ground.
+---
 
-### Assorted
-Rain as opaque white slashes (film scratches) → thin grey-blue veils with a few
-lit streaks. Puddle rings as perfect ellipses → broken arcs. Puddle surface as
-evenly-stacked lines (mosaic tiling) → individual short glints. Collision spray
-as straight rays → thrown arcs with a bead at the head. Umbrella canopies as
-flat blobs with ruled rib seams → impasto panels with ribs implied by shadow
-wedges. Hard ruled horizon → scumbled haze. Reflections as hard-clipped decals
-→ feathered accumulation, and on the kettle, laid in with soft-light so it reads
-as light on curved tin instead of bleaching a hole through the form.
+## What failed on **paint** during this pass, and what was done about it
 
-## Still soft — honest list
+- **Two-point strokes vanished.** `partial()` on a short overlay returns two
+  points; with `raw: true` the taper is a sine wave that evaluates to zero at
+  both ends, so tally marks and crosshairs drew nothing. Dropped `raw` from
+  those calls so the brush resamples and the taper has somewhere to live.
+- **Black bands at the frame edge.** An off-centre camera at zoom 1 walks the
+  plate off its own edge. `applyCam` now derives the minimum zoom needed to keep
+  the plate covering the frame, rotation included, and takes the max of that and
+  the requested zoom.
+- **The bite looked like a handle.** The bite contour was drawn all the way
+  round, so the part outside the biscuit read as a loop stuck on the side. Now
+  clipped to the body.
+- **A grey crescent hanging in the bite.** The envelope halo was laid down before
+  the bite was cut, so lifting the paint left the halo behind it. The shade now
+  goes under the *bitten silhouette* — the body is painted into its own plate,
+  the bite is cut, and the shadow is cast off the resulting alpha.
+- **Meteors came out as hollow tubes.** Two thin ribbons plus a pale core is a
+  wireframe, not a brushload. Widened, stacked the bristles tight (`spread: 0.2`)
+  and put the light *inside* the mark.
+- **The macro biscuit was grey.** Rebased off oatmeal onto a warmer gold family
+  and thinned the contour from 30px to 17px, which had been reading as a rubber
+  tyre round the edge.
+- **The small umbrella appeared twice** during the closing beat of 02 — once at
+  its original foot and once where it had moved to. Suppressed at the original.
 
-**Film 03 is the least finished.** It was built last and got roughly a quarter
-of the review passes the other two did. Specifically:
+---
 
-- The spout still reads a little like a fin rather than a spout. The silhouette
-  is right in outline but the interior modelling does not turn the cone.
-- The kettle body's knife work is too uniformly vertical. It has mass but not
-  much variety in how the light crosses it.
-- The cloud silhouette is better than the thought-balloon it started as, but the
-  lobes are still legibly lobes in places.
-- Its rain still reads as somewhat mechanical — the individual marks are
-  randomly placed but they are all the same kind of mark.
+## Adversarial questions, answered honestly
 
-Two defects found in film 03 on video review and since fixed: the second line of
-the title fell off the bottom edge of the square, and the loop hard-cut back to
-an empty bench because every element held to the last frame and then vanished.
-The weather now clears the way it arrived, by scrubbing the bare kitchen back
-over the top, so the last frame is the first frame (seam measured at max 16 /
-mean 0.001 per channel).
+**Would Kevin's timing feel sharper than a painted slideshow?**
+Yes for 01 and 03. 02 is close but its 3.30–3.68 contact passage is the best
+1.3 seconds in the set — six mode snaps, water off the rim, shudder at 9, and
+the gag landing on the last of them.
 
-**Across all three:**
+**Is there a real lens / match-cut / scale jump, or just colour changes?**
+Real, and three different lenses so the device does not wear out. Match-cuts are
+anchored on coordinates that are literally constants in the source, not on
+eyeballed positions. Two scale jumps per film, both painted rather than zoomed.
 
-- The dual-mode crossing is the weakest beat everywhere. It is honest paint on
-  both sides now, but the crossing itself is a device and it shows.
-- Grounds are worked but still quieter than the references. Hers carry more
-  tonal range and more collage than these do.
-- The awkwardness is deliberate but it is engineered awkwardness. It comes out
-  of seeded randomness, which is not the same thing as a decision made badly on
-  purpose, and in places you can feel the difference.
-- Playback has a bake cost on first frame (roughly 150–350ms) before it settles.
-  Steady-state is fine; the first frame after load may hitch once.
+**Does Mode B still feel like her hand, not a UI chart?**
+Mostly. It is a worked dark in all three — ember sweeps and charcoal scrape in
+01, navy graded down from her own hues with one warm lamp in 02, slate with the
+flame still burning in 03 — and the overlays are struck with the same brush as
+everything else, wonky and never ruled. The grid snaps are the closest any of
+them comes to a chart, which is the point: they last half a second and then
+break.
 
-**What I would do next**, in order: rebuild the film 03 spout and body modelling
-properly; give all three grounds another two registers of tone and more torn
-paper; then look hard at whether the second pole earns itself in each film or
-whether one of them would be better as a single sustained image.
+---
+
+## Still weak
+
+- **The chaos → grid → break arc is the same shape in all three films** (12 or 7
+  items, 4-wide, hand-drawn box, crosshairs, tally). It is the most literal
+  reading of the brief and the least invented thing in the set. A second pass
+  should differentiate the three: one should snap to a grid that is *wrong*, or
+  snap and then refuse to break.
+- **Film 03's spout** is a small nub in the wide shot, so the macro on its mouth
+  arrives without the wide shot having pointed at it. The arc thrown at 1.96
+  papers over this rather than fixing it.
+- **Frame time is ~15.5ms/frame in software-rendered headless Chrome** for 01,
+  which is the heaviest of the three. Fine on a GPU, but there is no headroom for
+  another live layer.
+- **The closing scrubs are the one place a fade survives.** Defensible — a rag
+  really is being dragged over a surface — but each film ends on its softest
+  1.2 seconds, which is the opposite of how each of them starts.
+- **Films 02 and 03 were shipped on a smoke test**, not the full contact-sheet
+  review 01 got. Their beats are verified to render; their frames have not been
+  argued with one at a time.
