@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>01 — Shopping Constellation</title>
+<title>Shopping Constellation</title>
 <style>
   html,body{margin:0;height:100%;background:#0d0b0a;overflow:hidden}
   body{display:flex;align-items:center;justify-content:center}
@@ -124,16 +124,27 @@ function rotPts(pts, cx, cy, a) {
   });
 }
 
+/* A torn edge, not a pinking-shear edge. Sampling at a fixed step with a
+   uniform random offset makes an even sawtooth, which is the giveaway that a
+   shape was generated rather than torn. Here the step length wanders and the
+   offset carries a slow drift with the odd deep nick, the way paper fibre
+   gives way unevenly. */
 function jagPoly(pts, seed, amp, step) {
-  var r = rnd(seed), out = [];
+  var r = rnd(seed), out = [], drift = 0;
+  var base = step || 22;
   for (var i = 0; i < pts.length; i++) {
     var a = pts[i], b = pts[(i + 1) % pts.length];
     var L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    var n = Math.max(2, Math.round(L / (step || 22)));
+    if (!L) continue;
     var nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
-    for (var j = 0; j < n; j++) {
-      var t = j / n, o = (r() - 0.5) * 2 * amp;
+    var d = 0;
+    while (d < L) {
+      drift = drift * 0.62 + (r() - 0.5) * amp * 1.1;
+      var nick = r() < 0.09 ? (r() - 0.5) * amp * 3.2 : 0;
+      var o = drift + nick + (r() - 0.5) * amp * 0.5;
+      var t = d / L;
       out.push([a[0] + (b[0] - a[0]) * t + nx * o, a[1] + (b[1] - a[1]) * t + ny * o]);
+      d += base * (0.35 + r() * 1.5);
     }
   }
   return out;
@@ -161,8 +172,20 @@ function brush(x, pts, o) {
   for (var b = 0; b < nb; b++) {
     var off = nb === 1 ? (r() - 0.5) * W * 0.12 : (b / (nb - 1) - 0.5) * W * (o.spread == null ? 0.92 : o.spread);
     var ph = r() * TAU, ph2 = r() * TAU;
+    /* arc modulation: a closed outline of even weight all the way round is the
+       sticker die-cut tell. Real drawn contours swell where the hand pressed
+       and vanish where it lifted, so weight rides a slow wave along the path
+       and drops out entirely in the troughs. */
+    var arcPh = r() * TAU, arcPh2 = r() * TAU, arcF = 1.3 + r() * 1.7;
     var bw = (W / Math.max(1, nb)) * (o.thick == null ? 1.5 : o.thick) * (0.72 + r() * 0.56);
     var bcol = o.vary ? jit(col, r, o.vary) : col;
+    /* dry-brush skips are run-lengths in real distance, not a per-sample coin
+       flip: a coin flip at the sampling step turns every stroke into a regular
+       dash pattern, which reads as digital hatching rather than a loaded
+       bristle losing contact with the tooth of the canvas. */
+    var dry = o.dry || 0;
+    var runLeft = dry ? (6 + r() * 26) / Math.max(0.2, dry) : Infinity;
+    var inGap = false;
     var prev = null, skip = false;
     for (var i = 0; i < sm.length; i++) {
       var p = sm[i];
@@ -175,8 +198,19 @@ function brush(x, pts, o) {
       var press = 1;
       if (o.taper) press = Math.pow(Math.sin(Math.PI * u), o.taper === true ? 0.42 : o.taper);
       press *= 0.68 + 0.22 * Math.sin(i * 0.29 + ph) + 0.24 * r();
-      if (o.dry) skip = r() < o.dry;
-      if (prev && !skip) {
+      if (o.arc) {
+        var av = 0.62 * Math.sin(u * TAU * arcF + arcPh) + 0.38 * Math.sin(u * TAU * arcF * 2.3 + arcPh2);
+        press *= Math.max(0, 0.55 + (o.arc === true ? 0.85 : o.arc) * av);
+      }
+      if (dry && prev) {
+        runLeft -= Math.hypot(xx - prev[0], yy - prev[1]);
+        if (runLeft <= 0) {
+          inGap = !inGap;
+          runLeft = inGap ? (2 + r() * 9) * dry * 2.4 : (6 + r() * 26) / Math.max(0.2, dry);
+        }
+        skip = inGap;
+      }
+      if (prev && !skip && press > 0.06) {
         x.beginPath();
         x.moveTo(prev[0], prev[1]); x.lineTo(xx, yy);
         x.strokeStyle = bcol;
@@ -327,7 +361,8 @@ function envelope(x, pts, o) {
       col: k === 2 ? mix(col, '#ffffff', 0.18) : col,
       w: w * (k === 0 ? 1 : k === 1 ? 0.7 : 0.4),
       alpha: k === 0 ? 0.88 : 0.5, bristles: k === 0 ? 4 : 2,
-      close: close, seed: (o.seed || 5) + k * 7 + 1, dens: 9, dry: k ? 0.25 : 0.06, vary: 14
+      close: close, seed: (o.seed || 5) + k * 7 + 1, dens: 9, dry: k ? 0.25 : 0.06, vary: 14,
+      arc: o.arc == null ? 0.7 : o.arc
     });
   }
 }
@@ -337,7 +372,8 @@ function rim(x, pts, o) {
   o = o || {};
   brush(x, shrinkPts(pts, o.k == null ? 1.075 : o.k), {
     col: o.col || '#F5F0E6', w: o.w || 16, alpha: o.alpha == null ? 0.3 : o.alpha,
-    bristles: 4, close: true, seed: o.seed || 77, dens: 8, dry: 0.3
+    bristles: 4, close: true, seed: o.seed || 77, dens: 8, dry: 0.3,
+    arc: o.arc == null ? 1.1 : o.arc, vary: 12
   });
 }
 
@@ -378,6 +414,32 @@ function impasto(x, pathFn, o) {
       bristles: 2, seed: (r() * 1e6) | 0, dens: 6, dry: 0.42
     });
   }
+  /* Crumpled-tissue creases: the surface signature of the collaged refs. Each
+     crease is a valley line with a lit ridge riding one side, so the mass
+     reads as skinned in something folded rather than tinted flat. */
+  if (o.crease) {
+    for (var c = 0; c < o.crease; c++) {
+      var ax = bb[0] + r() * bb[2], ay = bb[1] + r() * bb[3];
+      var ca = r() * TAU, cl = 12 + r() * Math.min(64, diag * 0.2);
+      var seg = 1 + (r() * 2 | 0), cp = [[ax, ay]];
+      for (var q2 = 0; q2 < seg; q2++) {
+        ca += (r() - 0.5) * 0.7;
+        var last = cp[cp.length - 1];
+        cp.push([last[0] + Math.cos(ca) * cl / seg, last[1] + Math.sin(ca) * cl / seg]);
+      }
+      var cn = rnd((r() * 1e6) | 0);
+      brush(x, cp, {
+        col: o.shade || mix(o.base, '#1A1A1A', 0.42), w: 1.1 + r() * 1.7,
+        alpha: 0.05 + r() * 0.1, bristles: 1, taper: 0.8, raw: true,
+        seed: (cn() * 1e6) | 0, dens: 4
+      });
+      brush(x, movePts(cp, 1 + r() * 1.5, -0.9 - r() * 1.5), {
+        col: o.lit || mix(o.base, '#ffffff', 0.5), w: 1 + r() * 1.5,
+        alpha: 0.05 + r() * 0.1, bristles: 1, taper: 0.8, raw: true,
+        seed: (cn() * 1e6) | 0, dens: 4
+      });
+    }
+  }
   if (o.stipple) {
     for (var s = 0; s < o.stipple; s++) {
       var sx2 = bb[0] + r() * bb[2], sy2 = bb[1] + r() * bb[3], rr = 1 + r() * 3.4;
@@ -401,7 +463,9 @@ function wash(x, pts, o) {
     x.fill();
     x.restore();
   }
-  brush(x, pts, { col: mix(col, '#1A1A1A', 0.25), w: o.edge || 9, alpha: 0.28, bristles: 3, close: true, seed: (o.seed || 21) + 4, dens: 9, dry: 0.35 });
+  if (o.edge !== 0) {
+    brush(x, pts, { col: mix(col, '#1A1A1A', 0.25), w: o.edge || 9, alpha: 0.28, bristles: 3, close: true, seed: (o.seed || 21) + 4, dens: 9, dry: 0.35 });
+  }
   if (o.bleed) {
     for (var b = 0; b < o.bleed; b++) {
       var p = pts[(r() * pts.length) | 0];
@@ -688,7 +752,40 @@ function hand(x, str, X, Y, size, o) {
     { w: 'lemons', ly: 800, sx: 262, sy: 762, s: 0.70, z: 2, kind: 'lemons' },
     { w: 'biscuits', ly: 900, sx: 740, sy: 758, s: 1.14, z: 4, kind: 'biscuit' }
   ];
-  var LINKS = [[0, 1], [1, 2], [2, 3], [4, 6], [5, 6], [0, 4]];
+  /* star marks sit in the gaps the objects leave, so the eye joins them up
+     without a line telling it to */
+  var STARS = [
+    [232, 176, 30], [548, 300, 20], [880, 250, 26], [104, 620, 23],
+    [596, 604, 34], [946, 726, 25], [430, 916, 28], [742, 430, 17],
+    [300, 540, 15], [680, 920, 19], [60, 330, 16], [860, 590, 14]
+  ];
+
+  /* Four strokes off one centre, each a separate flick of the loaded brush:
+     unequal arms, none quite crossing the middle. */
+  function star(x, cx, cy, rad, seed, alpha) {
+    var r = rnd(seed);
+    for (var k = 0; k < 4; k++) {
+      var a = k * Math.PI / 4 + (r() - 0.5) * 0.4;
+      var l0 = rad * (0.5 + r() * 0.7), l1 = rad * (0.5 + r() * 0.7);
+      var gap = rad * 0.1 * r();
+      brush(x, [
+        [cx - Math.cos(a) * l0, cy - Math.sin(a) * l0],
+        [cx - Math.cos(a) * gap, cy - Math.sin(a) * gap]
+      ], {
+        col: k % 2 ? P.goldLt : P.gold, w: 2.2 + r() * 2.6, alpha: alpha * (0.4 + r() * 0.45),
+        bristles: 1, taper: 0.5, seed: (r() * 1e6) | 0, dens: 4
+      });
+      brush(x, [
+        [cx + Math.cos(a) * gap, cy + Math.sin(a) * gap],
+        [cx + Math.cos(a) * l1, cy + Math.sin(a) * l1]
+      ], {
+        col: k % 2 ? P.gold : P.amber, w: 2.2 + r() * 2.6, alpha: alpha * (0.4 + r() * 0.45),
+        bristles: 1, taper: 0.5, seed: (r() * 1e6) | 0, dens: 4
+      });
+    }
+    x.beginPath(); x.arc(cx, cy, rad * 0.1 + 1.2, 0, TAU);
+    x.fillStyle = rgba(P.goldLt, alpha * 0.5); x.fill();
+  }
   var LX = 250, LSZ = 60, SPS = 620, SPC = 310;
 
   /* ---------------- shared texture ---------------- */
@@ -700,17 +797,33 @@ function hand(x, str, X, Y, size, o) {
   var gCanvas = (function () {
     var p = plate(W, H);
     ground(p.x, W, H, {
-      base: P.mist, seed: 12, tints: [P.dust, P.oat, P.stone, '#d6cdbe', '#bfb5a4'],
-      mottle: 110, sweeps: 62, scrape: 52, drift: 26, dark: '#5f564a', light: '#ffffff', vignette: 0.3
+      base: P.mist, seed: 12, tints: [P.dust, P.oat, P.stone, '#cdc2ae', '#b0a493', '#d9cfc0'],
+      mottle: 150, sweeps: 78, scrape: 66, drift: 32, dark: '#544b40', light: '#fffdf6', vignette: 0.34
     });
+    /* Broad knife scrapes so the quiet ground still has worked mass in it: a
+       ground this large reads as blank paper without them. */
+    var rk = rnd(1212);
+    for (var sk = 0; sk < 34; sk++) {
+      var ky = rk() * H, kx = -120 + rk() * 300, klen = 420 + rk() * 900;
+      var kd = (rk() - 0.5) * 0.9;
+      brush(p.x, [[kx, ky], [kx + klen * 0.5, ky + kd * 180 + (rk() - 0.5) * 90],
+        [kx + klen, ky + kd * 360 + (rk() - 0.5) * 120]], {
+        col: rk() < 0.5 ? jit('#a4977f', rk, 26) : jit('#efe7d8', rk, 18),
+        w: 46 + rk() * 130, alpha: 0.05 + rk() * 0.08, bristles: 6,
+        seed: (rk() * 1e6) | 0, dens: 5, dry: 0.3, spread: 1.05
+      });
+    }
     var rg = rnd(515);
     [[210, 260, '#b8a88c'], [820, 420, '#c9b8a0'], [480, 880, '#a8907a'], [900, 960, '#d8c0a8']].forEach(function (st) {
+      /* Old stains in the cloth. No edge stroke: a contour round a stain turns
+         it into a soap bubble floating on the canvas. */
       wash(p.x, blobPts(st[0], st[1], 120 + rg() * 150, 100 + rg() * 130, (rg() * 1e5) | 0, 13, 0.2),
-        { col: st[2], seed: (rg() * 1e5) | 0, layers: 3, alpha: 0.07, edge: 18, bleed: 7 });
+        { col: st[2], seed: (rg() * 1e5) | 0, layers: 3, alpha: 0.055, edge: 0, bleed: 7 });
     });
     ITEMS.forEach(function (it, i) {
       brush(p.x, blobPts(it.sx, it.sy, 96, 82, 700 + i, 11, 0.16), {
-        col: mix(P.mist, '#8a8070', 0.45), w: 10, alpha: 0.09, bristles: 3, close: true, seed: 300 + i, dens: 6, dry: 0.45
+        col: mix(P.mist, '#8a8070', 0.45), w: 10, alpha: 0.05, bristles: 3, close: true,
+        seed: 300 + i, dens: 6, dry: 0.45, arc: 1.3
       });
     });
     textureThrough(p.x, craze, function (c) { c.rect(0, 0, W, H); }, 0.34, -40, -30);
@@ -780,9 +893,8 @@ function hand(x, str, X, Y, size, o) {
     x.beginPath(); curve(x, SCRAP, true); x.fillStyle = rgba('#8a7a66', 0.9); x.fill();
     x.restore();
     paperPatch(x, SCRAPQ, {
-      seed: 61, amp: 7, step: 11, col: P.paper, fibre: 84, bb: [60, -100, 940, 1300],
-      shadow: '#4a3c2e', shadowA: 0.0, edgeCol: '#bba98c', edgeW: 5,
-      print: { lh: 15, col: '#3a332a', h: 3.0, figs: 5 }
+      seed: 61, amp: 9, step: 14, col: P.paper, fibre: 120, bb: [60, -100, 940, 1300],
+      shadow: '#4a3c2e', shadowA: 0.0, edgeCol: '#bba98c', edgeW: 5
     });
     x.save();
     x.beginPath(); curve(x, SCRAP, true); x.clip();
@@ -989,8 +1101,9 @@ function hand(x, str, X, Y, size, o) {
       var pf = function (k) { curve(k, pts, true); };
       envelope(x, pts, { w: 14, seed: sd + i, halo: 2, blur: 26, col: '#2a1408', fillCol: '#8a5a06', haloA: 0.5, hox: 6, hoy: 9 });
       impasto(x, pf, {
-        base: P.amber, cols: [P.amber, '#FFD700', '#dc9a10', '#fff2a8'], bb: [e[0] - 160, e[1] - 120, 320, 240],
-        seed: sd + 10 + i, n: 12, kw: 56, angle: e[4], spreadA: 0.35, stipple: 110, lit: '#fff7c8', shade: '#7a4a04'
+        base: P.amber, cols: [P.amber, '#FFD700', '#dc9a10', '#fff2a8', '#e8a908'], bb: [e[0] - 160, e[1] - 120, 320, 240],
+        seed: sd + 10 + i, n: 30, kw: 26, angle: e[4], spreadA: 1.25, stipple: 150, crease: 34,
+        lit: '#fff7c8', shade: '#7a4a04', drift: 26
       });
       textureThrough(x, craze, pf, 0.6, -520, -700 - i * 60);
       bead(x, pts, { w: 8, seed: sd + 30 + i, close: true, dry: 0.26 });
@@ -1007,19 +1120,25 @@ function hand(x, str, X, Y, size, o) {
     var pf = function (k) { curve(k, pts, true); };
     envelope(x, pts, { w: 18, seed: sd, halo: 2, blur: 34, col: '#2a1408', fillCol: '#9a7838', haloA: 0.5, hox: 8, hoy: 11 });
     impasto(x, pf, {
-      base: '#e6cf9a', cols: ['#e6cf9a', '#d8bb7a', '#c9a55a', '#f2e2b8'], bb: [c - 170, m - 140, 340, 320],
-      seed: sd + 1, n: 22, kw: 38, angle: 0.9, stipple: 190, lit: '#fff6dc', shade: '#6b4a1c'
+      base: '#e6cf9a', cols: ['#e6cf9a', '#d8bb7a', '#c9a55a', '#f2e2b8', '#be9448'], bb: [c - 170, m - 140, 340, 320],
+      seed: sd + 1, n: 30, kw: 30, angle: 0.9, spreadA: 1.4, stipple: 190, crease: 40,
+      lit: '#fff6dc', shade: '#6b4a1c'
     });
     textureThrough(x, craze, pf, 0.7, -260, -300);
     bead(x, pts, { w: 8, seed: sd + 2, close: true, dry: 0.36, alpha: 0.7 });
+    /* Docker holes poked by hand, so they wander off the ring and vary: the
+       even polar grid this replaced was the clearest sticker tell on the
+       whole shelf. */
     var r = rnd(sd + 5);
-    for (var i = 0; i < 12; i++) {
-      var a = i / 12 * TAU, d = 44 + (i % 2) * 44;
-      var hxx = c + Math.cos(a) * d, hyy = m + 18 + Math.sin(a) * d;
-      x.beginPath(); x.arc(hxx, hyy, 8 + r() * 4, 0, TAU);
-      x.fillStyle = rgba('#4a2e08', 0.6); x.fill();
-      x.beginPath(); x.arc(hxx - 2.2, hyy - 2.4, 4.4, 0, TAU);
-      x.fillStyle = rgba('#fff0c0', 0.32); x.fill();
+    for (var i = 0; i < 13; i++) {
+      var a = r() * TAU, d = 22 + r() * 82;
+      var hxx = c + Math.cos(a) * d, hyy = m + 18 + Math.sin(a) * d * 0.94;
+      var hrr = 5.5 + r() * 5;
+      x.beginPath();
+      x.ellipse(hxx, hyy, hrr * (0.8 + r() * 0.5), hrr * (0.8 + r() * 0.5), r() * TAU, 0, TAU);
+      x.fillStyle = rgba('#4a2e08', 0.42 + r() * 0.24); x.fill();
+      x.beginPath(); x.arc(hxx - hrr * 0.3, hyy - hrr * 0.34, hrr * 0.5, 0, TAU);
+      x.fillStyle = rgba('#fff0c0', 0.2 + r() * 0.2); x.fill();
     }
     /* a bite out of it, because obviously */
     var bite = blobPts(c - 118, m - 82, 56, 50, sd + 7, 9, 0.2);
@@ -1074,12 +1193,30 @@ function hand(x, str, X, Y, size, o) {
   /* scrubbing cream back over the dark: diagonal, alternating direction,
      the way you actually scrub a surface down */
   var wipeStrokes = (function () {
-    var s = [], i, n = 34, r = rnd(451);
-    for (i = 0; i < n; i++) {
-      var u = i / (n - 1), c = -260 + u * 1620, d = i % 2 ? 1 : -1;
-      var p0 = [c - d * 800, c + d * 800], p1 = [c + d * 800, c - d * 800];
-      var mid = [c + d * 70 + (r() - 0.5) * 90, c + d * 90 + (r() - 0.5) * 90];
-      s.push({ pts: [p0, mid, p1], w: 142 });
+    /* Short overlapping passes rather than one long swipe per step. Full-width
+       strokes revealed in order gave a perfectly straight diagonal edge -- a
+       sheet of plastic sliding across -- because a 1600px stroke cannot wobble
+       at a scale the eye reads. These advance in bands along the diagonal
+       while scattering sideways, so the front stays broken and blotchy the way
+       a rag works a surface back. */
+    var s = [], r = rnd(451), bands = 24, per = 8;
+    for (var b = 0; b < bands; b++) {
+      var base = -320 + (b / (bands - 1)) * 1740;
+      var offs = [];
+      for (var k = 0; k < per; k++) offs.push(-820 + (k / (per - 1)) * 1640 + (r() - 0.5) * 150);
+      for (var k2 = offs.length - 1; k2 > 0; k2--) {
+        var sw = (r() * (k2 + 1)) | 0, tmp = offs[k2]; offs[k2] = offs[sw]; offs[sw] = tmp;
+      }
+      offs.forEach(function (off) {
+        var c = base + (r() - 0.5) * 70;
+        var cx = c + off, cy = c - off;
+        var ang = -Math.PI / 4 + (r() - 0.5) * 0.5;
+        var L = 440 + r() * 340, d = r() < 0.5 ? 1 : -1;
+        var p0 = [cx - Math.cos(ang) * L / 2 * d, cy - Math.sin(ang) * L / 2 * d];
+        var p1 = [cx + Math.cos(ang) * L / 2 * d, cy + Math.sin(ang) * L / 2 * d];
+        var mid = [(p0[0] + p1[0]) / 2 + (r() - 0.5) * 90, (p0[1] + p1[1]) / 2 + (r() - 0.5) * 90];
+        s.push({ pts: [p0, mid, p1], w: 150 + r() * 90 });
+      });
     }
     return s;
   })();
@@ -1134,16 +1271,17 @@ function hand(x, str, X, Y, size, o) {
     X.restore();
     X.globalAlpha = 1;
 
-    /* the links go under the objects, like a ribbon behind the flowers */
-    var lp = clamp01((u - 5.9) / 1.1);
+    /* The constellation is made by the arrangement and by star marks struck
+       into the ground between the objects. Leader lines joining item to item
+       would turn the shelf into a wiring diagram, which is the failure the
+       first pass was rejected for. */
+    var lp = clamp01((u - 5.9) / 1.4);
     if (lp > 0) {
-      LINKS.forEach(function (lk, i) {
-        var f = clamp01(lp * LINKS.length - i);
+      STARS.forEach(function (s, i) {
+        var f = clamp01(lp * STARS.length * 0.7 - i * 0.55);
         if (f <= 0) return;
-        var a = ITEMS[lk[0]], b = ITEMS[lk[1]];
-        var mx = (a.sx + b.sx) / 2 + Math.sin(i * 2.1) * 86, my = (a.sy + b.sy) / 2 + Math.cos(i * 1.7) * 78;
-        var pth = partial([[a.sx, a.sy], [mx, my], [b.sx, b.sy]], f);
-        bead(X, pth, { w: 5.5, seed: 500 + i, dark: '#4a3208', col: '#a8861e', alpha: 0.8, dry: 0.3 });
+        var tw = Math.sin(u * 1.7 + i * 2.3) * 0.5 + 0.5;
+        star(X, s[0], s[1], s[2] * f * (0.86 + 0.14 * tw), 600 + i, f * (0.5 + 0.5 * tw));
       });
     }
 
@@ -1178,15 +1316,30 @@ function hand(x, str, X, Y, size, o) {
       g.addColorStop(1, rgba(P.cad, 0));
       X.fillStyle = g;
       X.fillRect(it6.sx - 420, it6.sy - 420, 840, 840);
+      /* Heat as scumble bloomed into the ground behind the form, the way the
+         orange glow sits behind the dog in the refs. Evenly spaced rays would
+         be a clip-art sunburst. */
       var bj6 = boil(u + 0.9);
-      for (var q = 0; q < 16; q++) {
-        var qa = q / 16 * TAU + 0.2 + (bj6 ? 0.012 : -0.012);
-        var r0 = 168 * it6.s, r1 = r0 + (54 + 96 * ((q % 3) / 2)) * fp * puls;
-        brush(X, [[it6.sx + Math.cos(qa) * r0, it6.sy + Math.sin(qa) * r0],
-          [it6.sx + Math.cos(qa) * r1, it6.sy + Math.sin(qa) * r1]], {
-          col: q % 3 ? P.gold : P.amber, w: 15 - (q % 3) * 3, alpha: 0.6 * fp,
-          bristles: 2, seed: 900 + q + (bj6 ? 40 : 0), dens: 5, taper: 0.55, fade: true
-        });
+      var hr = rnd(901);
+      for (var q = 0; q < 26; q++) {
+        var qa = hr() * TAU;
+        var r0 = (150 + hr() * 130) * it6.s * puls;
+        var hx2 = it6.sx + Math.cos(qa) * r0, hy2 = it6.sy + Math.sin(qa) * r0 * 0.9;
+        var hrad = 34 + hr() * 78;
+        X.save();
+        X.globalAlpha = (0.05 + hr() * 0.13) * fp;
+        X.globalCompositeOperation = 'lighter';
+        var hg = X.createRadialGradient(hx2, hy2, 0, hx2, hy2, hrad);
+        hg.addColorStop(0, rgba(hr() < 0.45 ? P.amber : P.cad, 0.8));
+        hg.addColorStop(1, rgba(P.cad, 0));
+        X.fillStyle = hg;
+        X.fillRect(hx2 - hrad, hy2 - hrad, hrad * 2, hrad * 2);
+        X.restore();
+      }
+      for (var q2 = 0; q2 < 9; q2++) {
+        var sa = hr() * TAU, sr = (165 + hr() * 60) * it6.s;
+        spatter(X, it6.sx + Math.cos(sa) * sr, it6.sy + Math.sin(sa) * sr,
+          22 + hr() * 30, 5, hr() < 0.5 ? P.goldLt : P.amber, (hr() * 1e6) | 0, 2.2);
       }
       X.save();
       X.translate(it6.sx + (bj6 ? 1.3 : -1.2), it6.sy + (bj6 ? -1.5 : 1.1));
@@ -1232,7 +1385,7 @@ function hand(x, str, X, Y, size, o) {
       drawSlate(u);
     } else {
       drawSlate(9.6 + (u - 9.6) * 0.15);
-      var wp = clamp01((u - 9.6) / 1.2);
+      var wp = clamp01((u - 9.6) / 1.45);
       paintOn(X, gCanvas, wipeRev, wp);
       /* the loaded edge of the brush, drawn live so the scrub is a mark */
       var nw = wipeStrokes.length, cur = wp * nw;
@@ -1249,8 +1402,8 @@ function hand(x, str, X, Y, size, o) {
         drip(X, fc - 250, fc + 190, 50 + 90 * (1 - wp), 9, mix(P.stone, '#ffffff', 0.4), 12);
         drip(X, fc + 210, fc - 250, 34 + 110 * (1 - wp), 7, mix(P.dust, '#ffffff', 0.3), 13);
       }
-      if (u > 10.8) {
-        X.globalAlpha = clamp01((u - 10.8) / 0.32);
+      if (u > 11.05) {
+        X.globalAlpha = clamp01((u - 11.05) / 0.3);
         X.drawImage(gCanvas.c, 0, 0);
         X.globalAlpha = 1;
       }
