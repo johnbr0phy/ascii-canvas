@@ -998,6 +998,18 @@ SCENES.push({
       }
       c.globalAlpha = 1;
     });
+    // the blue ribbon curling away, laid in under everything else
+    b.add(0.20,1.10,(c,k,rng)=>{
+      const pts=[];
+      for (let i=0;i<=80;i++){
+        const u=i/80;
+        const a=-0.5+u*6.5;
+        const rr=66+52*u;
+        pts.push({ x:256+Math.cos(a)*rr+u*168, y:892+Math.sin(a)*rr*0.7-u*54 });
+      }
+      const t=trim(pts,k); if(!t) return;
+      bristle(c,t,8,P.denim,rng,{alpha:0.88,bristles:3,tone:0.22,taper:false,coreA:0.95});
+    });
     // stems climbing out of the bottom edge
     const st = [
       { x0:112, y0:1090, x1:150, y1:498, bow:-34, head:{r:100,col:P.orange,rot:1.62,open:1,  petals:4} },
@@ -1036,18 +1048,6 @@ SCENES.push({
         petalFlower(c,{ cx:fl.cx, cy:fl.cy, r:fl.r, n:5, rot:fl.rot, coreOnly:true,
                         col:fl.col, hot:P.magenta },rng,k);
       });
-    });
-    // the blue ribbon curling away, laid in under everything else
-    b.add(0.20,1.10,(c,k,rng)=>{
-      const pts=[];
-      for (let i=0;i<=80;i++){
-        const u=i/80;
-        const a=-0.5+u*6.5;
-        const rr=66+52*u;
-        pts.push({ x:256+Math.cos(a)*rr+u*168, y:892+Math.sin(a)*rr*0.7-u*54 });
-      }
-      const t=trim(pts,k); if(!t) return;
-      bristle(c,t,8,P.denim,rng,{alpha:0.88,bristles:3,tone:0.22,taper:false,coreA:0.95});
     });
     b.add(5.00,0.50,(c,k,rng)=>{
       c.globalAlpha=k;
