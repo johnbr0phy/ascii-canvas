@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Shopping Constellation</title>
+<title>A Shopping List, Mostly Kept</title>
 <style>
   html,body{margin:0;height:100%;background:#0d0b0a;overflow:hidden}
   body{display:flex;align-items:center;justify-content:center}
@@ -186,18 +186,22 @@ function brush(x, pts, o) {
     var dry = o.dry || 0;
     var runLeft = dry ? (6 + r() * 26) / Math.max(0.2, dry) : Infinity;
     var inGap = false;
-    var prev = null, skip = false;
+    var prev = null, skip = false, run = 0, band = [], bands = [];
     for (var i = 0; i < sm.length; i++) {
+      if (i) run += Math.hypot(sm[i][0] - sm[i - 1][0], sm[i][1] - sm[i - 1][1]);
       var p = sm[i];
       var q = sm[Math.min(sm.length - 1, i + 1)], pp = sm[Math.max(0, i - 1)];
       var nx = -(q[1] - pp[1]), ny = q[0] - pp[0];
       var L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
-      var wig = Math.sin(i * 0.23 + ph) * W * 0.05 + Math.sin(i * 0.061 + ph2) * W * 0.1;
+      /* Wobble and pressure ride travelled distance, not sample index. Keyed
+         to the index they beat at a period set by the sampling density, so a
+         long stroke came out banded into even segments like a bamboo cane. */
+      var wig = Math.sin(run * 0.024 + ph) * W * 0.05 + Math.sin(run * 0.0065 + ph2) * W * 0.1;
       var xx = p[0] + nx * (off + wig), yy = p[1] + ny * (off + wig);
       var u = i / (sm.length - 1);
       var press = 1;
       if (o.taper) press = Math.pow(Math.sin(Math.PI * u), o.taper === true ? 0.42 : o.taper);
-      press *= 0.68 + 0.22 * Math.sin(i * 0.29 + ph) + 0.24 * r();
+      press *= 0.68 + 0.22 * Math.sin(run * 0.031 + ph) + 0.24 * r();
       if (o.arc) {
         var av = 0.62 * Math.sin(u * TAU * arcF + arcPh) + 0.38 * Math.sin(u * TAU * arcF * 2.3 + arcPh2);
         press *= Math.max(0, 0.55 + (o.arc === true ? 0.85 : o.arc) * av);
@@ -210,7 +214,15 @@ function brush(x, pts, o) {
         }
         skip = inGap;
       }
-      if (prev && !skip && press > 0.06) {
+      /* Ribbon mode collects the bristle into one filled band and lays it
+         down once. Stroking every segment separately at part alpha stacks
+         the overlaps and scallops the round caps, so a solid form like a
+         cane came out as a chain of translucent beads. Scumble and wash
+         still want the stacking, so they keep the segment-by-segment path. */
+      if (o.ribbon) {
+        if (skip || press <= 0.06) { if (band.length > 1) bands.push(band); band = []; }
+        else band.push([xx, yy, Math.max(0.5, bw * press) / 2]);
+      } else if (prev && !skip && press > 0.06) {
         x.beginPath();
         x.moveTo(prev[0], prev[1]); x.lineTo(xx, yy);
         x.strokeStyle = bcol;
@@ -220,8 +232,32 @@ function brush(x, pts, o) {
       }
       prev = [xx, yy];
     }
+    if (o.ribbon) {
+      if (band.length > 1) bands.push(band);
+      x.globalAlpha = A;
+      x.fillStyle = bcol;
+      for (var bi = 0; bi < bands.length; bi++) ribbon(x, bands[bi]);
+    }
   }
   x.globalAlpha = 1;
+}
+
+/* fill a band of [x, y, halfWidth] as one closed shape */
+function ribbon(x, band) {
+  var n = band.length, left = [], right = [], i, a, b, nx, ny, L;
+  for (i = 0; i < n; i++) {
+    a = band[Math.max(0, i - 1)]; b = band[Math.min(n - 1, i + 1)];
+    nx = -(b[1] - a[1]); ny = b[0] - a[0];
+    L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    left.push([band[i][0] + nx * band[i][2], band[i][1] + ny * band[i][2]]);
+    right.push([band[i][0] - nx * band[i][2], band[i][1] - ny * band[i][2]]);
+  }
+  x.beginPath();
+  x.moveTo(left[0][0], left[0][1]);
+  for (i = 1; i < n; i++) x.lineTo(left[i][0], left[i][1]);
+  for (i = n - 1; i >= 0; i--) x.lineTo(right[i][0], right[i][1]);
+  x.closePath();
+  x.fill();
 }
 
 /* ---- grain: canvas tooth, composited with overlay ---- */
@@ -363,6 +399,48 @@ function envelope(x, pts, o) {
       alpha: k === 0 ? 0.88 : 0.5, bristles: k === 0 ? 4 : 2,
       close: close, seed: (o.seed || 5) + k * 7 + 1, dens: 9, dry: k ? 0.25 : 0.06, vary: 14,
       arc: o.arc == null ? 0.7 : o.arc
+    });
+  }
+}
+
+/* ---- charcoal contour ----
+   The contour is one dark line, not a bundle. Running brush() with four
+   spread bristles and dry gaps gives each bristle its own phase, so the
+   outline comes out as four parallel dashed tracks: stitching round a patch,
+   which is the die-cut tell. So: a soft dark bleed either side, then a single
+   continuous core whose weight rides the arc wave, then a short overdrawn
+   passage or two where the hand went back over the line. */
+function contour(x, pts, o) {
+  o = o || {};
+  var col = o.col || '#141210', W = o.w == null ? 17 : o.w;
+  var close = o.close !== false, seed = o.seed == null ? 5 : o.seed;
+  var r = rnd(seed + 991);
+  var sm = crSample(pts, 7, close);
+  /* the bleed: wide, faint, no gaps, so the line has soot around it */
+  for (var b = 0; b < 2; b++) {
+    brush(x, movePts(sm, (r() - 0.5) * 3, (r() - 0.5) * 3), {
+      col: col, w: W * (2.1 + b * 1.5), alpha: 0.1 - b * 0.035, bristles: 2,
+      close: close, seed: seed + 40 + b, raw: true, spread: 1.2, thick: 1.1
+    });
+  }
+  /* the core: continuous, weight-varied, drawn once */
+  brush(x, sm, {
+    col: col, w: W, alpha: o.alpha == null ? 0.93 : o.alpha, bristles: 2,
+    close: close, seed: seed + 1, raw: true, vary: o.vary == null ? 16 : o.vary,
+    spread: 0.3, thick: 1.3, arc: o.arc == null ? 0.42 : o.arc, ribbon: true
+  });
+  /* going back over it: a couple of short passages, heavier, slightly off */
+  var goes = o.goes == null ? 3 : o.goes;
+  for (var g = 0; g < goes; g++) {
+    var i0 = (r() * sm.length) | 0;
+    var len = Math.max(6, (sm.length * (0.09 + r() * 0.17)) | 0);
+    var seg = [];
+    for (var k = 0; k < len; k++) seg.push(sm[(i0 + k) % sm.length]);
+    if (!close && i0 + len > sm.length) continue;
+    brush(x, movePts(seg, (r() - 0.5) * 5, (r() - 0.5) * 5), {
+      col: r() < 0.3 ? mix(col, '#ffffff', 0.2) : col,
+      w: W * (0.62 + r() * 0.6), alpha: 0.5 + r() * 0.3, bristles: 1,
+      close: false, seed: (r() * 1e6) | 0, raw: true, taper: 0.7, thick: 1.2
     });
   }
 }
@@ -983,9 +1061,10 @@ function hand(x, str, X, Y, size, o) {
       seed: sd + 1, n: 20, kw: 40, angle: -1.45, spreadA: 0.3, stipple: 120, lit: '#ffffff', shade: '#6c7c80'
     });
     textureThrough(x, craze, pf, 0.5, -300 - sd % 200, -200);
-    /* cream lead-line, stained-glass rather than gold */
-    brush(x, pts, { col: P.cream, w: 14, alpha: 0.78, bristles: 3, close: true, seed: sd + 9, dens: 8, dry: 0.16, vary: 18 });
-    brush(x, pts, { col: mix(P.cream, '#b8b0a0', 0.35), w: 9, alpha: 0.6, bristles: 2, close: true, seed: sd + 10, dens: 8, dry: 0.34, vary: 14 });
+    /* Charcoal contour. A pale lead-line round every object gave each of them
+       a bright die-cut border, which is the sticker tell; the gold relief is
+       kept back for the tomato alone, the way she concentrates it. */
+    contour(x, pts, { col: '#241205', w: 15, seed: sd + 9, arc: 0.4, vary: 18 });
     brush(x, [[c - 62, m - 20], [c - 72, m + 170]], { col: '#ffffff', w: 20, alpha: 0.3, bristles: 3, seed: sd + 3, dens: 6, dry: 0.3 });
     brush(x, [[c + 66, m + 10], [c + 72, m + 160]], { col: '#7f9095', w: 16, alpha: 0.22, bristles: 3, seed: sd + 4, dens: 6, dry: 0.35 });
     var cap = [[c - 50, m - 174], [c + 50, m - 178], [c + 46, m - 226], [c - 46, m - 222]];
@@ -994,7 +1073,7 @@ function hand(x, str, X, Y, size, o) {
       base: P.verm, cols: [P.verm, P.cad, '#8a1410'], bb: [c - 70, m - 240, 140, 90],
       seed: sd + 6, n: 8, kw: 22, stipple: 30, lit: '#ff9a6a', shade: '#4a0c08'
     });
-    brush(x, cap, { col: mix(P.cream, P.verm, 0.4), w: 8, alpha: 0.6, bristles: 2, close: true, seed: sd + 7, dens: 7, dry: 0.3 });
+    contour(x, cap, { col: '#2e0d08', w: 9, seed: sd + 7, arc: 0.35, goes: 2 });
   }
 
   function eggsFn(x, c, m, sd) {
@@ -1008,7 +1087,7 @@ function hand(x, str, X, Y, size, o) {
       });
       textureThrough(x, craze, pf, 0.45, -120 * i - 200, -420);
       spatter(x, e[0], e[1], e[2] * 0.85, 54, '#5a3a18', sd + 40 + i, 2.8);
-      brush(x, pts, { col: mix(P.cream, '#c9ab7a', 0.4), w: 11, alpha: 0.72, bristles: 3, close: true, seed: sd + 60 + i, dens: 8, dry: 0.28, vary: 16 });
+      contour(x, pts, { col: '#2a1608', w: 13, seed: sd + 60 + i, arc: 0.42, vary: 16 });
     });
   }
 
@@ -1041,7 +1120,7 @@ function hand(x, str, X, Y, size, o) {
       seed: sd + 1, n: 26, kw: 46, angle: -0.35, stipple: 150, lit: '#e6b25a', shade: '#2e1805'
     });
     textureThrough(x, craze, pf, 0.66, -180, -620);
-    brush(x, pts, { col: '#e0a64e', w: 12, alpha: 0.66, bristles: 3, close: true, seed: sd + 3, dens: 8, dry: 0.38, vary: 20 });
+    contour(x, pts, { col: '#2a1606', w: 14, seed: sd + 3, arc: 0.44, vary: 20 });
     for (var i = 0; i < 3; i++) {
       var y = m - 30 + i * 42;
       scratch(x, [[c - 6 + i * 10, y + 22], [c + 62, y - 12], [c + 134 - i * 8, y + 16]], {
@@ -1091,7 +1170,7 @@ function hand(x, str, X, Y, size, o) {
     });
     hand(x, 'tea', c - 42, m - 16, 62, { col: P.ink, seed: sd + 30, w: 0.11, bristles: 3, alpha: 0.88 });
     brush(x, [[c - 44, m + 52], [c + 20, m + 46], [c + 52, m + 52]], { col: P.verm, w: 5, alpha: 0.6, bristles: 2, seed: sd + 31, dens: 7, taper: 0.5 });
-    brush(x, pts, { col: mix(P.cream, '#d8a06a', 0.45), w: 11, alpha: 0.66, bristles: 3, close: true, seed: sd + 2, dens: 8, dry: 0.3, vary: 16 });
+    contour(x, pts, { col: '#2a1004', w: 12, seed: sd + 2, arc: 0.44, vary: 16 });
   }
 
   function lemons(x, c, m, sd) {
@@ -1106,7 +1185,7 @@ function hand(x, str, X, Y, size, o) {
         lit: '#fff7c8', shade: '#7a4a04', drift: 26
       });
       textureThrough(x, craze, pf, 0.6, -520, -700 - i * 60);
-      bead(x, pts, { w: 8, seed: sd + 30 + i, close: true, dry: 0.26 });
+      contour(x, pts, { col: '#2e1a04', w: 12, seed: sd + 30 + i, arc: 0.48, vary: 18 });
       [1, -1].forEach(function (sgn, k) {
         var tip = rotPts([[e[0] + sgn * e[2] * 0.92, e[1] + 2], [e[0] + sgn * e[2] * 1.18, e[1] - 6 * sgn]], e[0], e[1], e[4]);
         brush(x, tip, { col: mix(P.amber, P.crust, 0.5), w: 15, alpha: 0.72, bristles: 2, seed: sd + 50 + i * 3 + k, dens: 5, taper: 0.5 });
@@ -1125,7 +1204,7 @@ function hand(x, str, X, Y, size, o) {
       lit: '#fff6dc', shade: '#6b4a1c'
     });
     textureThrough(x, craze, pf, 0.7, -260, -300);
-    bead(x, pts, { w: 8, seed: sd + 2, close: true, dry: 0.36, alpha: 0.7 });
+    contour(x, pts, { col: '#2a1c08', w: 13, seed: sd + 2, arc: 0.5, vary: 18 });
     /* Docker holes poked by hand, so they wander off the ring and vary: the
        even polar grid this replaced was the clearest sticker tell on the
        whole shelf. */

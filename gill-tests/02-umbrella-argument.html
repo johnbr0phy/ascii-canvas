@@ -186,18 +186,22 @@ function brush(x, pts, o) {
     var dry = o.dry || 0;
     var runLeft = dry ? (6 + r() * 26) / Math.max(0.2, dry) : Infinity;
     var inGap = false;
-    var prev = null, skip = false;
+    var prev = null, skip = false, run = 0, band = [], bands = [];
     for (var i = 0; i < sm.length; i++) {
+      if (i) run += Math.hypot(sm[i][0] - sm[i - 1][0], sm[i][1] - sm[i - 1][1]);
       var p = sm[i];
       var q = sm[Math.min(sm.length - 1, i + 1)], pp = sm[Math.max(0, i - 1)];
       var nx = -(q[1] - pp[1]), ny = q[0] - pp[0];
       var L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
-      var wig = Math.sin(i * 0.23 + ph) * W * 0.05 + Math.sin(i * 0.061 + ph2) * W * 0.1;
+      /* Wobble and pressure ride travelled distance, not sample index. Keyed
+         to the index they beat at a period set by the sampling density, so a
+         long stroke came out banded into even segments like a bamboo cane. */
+      var wig = Math.sin(run * 0.024 + ph) * W * 0.05 + Math.sin(run * 0.0065 + ph2) * W * 0.1;
       var xx = p[0] + nx * (off + wig), yy = p[1] + ny * (off + wig);
       var u = i / (sm.length - 1);
       var press = 1;
       if (o.taper) press = Math.pow(Math.sin(Math.PI * u), o.taper === true ? 0.42 : o.taper);
-      press *= 0.68 + 0.22 * Math.sin(i * 0.29 + ph) + 0.24 * r();
+      press *= 0.68 + 0.22 * Math.sin(run * 0.031 + ph) + 0.24 * r();
       if (o.arc) {
         var av = 0.62 * Math.sin(u * TAU * arcF + arcPh) + 0.38 * Math.sin(u * TAU * arcF * 2.3 + arcPh2);
         press *= Math.max(0, 0.55 + (o.arc === true ? 0.85 : o.arc) * av);
@@ -210,7 +214,15 @@ function brush(x, pts, o) {
         }
         skip = inGap;
       }
-      if (prev && !skip && press > 0.06) {
+      /* Ribbon mode collects the bristle into one filled band and lays it
+         down once. Stroking every segment separately at part alpha stacks
+         the overlaps and scallops the round caps, so a solid form like a
+         cane came out as a chain of translucent beads. Scumble and wash
+         still want the stacking, so they keep the segment-by-segment path. */
+      if (o.ribbon) {
+        if (skip || press <= 0.06) { if (band.length > 1) bands.push(band); band = []; }
+        else band.push([xx, yy, Math.max(0.5, bw * press) / 2]);
+      } else if (prev && !skip && press > 0.06) {
         x.beginPath();
         x.moveTo(prev[0], prev[1]); x.lineTo(xx, yy);
         x.strokeStyle = bcol;
@@ -220,8 +232,32 @@ function brush(x, pts, o) {
       }
       prev = [xx, yy];
     }
+    if (o.ribbon) {
+      if (band.length > 1) bands.push(band);
+      x.globalAlpha = A;
+      x.fillStyle = bcol;
+      for (var bi = 0; bi < bands.length; bi++) ribbon(x, bands[bi]);
+    }
   }
   x.globalAlpha = 1;
+}
+
+/* fill a band of [x, y, halfWidth] as one closed shape */
+function ribbon(x, band) {
+  var n = band.length, left = [], right = [], i, a, b, nx, ny, L;
+  for (i = 0; i < n; i++) {
+    a = band[Math.max(0, i - 1)]; b = band[Math.min(n - 1, i + 1)];
+    nx = -(b[1] - a[1]); ny = b[0] - a[0];
+    L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    left.push([band[i][0] + nx * band[i][2], band[i][1] + ny * band[i][2]]);
+    right.push([band[i][0] - nx * band[i][2], band[i][1] - ny * band[i][2]]);
+  }
+  x.beginPath();
+  x.moveTo(left[0][0], left[0][1]);
+  for (i = 1; i < n; i++) x.lineTo(left[i][0], left[i][1]);
+  for (i = n - 1; i >= 0; i--) x.lineTo(right[i][0], right[i][1]);
+  x.closePath();
+  x.fill();
 }
 
 /* ---- grain: canvas tooth, composited with overlay ---- */
@@ -363,6 +399,48 @@ function envelope(x, pts, o) {
       alpha: k === 0 ? 0.88 : 0.5, bristles: k === 0 ? 4 : 2,
       close: close, seed: (o.seed || 5) + k * 7 + 1, dens: 9, dry: k ? 0.25 : 0.06, vary: 14,
       arc: o.arc == null ? 0.7 : o.arc
+    });
+  }
+}
+
+/* ---- charcoal contour ----
+   The contour is one dark line, not a bundle. Running brush() with four
+   spread bristles and dry gaps gives each bristle its own phase, so the
+   outline comes out as four parallel dashed tracks: stitching round a patch,
+   which is the die-cut tell. So: a soft dark bleed either side, then a single
+   continuous core whose weight rides the arc wave, then a short overdrawn
+   passage or two where the hand went back over the line. */
+function contour(x, pts, o) {
+  o = o || {};
+  var col = o.col || '#141210', W = o.w == null ? 17 : o.w;
+  var close = o.close !== false, seed = o.seed == null ? 5 : o.seed;
+  var r = rnd(seed + 991);
+  var sm = crSample(pts, 7, close);
+  /* the bleed: wide, faint, no gaps, so the line has soot around it */
+  for (var b = 0; b < 2; b++) {
+    brush(x, movePts(sm, (r() - 0.5) * 3, (r() - 0.5) * 3), {
+      col: col, w: W * (2.1 + b * 1.5), alpha: 0.1 - b * 0.035, bristles: 2,
+      close: close, seed: seed + 40 + b, raw: true, spread: 1.2, thick: 1.1
+    });
+  }
+  /* the core: continuous, weight-varied, drawn once */
+  brush(x, sm, {
+    col: col, w: W, alpha: o.alpha == null ? 0.93 : o.alpha, bristles: 2,
+    close: close, seed: seed + 1, raw: true, vary: o.vary == null ? 16 : o.vary,
+    spread: 0.3, thick: 1.3, arc: o.arc == null ? 0.42 : o.arc, ribbon: true
+  });
+  /* going back over it: a couple of short passages, heavier, slightly off */
+  var goes = o.goes == null ? 3 : o.goes;
+  for (var g = 0; g < goes; g++) {
+    var i0 = (r() * sm.length) | 0;
+    var len = Math.max(6, (sm.length * (0.09 + r() * 0.17)) | 0);
+    var seg = [];
+    for (var k = 0; k < len; k++) seg.push(sm[(i0 + k) % sm.length]);
+    if (!close && i0 + len > sm.length) continue;
+    brush(x, movePts(seg, (r() - 0.5) * 5, (r() - 0.5) * 5), {
+      col: r() < 0.3 ? mix(col, '#ffffff', 0.2) : col,
+      w: W * (0.62 + r() * 0.6), alpha: 0.5 + r() * 0.3, bristles: 1,
+      close: false, seed: (r() * 1e6) | 0, raw: true, taper: 0.7, thick: 1.2
     });
   }
 }
@@ -728,10 +806,10 @@ function hand(x, str, X, Y, size, o) {
    Two umbrellas fall out on a wet pavement. One is broad and easily
    offended in cadmium; the other is tall, narrow and turquoise, and
    knows it is right. A small yellow one waits, unimpressed.
-   Canvas pole: overcast mist above, cold wet slabs below, staccato rain.
-   Slate pole: seen in the puddle — the same two as made things, denim
-   panels, stitched seams, ribs as cream lead-lines, rain counted off
-   in tally marks. Then the rain washes the whole argument down. */
+   Day pole: overcast mist above, cold wet slabs below, staccato rain.
+   Night pole: found in the puddle — the same street under a sodium lamp,
+   the same two still at it, the rain counted off in chalk. Then the rain
+   washes the whole argument down the square. */
 (function () {
   var W = 1080, H = 1080, DUR = 11.0;
   var cv = document.getElementById('c'), X = cv.getContext('2d');
@@ -741,7 +819,7 @@ function hand(x, str, X, Y, size, o) {
     cream: '#F5F0E6', ink: '#1A1A1A', char: '#2B2B2B', wet: '#7f878a', deepwet: '#4a5559',
     cad: '#E34F0C', verm: '#C8102E', mag: '#D13478', rose: '#c8465a',
     turq: '#00B7EB', cyan: '#47e5df', navy: '#0a3a59', deep: '#002B5B',
-    denim: '#1B3A6B', denimLt: '#5b7aa8', denimPl: '#9fb4cf',
+    lampPl: '#9fb4cf',
     amber: '#F3B616', gold: '#C9A227', wood: '#8B5A2B', bark: '#5a3a1c'
   };
 
@@ -751,21 +829,6 @@ function hand(x, str, X, Y, size, o) {
   var castP = plate(W, H);
   var lensP = plate(W, H);
 
-  /* denim twill, visible from across the room */
-  var weave = (function () {
-    var p = plate(620, 620), x = p.x, r = rnd(31);
-    for (var i = -80; i < 700; i += 4) {
-      brush(x, [[i, 0], [i + 276, 620]], {
-        col: r() < 0.5 ? 'rgba(255,255,255,0.11)' : 'rgba(0,0,0,0.14)',
-        w: 2.6, alpha: 1, bristles: 1, seed: (r() * 1e6) | 0, dens: 4, dry: 0.34
-      });
-    }
-    for (var j = 0; j < 620; j += 7) {
-      brush(x, [[0, j], [620, j + 7]], { col: 'rgba(0,0,0,0.07)', w: 2, alpha: 1, bristles: 1, seed: (r() * 1e6) | 0, dens: 3, dry: 0.5 });
-    }
-    return p;
-  })();
-
   /* ---------------- the wet street ---------------- */
   var HOR = 686;
   var PUD = blobPts(548, 930, 386, 112, 91, 17, 0.16);
@@ -773,13 +836,23 @@ function hand(x, str, X, Y, size, o) {
   function street(night) {
     var p = plate(W, H), x = p.x, r = rnd(night ? 55 : 5);
     /* the air above: misty wall, vertical weather */
+    /* A quiet ground still has to be a worked one. Four near-identical pale
+       greys gave a blank sheet with a form sitting on top of it; the day set
+       now runs from warm putty through to a soured olive and a cold slate, so
+       there is somewhere for the eye to go in the empty half of the square. */
     ground(x, W, H, {
       base: night ? '#1d242c' : P.mist, seed: night ? 41 : 9,
-      tints: night ? ['#121820', '#28323e', P.deep, '#0a0e14'] : [P.dust, P.stone, P.pale, '#d4d8d4'],
-      mottle: 90, sweeps: 50, scrape: 40, drift: 22,
-      dark: night ? '#000000' : '#6b6b66', light: night ? '#6b88a8' : '#ffffff',
-      vignette: night ? 0.44 : 0.26, vertical: true
+      tints: night ? ['#121820', '#28323e', P.deep, '#0a0e14', '#3c4a5c']
+        : [P.dust, P.stone, P.pale, '#b8ab94', '#8f9a94', '#c4b8a4', '#6f7670'],
+      mottle: 150, sweeps: 90, scrape: 72, drift: 30,
+      dark: night ? '#000000' : '#575a52', light: night ? '#6b88a8' : '#ffffff',
+      vignette: night ? 0.44 : 0.34, vertical: true
     });
+    /* crumpled tissue laid into the wall, as she does */
+    x.save();
+    x.globalAlpha = night ? 0.4 : 0.55;
+    x.drawImage(craze.c, 0, 0);
+    x.restore();
     /* One warm source in all that navy. Her habit is a large quiet ground with
        the heat concentrated in one place; without it the night pole is just
        murk. */
@@ -804,6 +877,20 @@ function hand(x, str, X, Y, size, o) {
           bristles: 4, seed: (r() * 1e6) | 0, dens: 5, dry: 0.3, taper: 0.7, spread: 1.1
         });
       }
+    }
+    /* Torn paper laid into the wall. In the refs these patches are how the
+       ground gets its architecture: quiet rectangles of a slightly other
+       colour, edges frayed, never lining up into a grid. */
+    for (var pt = 0; pt < 9; pt++) {
+      var pw = 120 + r() * 300, ph = 150 + r() * 330;
+      var px0 = r() * (W - pw * 0.6) - pw * 0.2, py0 = r() * (HOR - 60) - ph * 0.25;
+      var rect = [[px0, py0], [px0 + pw, py0 - 8 + r() * 16],
+        [px0 + pw + (r() - 0.5) * 20, py0 + ph], [px0 + (r() - 0.5) * 20, py0 + ph]];
+      wash(x, jagPoly(rect, (r() * 1e5) | 0, 5, 26), {
+        col: night ? jit(r() < 0.5 ? '#26313e' : '#141b24', r, 16)
+          : jit(r() < 0.5 ? '#c9bda8' : '#9ea79f', r, 22),
+        seed: (r() * 1e5) | 0, layers: 2, alpha: 0.075, edge: 0, bleed: 7
+      });
     }
     /* stains and run-off on the wall above */
     for (var w0 = 0; w0 < 18; w0++) {
@@ -879,14 +966,17 @@ function hand(x, str, X, Y, size, o) {
         });
       }
     });
-    /* Wind-shiver on the surface: irregular heights and lengths. Evenly
-       stacked horizontal lines came out as mosaic tiling. */
-    for (var b = 0; b < 16; b++) {
-      var by = 848 + r() * 150, bx0 = 180 + r() * 460, blen = 90 + r() * 420;
-      brush(x, [[bx0, by], [bx0 + blen * 0.5, by + (r() - 0.5) * 9], [bx0 + blen, by + (r() - 0.5) * 11]], {
-        col: night ? mix(P.denimPl, '#ffffff', 0.35) : mix(P.pale, '#ffffff', 0.6),
-        w: 2.5 + r() * 7, alpha: 0.07 + r() * 0.17, bristles: 2,
-        seed: (r() * 1e6) | 0, dens: 6, dry: 0.45, taper: 0.7
+    /* Wind-shiver on the surface. Long strokes with dry gaps in them broke
+       into a dash rhythm and tiled the water like mosaic, so each glint is
+       instead its own short unbroken mark and the irregularity is in how long
+       they are and where they fall. */
+    for (var b = 0; b < 90; b++) {
+      var by = 846 + r() * 152, bx0 = 168 + r() * 700;
+      var blen = 7 + Math.pow(r(), 2.1) * 210;
+      brush(x, [[bx0, by], [bx0 + blen * 0.5, by + (r() - 0.5) * 5], [bx0 + blen, by + (r() - 0.5) * 7]], {
+        col: night ? mix(P.lampPl, '#ffffff', 0.35) : mix(P.pale, '#ffffff', 0.6),
+        w: 1.6 + r() * 5, alpha: 0.07 + r() * 0.15, bristles: 1,
+        seed: (r() * 1e6) | 0, dens: 6, taper: 0.8, ribbon: true
       });
     }
     x.restore();
@@ -990,15 +1080,7 @@ function hand(x, str, X, Y, size, o) {
     /* Charcoal contour, swelling and dropping out round the shape. Two passes
        offset against each other so it doubles in places, the way a line gets
        gone over. */
-    brush(x, out, {
-      col: P.char, w: 21, alpha: 0.8, bristles: 4, close: true, seed: o.seed + 3,
-      dens: 9, dry: 0.22, vary: 26, arc: 0.8
-    });
-    brush(x, movePts(out, -2.5, -3.5), {
-      col: mix(P.char, o.lit, 0.3), w: 9,
-      alpha: 0.42, bristles: 2, close: true, seed: o.seed + 4,
-      dens: 9, dry: 0.45, vary: 18, arc: 1.2
-    });
+    contour(x, out, { col: P.char, w: 19, seed: o.seed + 3, arc: 0.4, vary: 24 });
     /* At night a cold light catches the wet shoulders of the canopy only */
     if (o.night) {
       brush(x, shrinkPts(out.slice(0, Math.round(out.length * 0.55)), 0.97), {
@@ -1019,15 +1101,22 @@ function hand(x, str, X, Y, size, o) {
   function handle(x, cx, top, bottom, o) {
     var bend = o.bend || 4, w = o.w || 17;
     var shaft = [[cx, top], [cx + bend, (top + bottom) / 2], [cx + bend * 0.4, bottom - 132]];
-    brush(x, shaft, { col: o.dark || P.bark, w: w + 7, alpha: 0.45, bristles: 2, seed: o.seed + 1, dens: 9, dry: 0.04 });
-    brush(x, shaft, { col: o.col || P.wood, w: w, alpha: 0.95, bristles: 4, seed: o.seed, dens: 9, vary: 20, dry: 0.04 });
+    brush(x, shaft, { col: o.dark || P.bark, w: w + 7, alpha: 0.45, bristles: 2, seed: o.seed + 1, dens: 9, ribbon: true, spread: 0.5 });
+    brush(x, shaft, { col: o.col || P.wood, w: w, alpha: 0.95, bristles: 3, seed: o.seed, dens: 9, vary: 14, ribbon: true, spread: 0.46 });
+    /* The highlight is one lit edge running the length of the shaft. Arc
+       modulation strong enough to drop it out turned it into a row of pale
+       ticks, so it only thins here and there. */
     brush(x, movePts(shaft, -w * 0.28, 0), {
-      col: mix(o.col || P.wood, '#ffffff', 0.55), w: w * 0.26, alpha: 0.32,
-      bristles: 1, seed: o.seed + 2, dens: 9, dry: 0.08, arc: 1.2
+      col: mix(o.col || P.wood, '#ffffff', 0.55), w: w * 0.26, alpha: 0.3,
+      bristles: 1, seed: o.seed + 2, dens: 9, arc: 0.3, ribbon: true
+    });
+    brush(x, movePts(shaft, w * 0.34, 0), {
+      col: o.dark || P.bark, w: w * 0.3, alpha: 0.4,
+      bristles: 1, seed: o.seed + 6, dens: 9, arc: 0.3, ribbon: true
     });
     var crook = [[cx + bend * 0.4, bottom - 132], [cx - 26, bottom - 40], [cx + 46, bottom - 2], [cx + 96, bottom - 62]];
-    brush(x, crook, { col: o.dark || P.bark, w: w + 6, alpha: 0.45, bristles: 2, seed: o.seed + 3, dens: 10, dry: 0.04 });
-    brush(x, crook, { col: o.col || P.wood, w: w, alpha: 0.95, bristles: 4, seed: o.seed + 4, dens: 10, vary: 20, dry: 0.04 });
+    brush(x, crook, { col: o.dark || P.bark, w: w + 6, alpha: 0.45, bristles: 2, seed: o.seed + 3, dens: 10, ribbon: true, spread: 0.5 });
+    brush(x, crook, { col: o.col || P.wood, w: w, alpha: 0.95, bristles: 3, seed: o.seed + 4, dens: 10, vary: 14, ribbon: true, spread: 0.46 });
   }
 
   var SW = 900, SH = 1240, FX = 450, FY = 1180;
@@ -1043,8 +1132,7 @@ function hand(x, str, X, Y, size, o) {
        rather than light moving across the same red. */
     red: { cols: [P.verm, '#d8302a', '#bf1f26', '#b8181f', '#e03a2e', '#961218', '#c8242a'], lit: '#ff9a6a', shade: '#420a0e' },
     blue: { cols: [P.turq, '#0a86b8', '#0d6e94', '#0a5a7c', '#12a0cc', '#084a68'], lit: '#b8eef6', shade: '#04202e' },
-    small: { cols: [P.amber, '#e8ac10', '#FFD700', '#c98a10', '#f0c020', '#b87c08'], lit: '#fff7c8', shade: '#6b3e04' },
-    denim: { cols: [P.denim, '#27497f', P.denimLt, '#16305c', '#3a5f96', '#1b3a6b', '#4a6da0'], lit: P.denimPl, shade: '#080f22' }
+    small: { cols: [P.amber, '#e8ac10', '#FFD700', '#c98a10', '#f0c020', '#b87c08'], lit: '#fff7c8', shade: '#6b3e04' }
   };
 
   /* The second mode is this same street after dark -- they have been at it
@@ -1120,10 +1208,7 @@ function hand(x, str, X, Y, size, o) {
         dens: 9, dry: 0.25, taper: 0.5, arc: 0.9
       });
     }
-    brush(x, out, {
-      col: '#141210', w: 18, alpha: 0.86, bristles: 3, close: true,
-      seed: 403, dens: 9, dry: 0.24, vary: 16, arc: 0.85
-    });
+    contour(x, out, { col: '#141210', w: 18, seed: 403, arc: 0.45, vary: 16 });
     handle(x, FX + 4, dm.A[1] - 6, FY, {
       seed: 111 + sh.rx, bend: 12, w: 23,
       col: night ? mix(P.wood, '#0a1a2e', 0.5) : P.wood,
@@ -1154,7 +1239,7 @@ function hand(x, str, X, Y, size, o) {
       var sx = -140 + r() * (W + 280), sy = -80 + r() * (H + 160);
       var L = (front ? 150 : 70) + r() * (front ? 260 : 150);
       brush(x, [[sx, sy], [sx - L * gust, sy + L]], {
-        col: night ? mix(P.denimPl, '#ffffff', front ? 0.4 : 0.16) : mix(P.pale, '#ffffff', front ? 0.42 : 0.1),
+        col: night ? mix(P.lampPl, '#ffffff', front ? 0.4 : 0.16) : mix(P.pale, '#ffffff', front ? 0.42 : 0.1),
         w: (front ? 1.6 : 1.1) + r() * (front ? 2.6 : 1.5),
         alpha: front ? 0.1 + r() * 0.2 : 0.05 + r() * 0.1,
         bristles: 1, seed: (r() * 1e6) | 0, dens: 4, taper: 0.75, fade: true
@@ -1165,22 +1250,31 @@ function hand(x, str, X, Y, size, o) {
     for (var k = 0; k < 4; k++) {
       var px = 200 + r() * 700, py = 866 + r() * 116, rr = 12 + r() * 46;
       brush(x, blobPts(px, py, rr, rr * 0.27, (r() * 1e5) | 0, 11, 0.16), {
-        col: night ? P.denimPl : '#ffffff', w: 2 + r() * 2.4, alpha: 0.06 + r() * 0.1,
+        col: night ? P.lampPl : '#ffffff', w: 2 + r() * 2.4, alpha: 0.06 + r() * 0.1,
         bristles: 1, close: true, seed: (r() * 1e6) | 0, dens: 6, dry: 0.4, arc: 1.4
       });
     }
   }
 
-  /* water thrown off the rim when they collide */
+  /* Water thrown off the rim when they collide. Straight near-opaque rays out
+     of the collision point read as scratches in the film, so each throw is a
+     thrown arc that falls off, thin and half-transparent, with the weight in
+     a bead at its head. */
   function flick(x, u) {
     var r = rnd(Math.floor(u * 12) * 31 + 7);
-    for (var i = 0; i < 16; i++) {
-      var a = -1.9 + r() * 1.5, L = 40 + r() * 90;
+    for (var i = 0; i < 14; i++) {
+      var a = -2.2 + r() * 1.9, L = 46 + r() * 110;
       var sx = 470 + r() * 150, sy = 430 + r() * 90;
-      brush(x, [[sx, sy], [sx + Math.cos(a) * L * 0.5, sy + Math.sin(a) * L * 0.5 - 14], [sx + Math.cos(a) * L, sy + Math.sin(a) * L]], {
-        col: mix(P.pale, '#ffffff', 0.5), w: 5 + r() * 6, alpha: 0.4 + r() * 0.35,
-        bristles: 2, seed: (r() * 1e6) | 0, dens: 5, taper: 0.5, fade: true
+      var ex = sx + Math.cos(a) * L, ey = sy + Math.sin(a) * L + L * 0.34;
+      brush(x, [[sx, sy],
+        [sx + Math.cos(a) * L * 0.55, sy + Math.sin(a) * L * 0.55], [ex, ey]], {
+        col: mix(P.pale, '#ffffff', 0.4), w: 2.2 + r() * 2.6, alpha: 0.16 + r() * 0.2,
+        bristles: 1, seed: (r() * 1e6) | 0, dens: 6, taper: 0.9, fade: true
       });
+      x.beginPath();
+      x.ellipse(ex, ey, 2.2 + r() * 3, 3 + r() * 4, a, 0, TAU);
+      x.fillStyle = rgba(mix(P.pale, '#ffffff', 0.6), 0.3 + r() * 0.26);
+      x.fill();
       if (r() < 0.4) {
         var ex = sx + Math.cos(a) * L, ey = sy + Math.sin(a) * L;
         x.beginPath(); x.arc(ex, ey, 3 + r() * 5, 0, TAU);
@@ -1220,7 +1314,7 @@ function hand(x, str, X, Y, size, o) {
     for (var i = 0; i < n && i <= upto; i++) {
       var m = TALLY[i], f = clamp01(upto - i);
       brush(x, [[m[0], m[1]], [m[0] + (m[2] - m[0]) * f, m[1] + (m[3] - m[1]) * f]], {
-        col: m[4] ? mix(P.amber, P.cream, 0.4) : mix(P.cream, P.denimPl, 0.45),
+        col: m[4] ? mix(P.amber, P.cream, 0.4) : mix(P.cream, P.lampPl, 0.45),
         w: m[4] ? 7 : 6, alpha: 0.3, bristles: 2, seed: 900 + i, dens: 4, taper: 0.6, fade: true
       });
     }
@@ -1349,7 +1443,7 @@ function hand(x, str, X, Y, size, o) {
       for (var rp = 0; rp < 3; rp++) {
         var rr2 = 26 + rp * 22 + gr() * 16;
         brush(dst, blobPts(gx - 4, gy + 4, rr2, rr2 * 0.3, (gr() * 1e5) | 0, 11, 0.18), {
-          col: night ? P.denimPl : mix(P.pale, '#ffffff', 0.5), w: 2.4 + gr() * 2.6,
+          col: night ? P.lampPl : mix(P.pale, '#ffffff', 0.5), w: 2.4 + gr() * 2.6,
           alpha: 0.1 + gr() * 0.12, bristles: 1, close: true,
           seed: (gr() * 1e6) | 0, dens: 6, dry: 0.45, arc: 1.3
         });
@@ -1421,7 +1515,7 @@ function hand(x, str, X, Y, size, o) {
         for (var dq = 0; dq < 7; dq++) {
           var dp = pud[(dr() * pud.length) | 0];
           drip(X, dp[0], dp[1], 40 + dr() * 130 * lp, 6 + dr() * 6,
-            mix(P.denimPl, P.wet, 0.4), (dr() * 1e6) | 0);
+            mix(P.lampPl, P.wet, 0.4), (dr() * 1e6) | 0);
         }
       }
     } else if (u < 8.7) {
