@@ -91,11 +91,12 @@ bottom margin. Firing solution arcs out to the mark with range ticks every
 
 **8 · 23.40 — THE LANCE** *(paper)*
 Fires at 23.55. `#73FF99` at full saturation, spent once and not used again.
-She parts at 23.90 at stations 4 and 8 — three masses, each carrying the
-momentum she had and the spin the shot gave her. 300 px ember bloom, five
-secondary magazines cooking off at 24.20 and after. The lance axis carries on
-past her, dashed, because the geometry does not care that the picture got
-interesting.
+She does not come apart along a dotted line: at 23.86 the two cut stations
+tear first, each throwing its plating clear while the masses are still where
+they were, and only then do the three of them part. The spin arrives with the
+shot and the drift follows it. 300 px ember bloom, five secondary magazines
+cooking off at 24.20 and after. The lance axis carries on past her, dashed,
+because the geometry does not care that the picture got interesting.
 
 **9 · 26.40 — WRECK FIELD** *(blueprint)*
 Three derelicts drifting apart on the same analytic tracks scene 8 handed
@@ -173,6 +174,7 @@ Argued, on purpose:
 - The warm hull fill knocks back the starfield behind it at 0.90 alpha rather
   than occluding it outright, so a bright star can faintly print through a
   hull. Left in — it reads as a drawing rather than a render.
-- Scene 8's three masses separate mostly by rotation in the first second and
-  only then by drift. A real break would throw them apart faster than it spun
-  them.
+- Nothing occludes a callout's leader, only its label. A leader can still run
+  across a hull it does not belong to.
+- The screen in scene 5 is 22 fighters on eleven starting heights, so two of
+  them share a track and cross without either giving way.
