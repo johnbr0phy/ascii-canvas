@@ -2,311 +2,1632 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>03 — Kettle Weather</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Showers Later, Mainly in the Cup</title>
 <style>
-  html,body{margin:0;height:100%;background:#1a1612;overflow:hidden;display:flex;align-items:center;justify-content:center}
-  canvas{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
+  html,body{margin:0;height:100%;background:#0d0b0a;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  canvas{width:min(100vw,100vh);height:min(100vw,100vh);display:block;touch-action:none}
 </style>
 </head>
 <body>
 <canvas id="c" width="1080" height="1080"></canvas>
 <script>
-/* 03-kettle-weather — ~10s seamless loop
-   Kitchen kettle as tiny weather system — monumental ordinary (Gill thesis).
-   Steam as clouds; revealing lens into the boil (slate pressure chart).
-   Accent: amber/gold heat. Hard cuts / paint-over. NOT: catalogue kitchen pieces, Claude green. */
-(function () {
-  const W = 1080, H = 1080, DUR = 10;
-  const canvas = document.getElementById('c');
-  const ctx = canvas.getContext('2d');
+/* ===========================================================
+   PAINT — a small acrylic/mixed-media engine for canvas 2d.
+   Every mark is built from bristles with pressure, dry gaps and
+   colour drift. Surfaces are baked once into plates; animation
+   is transform, reveal and two-plate boil, the way hand-painted
+   animation actually moves.
+   =========================================================== */
+var TAU = Math.PI * 2;
 
-  const P = {
-    cream: '#F5F0E6', peach: '#FACFAE', amber: '#F3B616',
-    gold: '#FFD700', cadmium: '#FF4D00', ochre: '#8B5A2B',
-    turquoise: '#38BDF8', navy: '#0a3a59', ink: '#121212',
-    slate: '#211919', mist: '#E9E5E2', steam: '#f1fafa',
-    copper: '#B8860B', warmgrey: '#ded4d7'
+function rnd(seed) {
+  var s = (Math.imul(seed | 0, 2654435761) ^ 0x9e3779b9) >>> 0;
+  return function () {
+    s = (s + 0x6D2B79F5) >>> 0;
+    var t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---- colour ---- */
+function hx(h) {
+  h = h.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function cl(v) { return v < 0 ? 0 : v > 255 ? 255 : v; }
+function toHex(a) {
+  return '#' + a.map(function (v) { return ('0' + Math.round(cl(v)).toString(16)).slice(-2); }).join('');
+}
+function mix(a, b, t) {
+  var A = hx(a), B = hx(b);
+  return toHex([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]);
+}
+function rgba(h, a) { var c = hx(h); return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
+function jit(h, r, amt) {
+  var c = hx(h), d = (r() - 0.5) * 2 * amt;
+  return toHex([c[0] + d, c[1] + d * (0.55 + r() * 0.6), c[2] + d * (0.3 + r() * 0.7)]);
+}
+
+/* ---- plates ---- */
+function plate(w, h) {
+  var c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  return { c: c, x: c.getContext('2d'), w: w, h: h };
+}
+
+/* ---- geometry ---- */
+function crSample(p, n, close) {
+  var N = p.length, out = [];
+  if (N < 2) return p.slice();
+  if (N === 2) {
+    for (var k = 0; k <= n; k++) {
+      var t = k / n;
+      out.push([p[0][0] + (p[1][0] - p[0][0]) * t, p[0][1] + (p[1][1] - p[0][1]) * t]);
+    }
+    return out;
+  }
+  var get = function (i) {
+    return close ? p[((i % N) + N) % N] : p[i < 0 ? 0 : i > N - 1 ? N - 1 : i];
+  };
+  var last = close ? N : N - 1;
+  for (var i = 0; i < last; i++) {
+    var p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+    for (var j = 0; j < n; j++) {
+      var u = j / n, u2 = u * u, u3 = u2 * u;
+      out.push([
+        0.5 * (2 * p1[0] + (-p0[0] + p2[0]) * u + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * u2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * u3),
+        0.5 * (2 * p1[1] + (-p0[1] + p2[1]) * u + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * u2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * u3)
+      ]);
+    }
+  }
+  if (!close) out.push(p[N - 1]);
+  return out;
+}
+
+function curve(x, p, close) {
+  if (p.length < 2) return;
+  var sm = crSample(p, 10, close);
+  x.moveTo(sm[0][0], sm[0][1]);
+  for (var i = 1; i < sm.length; i++) x.lineTo(sm[i][0], sm[i][1]);
+  if (close) x.closePath();
+}
+
+function blobPts(cx, cy, rx, ry, seed, lumps, amp) {
+  var r = rnd(seed), n = lumps || 13, a = amp == null ? 0.13 : amp, pts = [];
+  for (var i = 0; i < n; i++) {
+    var th = i / n * TAU, k = 1 + (r() - 0.5) * 2 * a;
+    pts.push([cx + Math.cos(th) * rx * k, cy + Math.sin(th) * ry * k]);
+  }
+  return pts;
+}
+
+function shrinkPts(pts, k) {
+  var cx = 0, cy = 0;
+  pts.forEach(function (p) { cx += p[0]; cy += p[1]; });
+  cx /= pts.length; cy /= pts.length;
+  return pts.map(function (p) { return [cx + (p[0] - cx) * k, cy + (p[1] - cy) * k]; });
+}
+
+function movePts(pts, dx, dy) {
+  return pts.map(function (p) { return [p[0] + dx, p[1] + dy]; });
+}
+
+function rotPts(pts, cx, cy, a) {
+  var c = Math.cos(a), s = Math.sin(a);
+  return pts.map(function (p) {
+    var dx = p[0] - cx, dy = p[1] - cy;
+    return [cx + dx * c - dy * s, cy + dx * s + dy * c];
+  });
+}
+
+/* A torn edge, not a pinking-shear edge. Sampling at a fixed step with a
+   uniform random offset makes an even sawtooth, which is the giveaway that a
+   shape was generated rather than torn. Here the step length wanders and the
+   offset carries a slow drift with the odd deep nick, the way paper fibre
+   gives way unevenly. */
+function jagPoly(pts, seed, amp, step) {
+  var r = rnd(seed), out = [], drift = 0;
+  var base = step || 22;
+  for (var i = 0; i < pts.length; i++) {
+    var a = pts[i], b = pts[(i + 1) % pts.length];
+    var L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    if (!L) continue;
+    var nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+    var d = 0;
+    while (d < L) {
+      drift = drift * 0.62 + (r() - 0.5) * amp * 1.1;
+      var nick = r() < 0.09 ? (r() - 0.5) * amp * 3.2 : 0;
+      var o = drift + nick + (r() - 0.5) * amp * 0.5;
+      var t = d / L;
+      out.push([a[0] + (b[0] - a[0]) * t + nx * o, a[1] + (b[1] - a[1]) * t + ny * o]);
+      d += base * (0.35 + r() * 1.5);
+    }
+  }
+  return out;
+}
+
+function partial(pts, f) {
+  if (f >= 1) return pts;
+  var sm = crSample(pts, 8, false);
+  var n = Math.max(2, Math.round(sm.length * Math.max(0.02, f)));
+  return sm.slice(0, n);
+}
+
+/* ---- the brush ----
+   pressure + bristle spread + dry-brush gaps + colour drift. */
+function brush(x, pts, o) {
+  o = o || {};
+  var r = rnd(o.seed == null ? 11 : o.seed);
+  var sm = o.raw ? pts : crSample(pts, o.dens || 8, !!o.close);
+  if (sm.length < 2) return;
+  var nb = o.bristles == null ? 4 : o.bristles;
+  var W = o.w == null ? 10 : o.w;
+  var A = o.alpha == null ? 0.9 : o.alpha;
+  var col = o.col || '#1A1A1A';
+  x.lineCap = 'round'; x.lineJoin = 'round';
+  for (var b = 0; b < nb; b++) {
+    var off = nb === 1 ? (r() - 0.5) * W * 0.12 : (b / (nb - 1) - 0.5) * W * (o.spread == null ? 0.92 : o.spread);
+    var ph = r() * TAU, ph2 = r() * TAU;
+    /* arc modulation: a closed outline of even weight all the way round is the
+       sticker die-cut tell. Real drawn contours swell where the hand pressed
+       and vanish where it lifted, so weight rides a slow wave along the path
+       and drops out entirely in the troughs. */
+    var arcPh = r() * TAU, arcPh2 = r() * TAU, arcF = 1.3 + r() * 1.7;
+    var bw = (W / Math.max(1, nb)) * (o.thick == null ? 1.5 : o.thick) * (0.72 + r() * 0.56);
+    var bcol = o.vary ? jit(col, r, o.vary) : col;
+    /* dry-brush skips are run-lengths in real distance, not a per-sample coin
+       flip: a coin flip at the sampling step turns every stroke into a regular
+       dash pattern, which reads as digital hatching rather than a loaded
+       bristle losing contact with the tooth of the canvas. */
+    var dry = o.dry || 0;
+    var runLeft = dry ? (6 + r() * 26) / Math.max(0.2, dry) : Infinity;
+    var inGap = false;
+    var prev = null, skip = false, run = 0, band = [], bands = [];
+    for (var i = 0; i < sm.length; i++) {
+      if (i) run += Math.hypot(sm[i][0] - sm[i - 1][0], sm[i][1] - sm[i - 1][1]);
+      var p = sm[i];
+      var q = sm[Math.min(sm.length - 1, i + 1)], pp = sm[Math.max(0, i - 1)];
+      var nx = -(q[1] - pp[1]), ny = q[0] - pp[0];
+      var L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+      /* Wobble and pressure ride travelled distance, not sample index. Keyed
+         to the index they beat at a period set by the sampling density, so a
+         long stroke came out banded into even segments like a bamboo cane. */
+      var wig = Math.sin(run * 0.024 + ph) * W * 0.05 + Math.sin(run * 0.0065 + ph2) * W * 0.1;
+      var xx = p[0] + nx * (off + wig), yy = p[1] + ny * (off + wig);
+      var u = i / (sm.length - 1);
+      var press = 1;
+      if (o.taper) press = Math.pow(Math.sin(Math.PI * u), o.taper === true ? 0.42 : o.taper);
+      press *= 0.68 + 0.22 * Math.sin(run * 0.031 + ph) + 0.24 * r();
+      if (o.arc) {
+        var av = 0.62 * Math.sin(u * TAU * arcF + arcPh) + 0.38 * Math.sin(u * TAU * arcF * 2.3 + arcPh2);
+        press *= Math.max(0, 0.55 + (o.arc === true ? 0.85 : o.arc) * av);
+      }
+      if (dry && prev) {
+        runLeft -= Math.hypot(xx - prev[0], yy - prev[1]);
+        if (runLeft <= 0) {
+          inGap = !inGap;
+          runLeft = inGap ? (2 + r() * 9) * dry * 2.4 : (6 + r() * 26) / Math.max(0.2, dry);
+        }
+        skip = inGap;
+      }
+      /* Ribbon mode collects the bristle into one filled band and lays it
+         down once. Stroking every segment separately at part alpha stacks
+         the overlaps and scallops the round caps, so a solid form like a
+         cane came out as a chain of translucent beads. Scumble and wash
+         still want the stacking, so they keep the segment-by-segment path. */
+      if (o.ribbon) {
+        if (skip || press <= 0.06) { if (band.length > 1) bands.push(band); band = []; }
+        else band.push([xx, yy, Math.max(0.5, bw * press) / 2]);
+      } else if (prev && !skip && press > 0.06) {
+        x.beginPath();
+        x.moveTo(prev[0], prev[1]); x.lineTo(xx, yy);
+        x.strokeStyle = bcol;
+        x.globalAlpha = o.solid ? A : A * (0.6 + 0.4 * r()) * (o.fade ? Math.max(0.12, press) : 1);
+        x.lineWidth = Math.max(0.5, bw * press);
+        x.stroke();
+      }
+      prev = [xx, yy];
+    }
+    if (o.ribbon) {
+      if (band.length > 1) bands.push(band);
+      x.globalAlpha = A;
+      x.fillStyle = bcol;
+      for (var bi = 0; bi < bands.length; bi++) ribbon(x, bands[bi]);
+    }
+  }
+  x.globalAlpha = 1;
+}
+
+/* fill a band of [x, y, halfWidth] as one closed shape */
+function ribbon(x, band) {
+  var n = band.length, left = [], right = [], i, a, b, nx, ny, L;
+  for (i = 0; i < n; i++) {
+    a = band[Math.max(0, i - 1)]; b = band[Math.min(n - 1, i + 1)];
+    nx = -(b[1] - a[1]); ny = b[0] - a[0];
+    L = Math.hypot(nx, ny) || 1; nx /= L; ny /= L;
+    left.push([band[i][0] + nx * band[i][2], band[i][1] + ny * band[i][2]]);
+    right.push([band[i][0] - nx * band[i][2], band[i][1] - ny * band[i][2]]);
+  }
+  x.beginPath();
+  x.moveTo(left[0][0], left[0][1]);
+  for (i = 1; i < n; i++) x.lineTo(left[i][0], left[i][1]);
+  for (i = n - 1; i >= 0; i--) x.lineTo(right[i][0], right[i][1]);
+  x.closePath();
+  x.fill();
+}
+
+/* ---- grain: canvas tooth, composited with overlay ---- */
+function grainPlate(W, H, seed, amt, weave) {
+  var p = plate(W, H), im = p.x.createImageData(W, H), d = im.data, r = rnd(seed);
+  for (var y = 0; y < H; y++) {
+    var wy = weave ? Math.sin(y * 1.93) : 0;
+    for (var x = 0; x < W; x++) {
+      var i = (y * W + x) * 4;
+      var v = (r() - 0.5) * 2;
+      if (weave) v += 0.42 * (Math.sin(x * 1.71) + wy);
+      var g = 128 + v * amt;
+      d[i] = d[i + 1] = d[i + 2] = g < 0 ? 0 : g > 255 ? 255 : g;
+      d[i + 3] = 255;
+    }
+  }
+  p.x.putImageData(im, 0, 0);
+  return p;
+}
+
+function applyGrain(x, g, a, W, H) {
+  x.save();
+  x.globalCompositeOperation = 'overlay';
+  x.globalAlpha = a;
+  x.drawImage(g.c, 0, 0, W, H);
+  x.restore();
+}
+
+/* ---- crumpled tissue / crackle, as a reusable transparent plate ---- */
+function crazePlate(W, H, o) {
+  o = o || {};
+  var p = plate(W, H), x = p.x, r = rnd(o.seed || 3);
+  var facets = o.facets == null ? 130 : o.facets;
+  for (var i = 0; i < facets; i++) {
+    var cx = r() * W, cy = r() * H, n = 4 + (r() * 3 | 0), rad = 9 + r() * 34, pts = [];
+    for (var k = 0; k < n; k++) {
+      var a = k / n * TAU;
+      pts.push([cx + Math.cos(a) * rad * (0.45 + r() * 0.9), cy + Math.sin(a) * rad * (0.45 + r() * 0.9)]);
+    }
+    x.beginPath(); curve(x, pts, true);
+    x.fillStyle = r() < 0.5 ? 'rgba(255,255,255,0.028)' : 'rgba(0,0,0,0.05)';
+    x.fill();
+  }
+  var lines = o.lines == null ? 300 : o.lines;
+  for (var j = 0; j < lines; j++) {
+    var px = r() * W, py = r() * H, ang = r() * TAU, ps = [[px, py]];
+    var segs = 3 + (r() * 7 | 0);
+    for (var s = 0; s < segs; s++) {
+      ang += (r() - 0.5) * 1.15;
+      var Ln = 12 + r() * 48;
+      px += Math.cos(ang) * Ln; py += Math.sin(ang) * Ln;
+      ps.push([px, py]);
+    }
+    var sd = (r() * 1e6) | 0;
+    brush(x, ps.map(function (q) { return [q[0] - 1.5, q[1] - 1.6]; }),
+      { col: '#ffffff', w: 1.5, alpha: 0.13, bristles: 1, seed: sd + 1, dens: 4, dry: 0.3 });
+    brush(x, ps, { col: '#000000', w: 1.7, alpha: 0.14 + r() * 0.1, bristles: 1, seed: sd, dens: 4, dry: 0.16 });
+  }
+  return p;
+}
+
+/* draw a texture plate through a shape */
+function textureThrough(x, tex, pathFn, a, dx, dy) {
+  x.save();
+  x.beginPath(); pathFn(x); x.clip();
+  x.globalAlpha = a == null ? 0.85 : a;
+  x.drawImage(tex.c, dx || 0, dy || 0);
+  x.restore();
+  x.globalAlpha = 1;
+}
+
+/* ---- scrubbed, trowelled ground ---- */
+function ground(x, W, H, o) {
+  var r = rnd(o.seed || 1);
+  x.fillStyle = o.base; x.fillRect(0, 0, W, H);
+  var tints = o.tints || [o.base];
+  var i, g, cx, cy, rad;
+  for (i = 0; i < (o.mottle == null ? 110 : o.mottle); i++) {
+    cx = r() * W; cy = r() * H; rad = 50 + r() * 230;
+    g = x.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    var col = tints[(r() * tints.length) | 0];
+    g.addColorStop(0, rgba(col, 0.08 + r() * 0.13));
+    g.addColorStop(1, rgba(col, 0));
+    x.fillStyle = g;
+    x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+  }
+  var vert = !!o.vertical;
+  for (i = 0; i < (o.sweeps == null ? 90 : o.sweeps); i++) {
+    var len = (vert ? H : W) * (0.3 + r() * 0.8);
+    var sx = r() * W * 1.1 - W * 0.05, sy = r() * H * 1.1 - H * 0.05;
+    var drift = (r() - 0.5) * 180;
+    var pts = vert
+      ? [[sx, sy], [sx + drift * 0.3, sy + len * 0.4], [sx + drift, sy + len]]
+      : [[sx, sy], [sx + len * 0.4, sy + drift * 0.3], [sx + len, sy + drift]];
+    /* No dry gaps on a sweep this wide. The ink runs come out a similar
+       length across every bristle, so ninety of them tile the whole ground
+       into rows of little lozenges — the pattern reads as machine hatching
+       and it prints straight through anything translucent laid over it. */
+    brush(x, pts, {
+      col: jit(tints[(r() * tints.length) | 0], r, o.drift == null ? 26 : o.drift),
+      w: 18 + r() * 64, alpha: 0.04 + r() * 0.1, bristles: 4,
+      seed: (r() * 1e6) | 0, dens: 6, spread: 0.6, thick: 2.6, taper: 0.85
+    });
+  }
+  /* Broken touches instead, each its own short mark, so the break is in where
+     they fall rather than in a rhythm along a stroke. */
+  for (i = 0; i < (o.mottle == null ? 60 : o.mottle); i++) {
+    var tx = r() * W, ty = r() * H, ta = r() * TAU;
+    var tL = 10 + Math.pow(r(), 2) * 150;
+    brush(x, [[tx, ty], [tx + Math.cos(ta) * tL, ty + Math.sin(ta) * tL]], {
+      col: jit(tints[(r() * tints.length) | 0], r, o.drift == null ? 26 : o.drift),
+      w: 6 + r() * 42, alpha: 0.035 + r() * 0.1, bristles: 4,
+      seed: (r() * 1e6) | 0, dens: 5, taper: 0.9, spread: 0.6, thick: 2.6
+    });
+  }
+  for (i = 0; i < (o.scrape == null ? 40 : o.scrape); i++) {
+    var ax = r() * W, ay = r() * H, aa = (vert ? Math.PI / 2 : 0) + (r() - 0.5) * 0.7, aL = 60 + r() * 260;
+    brush(x, [[ax, ay], [ax + Math.cos(aa) * aL, ay + Math.sin(aa) * aL]], {
+      col: r() < 0.5 ? o.light || '#ffffff' : o.dark || '#4a4038',
+      w: 5 + r() * 16, alpha: 0.05 + r() * 0.1, bristles: 3,
+      seed: (r() * 1e6) | 0, dens: 5, taper: 0.9, arc: 0.7
+    });
+  }
+  if (o.vignette !== false) {
+    g = x.createRadialGradient(W * 0.5, H * 0.48, W * 0.22, W * 0.5, H * 0.5, W * 0.78);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(1, rgba(o.dark || '#2B2B2B', o.vignette || 0.2));
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+  }
+}
+
+/* ---- edges: fuzzy charcoal envelope + drawn outline ---- */
+function envelope(x, pts, o) {
+  o = o || {};
+  var col = o.col || '#1A1A1A', close = o.close !== false;
+  var w = o.w == null ? 12 : o.w;
+  /* the halo is a blurred fill, not a stroke: a form sinking into the ground
+     rather than a ring drawn around a sticker. Body paint covers it after. */
+  var halos = o.halo == null ? 2 : o.halo;
+  for (var i = 0; i < halos; i++) {
+    x.save();
+    x.shadowColor = rgba(o.haloCol || col, (o.haloA == null ? 0.4 : o.haloA) / (1 + i));
+    x.shadowBlur = (o.blur == null ? 26 : o.blur) * (1 + i * 1.6);
+    x.shadowOffsetX = (o.hox || 0) * (1 + i);
+    x.shadowOffsetY = (o.hoy || 0) * (1 + i);
+    x.beginPath(); curve(x, pts, true);
+    x.fillStyle = rgba(o.fillCol || col, 0.9);
+    x.fill();
+    x.restore();
+  }
+  for (var k = 0; k < (o.passes || 3); k++) {
+    brush(x, k ? movePts(pts, (k % 2 ? 1.6 : -1.4), (k % 2 ? -1.2 : 1.8)) : pts, {
+      col: k === 2 ? mix(col, '#ffffff', 0.18) : col,
+      w: w * (k === 0 ? 1 : k === 1 ? 0.7 : 0.4),
+      alpha: k === 0 ? 0.88 : 0.5, bristles: k === 0 ? 4 : 2,
+      close: close, seed: (o.seed || 5) + k * 7 + 1, dens: 9, dry: k ? 0.25 : 0.06, vary: 14,
+      arc: o.arc == null ? 0.7 : o.arc
+    });
+  }
+}
+
+/* ---- charcoal contour ----
+   The contour is one dark line, not a bundle. Running brush() with four
+   spread bristles and dry gaps gives each bristle its own phase, so the
+   outline comes out as four parallel dashed tracks: stitching round a patch,
+   which is the die-cut tell. So: a soft dark bleed either side, then a single
+   continuous core whose weight rides the arc wave, then a short overdrawn
+   passage or two where the hand went back over the line. */
+function contour(x, pts, o) {
+  o = o || {};
+  var col = o.col || '#141210', W = o.w == null ? 17 : o.w;
+  var close = o.close !== false, seed = o.seed == null ? 5 : o.seed;
+  var r = rnd(seed + 991);
+  var sm = crSample(pts, 7, close);
+  /* the bleed: wide, faint, no gaps, so the line has soot around it */
+  for (var b = 0; b < 2; b++) {
+    brush(x, movePts(sm, (r() - 0.5) * 3, (r() - 0.5) * 3), {
+      col: col, w: W * (2.1 + b * 1.5), alpha: 0.1 - b * 0.035, bristles: 2,
+      close: close, seed: seed + 40 + b, raw: true, spread: 1.2, thick: 1.1
+    });
+  }
+  /* the core: continuous, weight-varied, drawn once */
+  brush(x, sm, {
+    col: col, w: W, alpha: o.alpha == null ? 0.93 : o.alpha, bristles: 2,
+    close: close, seed: seed + 1, raw: true, vary: o.vary == null ? 16 : o.vary,
+    spread: 0.3, thick: 1.3, arc: o.arc == null ? 0.42 : o.arc, ribbon: true
+  });
+  /* going back over it: a couple of short passages, heavier, slightly off */
+  var goes = o.goes == null ? 3 : o.goes;
+  for (var g = 0; g < goes; g++) {
+    var i0 = (r() * sm.length) | 0;
+    var len = Math.max(6, (sm.length * (0.09 + r() * 0.17)) | 0);
+    var seg = [];
+    for (var k = 0; k < len; k++) seg.push(sm[(i0 + k) % sm.length]);
+    if (!close && i0 + len > sm.length) continue;
+    brush(x, movePts(seg, (r() - 0.5) * 5, (r() - 0.5) * 5), {
+      col: r() < 0.3 ? mix(col, '#ffffff', 0.2) : col,
+      w: W * (0.62 + r() * 0.6), alpha: 0.5 + r() * 0.3, bristles: 1,
+      close: false, seed: (r() * 1e6) | 0, raw: true, taper: 0.7, thick: 1.2
+    });
+  }
+}
+
+/* pale second rim so a form lifts off the ground */
+function rim(x, pts, o) {
+  o = o || {};
+  brush(x, shrinkPts(pts, o.k == null ? 1.075 : o.k), {
+    col: o.col || '#F5F0E6', w: o.w || 16, alpha: o.alpha == null ? 0.3 : o.alpha,
+    bristles: 4, close: true, seed: o.seed || 77, dens: 8, dry: 0.3,
+    arc: o.arc == null ? 1.1 : o.arc, vary: 12
+  });
+}
+
+/* ---- impasto body: knife strokes with ridge light ---- */
+function impasto(x, pathFn, o) {
+  var r = rnd(o.seed || 9);
+  x.save();
+  x.beginPath(); pathFn(x); x.clip();
+  var bb = o.bb;
+  x.fillStyle = o.base; x.fillRect(bb[0], bb[1], bb[2], bb[3]);
+  if (o.grad) {
+    var g = x.createLinearGradient(o.grad[0], o.grad[1], o.grad[2], o.grad[3]);
+    g.addColorStop(0, rgba(o.grad[4], o.grad[6] == null ? 0.95 : o.grad[6]));
+    g.addColorStop(1, rgba(o.grad[5], 0));
+    x.fillStyle = g; x.fillRect(bb[0], bb[1], bb[2], bb[3]);
+  }
+  var n = o.n == null ? 26 : o.n;
+  var ang = o.angle == null ? -0.5 : o.angle;
+  var diag = Math.hypot(bb[2], bb[3]);
+  for (var i = 0; i < n; i++) {
+    var cx = bb[0] + r() * bb[2], cy = bb[1] + r() * bb[3];
+    var a = ang + (r() - 0.5) * (o.spreadA == null ? 0.6 : o.spreadA);
+    var L = diag * (0.25 + r() * 0.55) * (o.len == null ? 1 : o.len);
+    var p0 = [cx - Math.cos(a) * L / 2, cy - Math.sin(a) * L / 2];
+    var p1 = [cx + Math.cos(a) * L / 2 + (r() - 0.5) * 40, cy + Math.sin(a) * L / 2 + (r() - 0.5) * 40];
+    var mid = [(p0[0] + p1[0]) / 2 + (r() - 0.5) * 50, (p0[1] + p1[1]) / 2 + (r() - 0.5) * 50];
+    var pth = [p0, mid, p1];
+    var w = (o.kw == null ? 34 : o.kw) * (0.5 + r());
+    var body = jit(r() < 0.5 ? o.base : (o.cols || [o.base])[(r() * (o.cols || [o.base]).length) | 0], r, o.drift == null ? 22 : o.drift);
+    var nx = -Math.sin(a), ny = Math.cos(a);
+    brush(x, movePts(pth, nx * w * 0.42, ny * w * 0.42), {
+      col: o.shade || mix(o.base, '#1A1A1A', 0.42), w: w * 0.34, alpha: 0.2 + r() * 0.2,
+      bristles: 2, seed: (r() * 1e6) | 0, dens: 6, dry: 0.3
+    });
+    brush(x, pth, { col: body, w: w, alpha: 0.45 + r() * 0.45, bristles: 4 + (r() * 3 | 0), seed: (r() * 1e6) | 0, dens: 6, dry: 0.16, spread: 1 });
+    brush(x, movePts(pth, -nx * w * 0.36, -ny * w * 0.36), {
+      col: o.lit || mix(o.base, '#ffffff', 0.45), w: w * 0.24, alpha: 0.18 + r() * 0.26,
+      bristles: 2, seed: (r() * 1e6) | 0, dens: 6, dry: 0.42
+    });
+  }
+  /* Crumpled-tissue creases: the surface signature of the collaged refs. Each
+     crease is a valley line with a lit ridge riding one side, so the mass
+     reads as skinned in something folded rather than tinted flat. */
+  if (o.crease) {
+    for (var c = 0; c < o.crease; c++) {
+      var ax = bb[0] + r() * bb[2], ay = bb[1] + r() * bb[3];
+      var ca = r() * TAU, cl = 12 + r() * Math.min(64, diag * 0.2);
+      var seg = 1 + (r() * 2 | 0), cp = [[ax, ay]];
+      for (var q2 = 0; q2 < seg; q2++) {
+        ca += (r() - 0.5) * 0.7;
+        var last = cp[cp.length - 1];
+        cp.push([last[0] + Math.cos(ca) * cl / seg, last[1] + Math.sin(ca) * cl / seg]);
+      }
+      var cn = rnd((r() * 1e6) | 0);
+      brush(x, cp, {
+        col: o.shade || mix(o.base, '#1A1A1A', 0.42), w: 1.1 + r() * 1.7,
+        alpha: 0.05 + r() * 0.1, bristles: 1, taper: 0.8, raw: true,
+        seed: (cn() * 1e6) | 0, dens: 4
+      });
+      brush(x, movePts(cp, 1 + r() * 1.5, -0.9 - r() * 1.5), {
+        col: o.lit || mix(o.base, '#ffffff', 0.5), w: 1 + r() * 1.5,
+        alpha: 0.05 + r() * 0.1, bristles: 1, taper: 0.8, raw: true,
+        seed: (cn() * 1e6) | 0, dens: 4
+      });
+    }
+  }
+  if (o.stipple) {
+    for (var s = 0; s < o.stipple; s++) {
+      var sx2 = bb[0] + r() * bb[2], sy2 = bb[1] + r() * bb[3], rr = 1 + r() * 3.4;
+      x.beginPath(); x.arc(sx2, sy2, rr, 0, TAU);
+      x.fillStyle = rgba(r() < 0.5 ? (o.lit || '#ffffff') : (o.shade || '#1A1A1A'), 0.1 + r() * 0.3);
+      x.fill();
+    }
+  }
+  x.restore();
+}
+
+/* ---- watercolour body with a wet edge ---- */
+function wash(x, pts, o) {
+  o = o || {};
+  var col = o.col || '#D13478', r = rnd(o.seed || 21);
+  for (var i = 0; i < (o.layers || 5); i++) {
+    var k = 1 - i * 0.07;
+    x.save();
+    x.beginPath(); curve(x, shrinkPts(movePts(pts, (r() - 0.5) * 9, (r() - 0.5) * 9), k), true);
+    x.fillStyle = rgba(i === 0 ? mix(col, '#ffffff', 0.35) : col, o.alpha == null ? 0.12 : o.alpha);
+    x.fill();
+    x.restore();
+  }
+  if (o.edge !== 0) {
+    brush(x, pts, { col: mix(col, '#1A1A1A', 0.25), w: o.edge || 9, alpha: 0.28, bristles: 3, close: true, seed: (o.seed || 21) + 4, dens: 9, dry: 0.35 });
+  }
+  if (o.bleed) {
+    for (var b = 0; b < o.bleed; b++) {
+      var p = pts[(r() * pts.length) | 0];
+      var a = r() * TAU, L = 12 + r() * 46;
+      brush(x, [[p[0], p[1]], [p[0] + Math.cos(a) * L, p[1] + Math.sin(a) * L]], {
+        col: col, w: 4 + r() * 12, alpha: 0.1 + r() * 0.16, bristles: 2, taper: 0.6, seed: (r() * 1e6) | 0, dens: 5
+      });
+    }
+  }
+}
+
+/* ---- drips kept on purpose ---- */
+function drip(x, x0, y0, len, w, col, seed) {
+  var r = rnd(seed), pts = [[x0, y0]], cx = x0;
+  for (var i = 1; i <= 6; i++) {
+    cx += (r() - 0.5) * w * 0.5;
+    pts.push([cx, y0 + len * i / 6]);
+  }
+  brush(x, pts, { col: col, w: w, alpha: 0.6, bristles: 2, taper: 0.55, seed: seed, dens: 6, dry: 0.12 });
+  var end = pts[6];
+  x.beginPath(); x.arc(end[0], end[1], w * 0.6, 0, TAU);
+  x.fillStyle = rgba(col, 0.78); x.fill();
+  x.beginPath(); x.arc(end[0] - w * 0.18, end[1] - w * 0.2, w * 0.2, 0, TAU);
+  x.fillStyle = rgba('#ffffff', 0.22); x.fill();
+}
+
+function spatter(x, cx, cy, rad, count, col, seed, size) {
+  var r = rnd(seed);
+  for (var i = 0; i < count; i++) {
+    var a = r() * TAU, d = Math.pow(r(), 0.6) * rad;
+    var s = (size || 3) * (0.3 + r() * 1.4);
+    x.beginPath();
+    x.ellipse(cx + Math.cos(a) * d, cy + Math.sin(a) * d, s, s * (0.6 + r() * 0.8), a, 0, TAU);
+    x.fillStyle = rgba(col, 0.2 + r() * 0.6);
+    x.fill();
+  }
+}
+
+/* ---- sgraffito: scratched back into wet paint ---- */
+function scratch(x, pts, o) {
+  o = o || {};
+  brush(x, pts, { col: o.col || '#F5F0E6', w: o.w || 3, alpha: o.alpha == null ? 0.38 : o.alpha, bristles: 1, close: o.close, seed: o.seed || 33, dens: 8, dry: 0.3 });
+  brush(x, movePts(pts, 2.2, 2.4), { col: o.dark || '#000000', w: (o.w || 3) * 0.8, alpha: 0.22, bristles: 1, close: o.close, seed: (o.seed || 33) + 1, dens: 8, dry: 0.4 });
+}
+
+/* ---- collage: torn paper, optionally printed ---- */
+function paperPatch(x, poly, o) {
+  o = o || {};
+  var seed = o.seed || 17, r = rnd(seed);
+  var jag = jagPoly(poly, seed, o.amp == null ? 6 : o.amp, o.step || 20);
+  var path = function (c) { curve(c, jag, true); };
+  x.save();
+  x.beginPath(); curve(x, movePts(jag, 5, 7), true);
+  x.fillStyle = rgba(o.shadow || '#1A1A1A', o.shadowA == null ? 0.22 : o.shadowA);
+  x.fill();
+  x.restore();
+  x.save();
+  x.beginPath(); path(x); x.clip();
+  var bb = o.bb;
+  x.fillStyle = o.col || '#f8f1e0';
+  x.fillRect(bb[0], bb[1], bb[2], bb[3]);
+  for (var i = 0; i < (o.fibre == null ? 60 : o.fibre); i++) {
+    var fx = bb[0] + r() * bb[2], fy = bb[1] + r() * bb[3], fa = r() * TAU, fl = 10 + r() * 70;
+    brush(x, [[fx, fy], [fx + Math.cos(fa) * fl, fy + Math.sin(fa) * fl]], {
+      col: r() < 0.5 ? mix(o.col || '#f8f1e0', '#ffffff', 0.5) : mix(o.col || '#f8f1e0', '#8a7f6f', 0.35),
+      w: 2 + r() * 7, alpha: 0.1 + r() * 0.18, bristles: 2, seed: (r() * 1e6) | 0, dens: 4, dry: 0.4
+    });
+  }
+  if (o.print) {
+    var lh = o.print.lh || 13;
+    for (var y = bb[1] + 6; y < bb[1] + bb[3]; y += lh) {
+      if (r() < 0.12) continue;
+      var cx = bb[0] + 4 + r() * 12;
+      var right = bb[0] + bb[2] - (4 + r() * 40);
+      while (cx < right) {
+        var wl = 8 + r() * 34;
+        x.fillStyle = rgba(o.print.col || '#2B2B2B', 0.16 + r() * 0.2);
+        x.fillRect(cx, y, Math.min(wl, right - cx), o.print.h || 3.2);
+        cx += wl + 4 + r() * 7;
+      }
+    }
+    if (o.print.figs) {
+      for (var f = 0; f < o.print.figs; f++) {
+        var gx = bb[0] + r() * bb[2], gy = bb[1] + r() * bb[3];
+        x.fillStyle = rgba(o.print.col || '#2B2B2B', 0.1 + r() * 0.12);
+        x.fillRect(gx, gy, 30 + r() * 60, 18 + r() * 40);
+      }
+    }
+  }
+  if (o.tex) x.drawImage(o.tex.c, o.texDx || 0, o.texDy || 0);
+  x.restore();
+  if (o.edge !== false) {
+    brush(x, jag, {
+      col: o.edgeCol || mix(o.col || '#f8f1e0', '#6b6055', 0.5), w: o.edgeW || 4.5,
+      alpha: 0.4, bristles: 2, close: true, seed: seed + 3, dens: 8, dry: 0.3
+    });
+  }
+  return jag;
+}
+
+/* ---- gold / bronze relief bead: jewellery for ordinary objects ---- */
+function bead(x, pts, o) {
+  o = o || {};
+  var w = o.w || 10, close = !!o.close, sd = o.seed || 41;
+  var dry = o.dry == null ? 0.08 : o.dry, a = o.alpha == null ? 1 : o.alpha;
+  brush(x, movePts(pts, w * 0.3, w * 0.36), { col: o.dark || '#6b4a12', w: w * 1.05, alpha: 0.75 * a, bristles: 3, close: close, seed: sd + 1, dens: 10, dry: dry });
+  brush(x, pts, { col: o.col || '#C9A227', w: w, alpha: 0.95 * a, bristles: 3, close: close, seed: sd, dens: 10, vary: 34, dry: dry + 0.06 });
+  brush(x, movePts(pts, -w * 0.22, -w * 0.28), { col: o.light || '#F7E7A8', w: w * 0.36, alpha: 0.65 * a, bristles: 1, close: close, seed: sd + 2, dens: 10, dry: 0.35 + dry });
+}
+
+/* ---- reveal: paint the thing on, in stroke order, brushy edge.
+   Finished strokes are kept in a mask plate so a frame only ever
+   draws the stroke currently under the brush. Deterministic: asking
+   for an earlier progress rebuilds from nothing. ---- */
+function Reveal(W, H, strokes) {
+  this.m = plate(W, H);
+  this.k = 0;
+  this.strokes = strokes;
+}
+Reveal.prototype.mask = function (p) {
+  var n = this.strokes.length, upto = p * n, done = Math.floor(upto);
+  if (done < this.k) { this.m.x.clearRect(0, 0, this.m.w, this.m.h); this.k = 0; }
+  while (this.k < done) {
+    var s = this.strokes[this.k];
+    brush(this.m.x, s.pts, { col: '#ffffff', w: s.w, alpha: 1, solid: true, bristles: 6, thick: 2.5, seed: this.k * 17 + 3, dens: 6, spread: 0.94, close: s.close });
+    this.k++;
+  }
+  return {
+    plate: this.m,
+    cur: done < n ? this.strokes[done] : null,
+    f: upto - done,
+    i: done
+  };
+};
+
+/* ===========================================================
+   HAND — a single-stroke alphabet, drawn with the same brush.
+   Boxes are 0..1 tall: cap top 0, x-height 0.36, baseline 0.86,
+   descender 1.08. Widths in units of size.
+   =========================================================== */
+var GLY = {
+  ' ': { w: 0.34, s: [] },
+  a: { w: 0.58, s: [[[.46,.46],[.34,.37],[.14,.44],[.09,.64],[.2,.83],[.38,.8],[.47,.66]], [[.47,.4],[.48,.82]]] },
+  b: { w: 0.56, s: [[[.1,.02],[.11,.83]], [[.11,.52],[.26,.39],[.44,.5],[.45,.68],[.3,.84],[.12,.76]]] },
+  c: { w: 0.54, s: [[[.47,.45],[.32,.36],[.13,.45],[.1,.65],[.22,.83],[.45,.78]]] },
+  d: { w: 0.57, s: [[[.47,.02],[.48,.83]], [[.47,.47],[.32,.36],[.12,.47],[.1,.67],[.24,.84],[.46,.75]]] },
+  e: { w: 0.55, s: [[[.1,.62],[.46,.57],[.41,.42],[.24,.36],[.1,.5],[.11,.7],[.27,.84],[.46,.77]]] },
+  f: { w: 0.44, s: [[[.44,.07],[.29,.03],[.21,.2],[.22,.86]], [[.06,.4],[.44,.36]]] },
+  g: { w: 0.57, s: [[[.46,.46],[.34,.37],[.14,.44],[.09,.64],[.2,.83],[.38,.8],[.47,.66]], [[.47,.4],[.47,.93],[.36,1.07],[.16,1.02]]] },
+  h: { w: 0.57, s: [[[.1,.02],[.11,.84]], [[.11,.53],[.27,.38],[.45,.5],[.46,.84]]] },
+  i: { w: 0.3, s: [[[.15,.38],[.16,.84]], [[.15,.17],[.16,.21]]] },
+  j: { w: 0.36, s: [[[.22,.38],[.23,.93],[.14,1.06],[.03,1.0]], [[.22,.17],[.23,.21]]] },
+  k: { w: 0.55, s: [[[.1,.02],[.11,.84]], [[.46,.39],[.12,.65]], [[.22,.57],[.47,.84]]] },
+  l: { w: 0.32, s: [[[.14,.02],[.17,.73],[.3,.84]]] },
+  m: { w: 0.82, s: [[[.08,.39],[.09,.84]], [[.09,.51],[.22,.38],[.34,.51],[.35,.84]], [[.35,.51],[.49,.38],[.63,.51],[.64,.84]]] },
+  n: { w: 0.57, s: [[[.1,.39],[.11,.84]], [[.11,.51],[.26,.37],[.44,.49],[.45,.84]]] },
+  o: { w: 0.58, s: [[[.28,.36],[.11,.49],[.1,.7],[.28,.84],[.46,.71],[.46,.49],[.28,.36]]] },
+  p: { w: 0.57, s: [[[.1,.38],[.08,1.07]], [[.09,.52],[.25,.37],[.45,.49],[.44,.71],[.26,.83],[.1,.75]]] },
+  q: { w: 0.57, s: [[[.45,.46],[.32,.37],[.13,.45],[.1,.65],[.22,.83],[.4,.79]], [[.46,.4],[.46,1.06],[.57,1.1]]] },
+  r: { w: 0.46, s: [[[.12,.39],[.13,.84]], [[.13,.55],[.26,.39],[.44,.37]]] },
+  s: { w: 0.5, s: [[[.43,.41],[.25,.34],[.13,.43],[.21,.57],[.39,.63],[.43,.75],[.29,.84],[.11,.79]]] },
+  t: { w: 0.45, s: [[[.22,.11],[.23,.71],[.32,.83],[.44,.79]], [[.07,.38],[.42,.36]]] },
+  u: { w: 0.57, s: [[[.1,.37],[.11,.71],[.24,.84],[.42,.73],[.44,.37]], [[.44,.62],[.45,.84]]] },
+  v: { w: 0.54, s: [[[.08,.37],[.26,.84],[.46,.37]]] },
+  w: { w: 0.78, s: [[[.06,.37],[.19,.84],[.32,.47],[.44,.84],[.58,.37]]] },
+  x: { w: 0.54, s: [[[.08,.37],[.46,.84]], [[.46,.37],[.08,.84]]] },
+  y: { w: 0.55, s: [[[.08,.37],[.27,.81]], [[.48,.37],[.32,.87],[.2,1.07],[.06,1.03]]] },
+  z: { w: 0.52, s: [[[.08,.39],[.45,.37],[.1,.83],[.47,.81]]] },
+  A: { w: 0.62, s: [[[.03,.85],[.27,.03],[.52,.85]], [[.13,.59],[.42,.57]]] },
+  B: { w: 0.58, s: [[[.1,.03],[.11,.85]], [[.11,.04],[.35,.09],[.37,.36],[.12,.44]], [[.12,.44],[.42,.52],[.44,.78],[.11,.85]]] },
+  C: { w: 0.6, s: [[[.5,.13],[.3,.03],[.11,.21],[.1,.66],[.28,.85],[.52,.78]]] },
+  D: { w: 0.62, s: [[[.1,.03],[.11,.85]], [[.11,.04],[.4,.14],[.44,.6],[.32,.84],[.11,.85]]] },
+  E: { w: 0.56, s: [[[.46,.05],[.1,.04],[.11,.85],[.48,.83]], [[.11,.44],[.38,.42]]] },
+  F: { w: 0.52, s: [[[.1,.85],[.09,.04],[.46,.06]], [[.1,.44],[.36,.42]]] },
+  G: { w: 0.64, s: [[[.5,.13],[.3,.03],[.11,.21],[.1,.66],[.3,.85],[.5,.74],[.48,.5],[.32,.5]]] },
+  H: { w: 0.6, s: [[[.08,.03],[.09,.85]], [[.46,.03],[.47,.85]], [[.09,.44],[.46,.42]]] },
+  I: { w: 0.3, s: [[[.15,.03],[.16,.85]]] },
+  J: { w: 0.5, s: [[[.42,.03],[.43,.68],[.3,.85],[.12,.77]]] },
+  K: { w: 0.58, s: [[[.1,.03],[.11,.85]], [[.46,.04],[.12,.5]], [[.2,.41],[.5,.85]]] },
+  L: { w: 0.52, s: [[[.1,.03],[.11,.84],[.48,.81]]] },
+  M: { w: 0.72, s: [[[.06,.85],[.08,.03],[.3,.61],[.52,.03],[.54,.85]]] },
+  N: { w: 0.62, s: [[[.08,.85],[.09,.03],[.46,.83],[.47,.04]]] },
+  O: { w: 0.64, s: [[[.31,.03],[.11,.25],[.1,.64],[.31,.85],[.51,.64],[.51,.25],[.31,.03]]] },
+  P: { w: 0.56, s: [[[.1,.85],[.09,.04],[.38,.11],[.4,.39],[.1,.47]]] },
+  Q: { w: 0.66, s: [[[.31,.03],[.11,.25],[.1,.64],[.31,.85],[.51,.64],[.51,.25],[.31,.03]], [[.38,.62],[.56,.92]]] },
+  R: { w: 0.58, s: [[[.1,.85],[.09,.04],[.38,.11],[.4,.39],[.1,.47]], [[.16,.47],[.48,.85]]] },
+  S: { w: 0.56, s: [[[.48,.13],[.28,.03],[.11,.17],[.19,.41],[.42,.51],[.48,.69],[.3,.85],[.09,.79]]] },
+  T: { w: 0.56, s: [[[.03,.05],[.52,.03]], [[.27,.04],[.28,.85]]] },
+  U: { w: 0.62, s: [[[.08,.03],[.09,.65],[.28,.85],[.48,.65],[.48,.03]]] },
+  V: { w: 0.6, s: [[[.05,.03],[.28,.85],[.52,.03]]] },
+  W: { w: 0.82, s: [[[.03,.03],[.17,.85],[.31,.31],[.44,.85],[.6,.03]]] },
+  X: { w: 0.58, s: [[[.08,.03],[.48,.85]], [[.48,.03],[.08,.85]]] },
+  Y: { w: 0.58, s: [[[.06,.03],[.28,.45],[.5,.03]], [[.28,.45],[.29,.85]]] },
+  Z: { w: 0.56, s: [[[.08,.05],[.48,.03],[.1,.83],[.5,.81]]] },
+  '0': { w: 0.56, s: [[[.28,.03],[.1,.25],[.1,.64],[.28,.85],[.46,.64],[.46,.25],[.28,.03]]] },
+  '1': { w: 0.36, s: [[[.08,.2],[.22,.04],[.23,.85]]] },
+  '2': { w: 0.52, s: [[[.09,.18],[.26,.03],[.44,.16],[.36,.42],[.1,.84],[.46,.82]]] },
+  '3': { w: 0.52, s: [[[.1,.09],[.3,.03],[.44,.18],[.28,.42],[.46,.58],[.42,.8],[.14,.84]]] },
+  '4': { w: 0.54, s: [[[.36,.03],[.07,.6],[.48,.58]], [[.34,.36],[.35,.85]]] },
+  '5': { w: 0.52, s: [[[.46,.05],[.13,.04],[.11,.4],[.32,.38],[.46,.56],[.38,.8],[.11,.81]]] },
+  '6': { w: 0.54, s: [[[.44,.06],[.2,.16],[.11,.5],[.12,.74],[.32,.85],[.46,.7],[.38,.5],[.14,.52]]] },
+  '7': { w: 0.5, s: [[[.06,.05],[.46,.03],[.2,.85]]] },
+  '8': { w: 0.54, s: [[[.28,.42],[.12,.3],[.16,.1],[.38,.08],[.42,.3],[.28,.42],[.14,.58],[.16,.79],[.38,.83],[.46,.62],[.28,.42]]] },
+  '9': { w: 0.54, s: [[[.44,.44],[.24,.5],[.12,.32],[.2,.1],[.42,.08],[.46,.4],[.36,.85]]] },
+  '.': { w: 0.26, s: [[[.1,.82],[.13,.85]]] },
+  ',': { w: 0.26, s: [[[.13,.8],[.08,.98]]] },
+  '!': { w: 0.26, s: [[[.14,.04],[.12,.62]], [[.11,.8],[.13,.84]]] },
+  '?': { w: 0.5, s: [[[.08,.16],[.26,.03],[.42,.16],[.3,.38],[.24,.6]], [[.22,.8],[.24,.84]]] },
+  "'": { w: 0.22, s: [[[.12,.04],[.1,.24]]] },
+  '-': { w: 0.44, s: [[[.06,.56],[.36,.54]]] },
+  ':': { w: 0.24, s: [[[.11,.44],[.13,.47]], [[.11,.76],[.13,.79]]] },
+  ';': { w: 0.26, s: [[[.12,.44],[.14,.47]], [[.13,.76],[.08,.94]]] },
+  '&': { w: 0.62, s: [[[.48,.85],[.14,.28],[.2,.07],[.38,.1],[.34,.32],[.1,.58],[.14,.8],[.36,.84],[.5,.66]]] },
+  '/': { w: 0.44, s: [[[.34,.02],[.06,.86]]] },
+  '(': { w: 0.3, s: [[[.24,.02],[.1,.44],[.24,.88]]] },
+  ')': { w: 0.3, s: [[[.08,.02],[.22,.44],[.08,.88]]] },
+  '"': { w: 0.34, s: [[[.1,.04],[.08,.24]], [[.24,.04],[.22,.24]]] }
+};
+
+function textWidth(str, size, tr) {
+  var w = 0;
+  for (var i = 0; i < str.length; i++) {
+    var g = GLY[str[i]] || GLY[' '];
+    w += (g.w + (tr == null ? 0.06 : tr)) * size;
+  }
+  return w;
+}
+
+/* handwriting: every stroke gets bristles, wobble and a baseline drift */
+function hand(x, str, X, Y, size, o) {
+  o = o || {};
+  var r = rnd(o.seed == null ? 5 : o.seed);
+  var tr = o.track == null ? 0.06 : o.track;
+  var cx = X, drift = 0;
+  for (var i = 0; i < str.length; i++) {
+    var ch = str[i], g = GLY[ch] || GLY[' '];
+    drift += (r() - 0.5) * size * 0.035;
+    var lean = (o.lean == null ? 0.06 : o.lean) + (r() - 0.5) * 0.05;
+    var sc = size * (0.94 + r() * 0.12);
+    for (var s = 0; s < g.s.length; s++) {
+      var pts = g.s[s].map(function (p) {
+        var yy = p[1] * sc;
+        return [cx + p[0] * sc + (0.86 - p[1]) * lean * sc + (r() - 0.5) * size * 0.022,
+                Y + yy + drift + (r() - 0.5) * size * 0.022];
+      });
+      brush(x, pts, {
+        col: o.col || '#1A1A1A',
+        w: (o.w == null ? 0.1 : o.w) * size * (0.8 + r() * 0.5),
+        alpha: o.alpha == null ? 0.88 : o.alpha,
+        bristles: o.bristles == null ? 2 : o.bristles,
+        seed: (r() * 1e6) | 0, dens: 7, dry: o.dry == null ? 0.1 : o.dry,
+        taper: o.taper == null ? 0.35 : o.taper, fade: true, vary: 16
+      });
+    }
+    cx += (g.w + tr) * sc;
+  }
+  return cx - X;
+}
+/* 03 — KETTLE WEATHER
+   A kettle on a hob, frontal and a size too big for its bench, the way the
+   sheepdog in the refs fills its square. It boils, and the steam does not
+   disperse: it gathers over the spout into a proper little cloud, thinks
+   about it, goes charcoal, and rains into the cup that has been waiting.
+   Kitchen pole: warm plaster, one amber heat under the body.
+   Weather pole: the same room once the front is through — storm ground,
+   the flame the only warm thing left, forecast slips torn into the sky.
+   The kettle's polished belly holds whichever pole the room is not in. */
+(function () {
+  var W = 1080, H = 1080, DUR = 11.5;
+  var cv = document.getElementById('c'), X = cv.getContext('2d');
+
+  var P = {
+    plaster: '#E2D6C4', putty: '#cdbea6', clay: '#b8a288', shade: '#8d7d68',
+    cream: '#F5F0E6', ink: '#1A1A1A', char: '#241a12',
+    enamel: '#2F7C89', enamelLt: '#63b3bd', enamelDk: '#123b45',
+    cad: '#E34F0C', verm: '#C8102E', amber: '#F3B616', gold: '#C9A227',
+    storm: '#2b3644', stormDk: '#101823', stormLt: '#6d8296',
+    steam: '#eef2f2', slate: '#5c6a72', tin: '#9aa6a8'
   };
 
-  function R(seed) {
-    let s = seed | 0;
-    return () => { s = (s * 1664525 + 1013904223) | 0; return (s >>> 0) / 4294967296; };
-  }
-  function mix(a, b, t) {
-    const p = (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
-    const A = p(a), B = p(b);
-    const r = (A[0]+(B[0]-A[0])*t)|0, g = (A[1]+(B[1]-A[1])*t)|0, bl = (A[2]+(B[2]-A[2])*t)|0;
-    return '#' + [r,g,bl].map(x => ('0'+Math.max(0,Math.min(255,x)).toString(16)).slice(-2)).join('');
-  }
+  var craze = crazePlate(W, H, { seed: 61, facets: 130, lines: 260 });
+  var grain = grainPlate(W, H, 8, 19, true);
+  var bellyP = plate(W, H);
+  var cloudP = plate(W, H);
 
-  function bristle(c, x0,y0,x1,y1, w, col, rng, opts) {
-    opts = opts || {};
-    const n = opts.bristles || 5;
-    const a0 = opts.alpha != null ? opts.alpha : 0.85;
-    for (let i = 0; i < n; i++) {
-      const o = (i - (n-1)/2) * (w / n) * 0.9;
-      const ang = Math.atan2(y1-y0, x1-x0) + Math.PI/2;
-      const ox = Math.cos(ang)*o + (rng()-0.5)*1.2;
-      const oy = Math.sin(ang)*o + (rng()-0.5)*1.2;
-      c.beginPath();
-      c.moveTo(x0+ox, y0+oy);
-      const mx = (x0+x1)/2 + (rng()-0.5)*w*0.3;
-      const my = (y0+y1)/2 + (rng()-0.5)*w*0.3;
-      c.quadraticCurveTo(mx, my, x1+ox*0.6, y1+oy*0.6);
-      c.strokeStyle = col;
-      c.globalAlpha = a0 * (0.55 + rng()*0.45);
-      c.lineWidth = Math.max(1.2, w/n * (0.7 + rng()*0.6));
-      c.lineCap = 'round';
-      c.stroke();
-    }
-    c.globalAlpha = 1;
-  }
+  /* ---------------- the kitchen, as two weathers ---------------- */
+  var BENCH = 946;
 
-  function kitchenGround(c, heat) {
-    const rng = R(27);
-    const base = mix(P.cream, P.peach, 0.2 + heat*0.25);
-    c.fillStyle = base;
-    c.fillRect(0,0,W,H);
-    for (let i = 0; i < 70; i++) {
-      const x = rng()*W, y = rng()*H;
-      bristle(c, x, y, x+(rng()-0.5)*120, y+(rng()-0.5)*40,
-        6+rng()*16, mix(base, rng()<0.4?P.warmgrey:P.amber, rng()*0.35), rng, {bristles:3, alpha:0.2});
-    }
-    // counter band
-    c.fillStyle = mix(P.ochre, P.ink, 0.35);
-    c.globalAlpha = 0.25;
-    c.fillRect(0, H-160, W, 160);
-    c.globalAlpha = 1;
-    for (let i = 0; i < 20; i++) {
-      bristle(c, rng()*W, H-140+rng()*100, rng()*W, H-100+rng()*80,
-        4, mix(P.ochre, P.ink, 0.2), rng, {bristles:2, alpha:0.2});
-    }
-  }
-
-  function slateBoil(c) {
-    const rng = R(44);
-    c.fillStyle = P.slate;
-    c.fillRect(0,0,W,H);
-    for (let i = 0; i < 35; i++) {
-      bristle(c, rng()*W, rng()*H, rng()*W, rng()*H, 4+rng()*10,
-        mix(P.slate, P.navy, rng()), rng, {bristles:2, alpha:0.22});
-    }
-  }
-
-  function drawKettle(c, cx, cy, scale, t, roaring) {
-    const rng = R(91);
-    const bodyW = 160 * scale;
-    const bodyH = 200 * scale;
-    // body — copper/amber vessel personality
-    c.beginPath();
-    c.moveTo(cx - bodyW*0.45, cy + bodyH*0.35);
-    c.quadraticCurveTo(cx - bodyW*0.55, cy, cx - bodyW*0.4, cy - bodyH*0.35);
-    c.lineTo(cx + bodyW*0.35, cy - bodyH*0.38);
-    c.quadraticCurveTo(cx + bodyW*0.5, cy, cx + bodyW*0.42, cy + bodyH*0.35);
-    c.closePath();
-    const bodyCol = mix(P.copper, roaring ? P.cadmium : P.amber, roaring ? 0.45 : 0.25);
-    c.fillStyle = bodyCol;
-    c.fill();
-    // impasto strokes on body
-    for (let i = 0; i < 16; i++) {
-      const yy = cy - bodyH*0.25 + i*bodyH*0.04;
-      bristle(c, cx-bodyW*0.3, yy, cx+bodyW*0.3, yy+(rng()-0.5)*6,
-        5+rng()*8, mix(bodyCol, P.gold, rng()*0.4), rng, {bristles:3, alpha:0.4});
-    }
-    // thick charcoal outline
-    c.strokeStyle = P.ink;
-    c.lineWidth = 8 * scale;
-    c.stroke();
-    // spout
-    c.beginPath();
-    c.moveTo(cx + bodyW*0.32, cy - bodyH*0.15);
-    c.quadraticCurveTo(cx + bodyW*0.75, cy - bodyH*0.35, cx + bodyW*0.85, cy - bodyH*0.05);
-    c.lineTo(cx + bodyW*0.7, cy + bodyH*0.05);
-    c.quadraticCurveTo(cx + bodyW*0.45, cy, cx + bodyW*0.35, cy + bodyH*0.08);
-    c.closePath();
-    c.fillStyle = mix(bodyCol, P.ochre, 0.2);
-    c.fill();
-    c.stroke();
-    // handle
-    c.beginPath();
-    c.arc(cx - bodyW*0.55, cy, 55*scale, -1.1, 1.1);
-    c.strokeStyle = P.ink;
-    c.lineWidth = 10*scale;
-    c.lineCap = 'round';
-    c.stroke();
-    // lid knob — gold accent
-    c.beginPath();
-    c.arc(cx, cy - bodyH*0.42, 14*scale, 0, Math.PI*2);
-    c.fillStyle = P.gold;
-    c.fill();
-    c.strokeStyle = P.ink;
-    c.lineWidth = 3;
-    c.stroke();
-    // whistle spark when roaring
-    if (roaring) {
-      const wx = cx + bodyW*0.85;
-      const wy = cy - bodyH*0.05;
-      for (let k = 0; k < 5; k++) {
-        const a = -0.8 + k*0.35 + Math.sin(t*8)*0.1;
-        bristle(c, wx, wy, wx+Math.cos(a)*40, wy+Math.sin(a)*40,
-          3, mix(P.cadmium, P.gold, k/5), R(50+k), {bristles:2, alpha:0.75});
+  function room(storm) {
+    var p = plate(W, H), x = p.x, r = rnd(storm ? 71 : 17);
+    ground(x, W, H, {
+      base: storm ? P.storm : P.plaster, seed: storm ? 73 : 19,
+      tints: storm
+        ? [P.stormDk, '#1d2836', '#39485c', '#0b1118', '#4a5f70']
+        : [P.putty, P.clay, P.plaster, '#d8c9ae', '#a89680', '#c2b49c', '#8f8470'],
+      mottle: 150, sweeps: 80, scrape: 70, drift: 28,
+      dark: storm ? '#03070c' : '#6f6252', light: storm ? '#8fa8bc' : '#fffaf0',
+      vignette: storm ? 0.46 : 0.3
+    });
+    x.save();
+    x.globalAlpha = storm ? 0.42 : 0.6;
+    x.drawImage(craze.c, 0, 0);
+    x.restore();
+    /* Forecast slips torn into the wall. This is where the gag lives without
+       becoming a chart: printed figures on paper she has torn and stuck down,
+       not arrows drawn over an empty slate. */
+    for (var s = 0; s < 5; s++) {
+      var pw = 130 + r() * 230, ph = 90 + r() * 190;
+      var px0 = r() * (W - pw * 0.7) - pw * 0.15, py0 = 330 + r() * 250;
+      x.save();
+      /* Half-buried. At full strength these came forward as bright lined
+         notes pinned to the wall; in the refs the newsprint is nearly
+         painted out and you only catch it. */
+      x.globalAlpha = 0.34 + r() * 0.2;
+      paperPatch(x, [[px0, py0], [px0 + pw, py0 - 10 + r() * 20],
+        [px0 + pw + (r() - 0.5) * 22, py0 + ph], [px0 + (r() - 0.5) * 22, py0 + ph]], {
+        seed: (r() * 1e5) | 0, amp: 5, step: 17, fibre: 26,
+        col: storm ? mix('#c4b9a4', P.stormDk, 0.66) : jit('#ddd0b6', r, 16),
+        bb: [px0 - 30, py0 - 30, pw + 60, ph + 60],
+        print: { lh: 16, h: 2.6, col: storm ? '#63727e' : '#7d7160', figs: 1 + (r() * 3 | 0) },
+        shadowA: storm ? 0.2 : 0.12, edgeW: 3.5,
+        edgeCol: storm ? '#0a1016' : mix('#ddd0b6', '#6b6055', 0.5)
+      });
+      x.restore();
+      /* scrubbed back into the wall so it is not sitting on top of it */
+      for (var sk = 0; sk < 5; sk++) {
+        var kx0 = px0 - 30 + r() * (pw + 60), ky0 = py0 - 20 + r() * (ph + 40);
+        brush(x, [[kx0, ky0], [kx0 + 70 + r() * 190, ky0 + (r() - 0.5) * 50]], {
+          col: storm ? jit('#222e3c', r, 20) : jit(mix(P.putty, P.clay, r()), r, 24),
+          w: 40 + r() * 90, alpha: 0.1 + r() * 0.16, bristles: 4,
+          seed: (r() * 1e6) | 0, dens: 5, taper: 0.85, spread: 0.6, thick: 2.6
+        });
       }
     }
+    /* Run-off and old splashes on the tiles, so the wall has a history */
+    for (var w0 = 0; w0 < 16; w0++) {
+      var wx = r() * W, wy = r() * (BENCH - 120);
+      wash(x, blobPts(wx, wy, 70 + r() * 160, 90 + r() * 180, (r() * 1e5) | 0, 13, 0.2), {
+        col: storm ? jit('#1b2632', r, 20) : jit(r() < 0.5 ? '#c4b296' : '#ab9c8c', r, 24),
+        seed: (r() * 1e5) | 0, layers: 3, alpha: 0.055, edge: 0, bleed: 6
+      });
+    }
+    /* the bench: a heavier band of the same family, laid in flat sweeps */
+    x.save();
+    x.beginPath();
+    var lip = [[-30, BENCH + 6], [280, BENCH - 12], [660, BENCH + 8], [1110, BENCH - 10],
+      [1110, 1110], [-30, 1110]];
+    curve(x, lip, true); x.clip();
+    for (var i = 0; i < 34; i++) {
+      var by = BENCH - 24 + r() * 190, bx = -140 + r() * 300;
+      brush(x, [[bx, by], [bx + 420 + r() * 480, by + (r() - 0.5) * 40],
+        [bx + 920 + r() * 300, by + (r() - 0.5) * 34]], {
+        col: storm ? jit('#151e28', r, 20) : jit(mix(P.clay, P.shade, r() * 0.8), r, 26),
+        w: 30 + r() * 80, alpha: 0.14 + r() * 0.2, bristles: 4,
+        seed: (r() * 1e6) | 0, dens: 5, spread: 0.6, thick: 2.6, taper: 0.9
+      });
+    }
+    x.restore();
+    /* The bench meets the wall in scumble, not a ruled line */
+    for (var hz = 0; hz < 24; hz++) {
+      var hx0 = r() * W, hy0 = BENCH - 30 + (r() - 0.5) * 54;
+      brush(x, [[hx0, hy0], [hx0 + 120 + r() * 320, hy0 + (r() - 0.5) * 26]], {
+        col: storm ? jit('#3c4c5e', r, 22) : jit(mix(P.putty, '#ffffff', 0.4), r, 22),
+        w: 16 + r() * 46, alpha: 0.05 + r() * 0.09, bristles: 4,
+        seed: (r() * 1e6) | 0, dens: 5, taper: 0.8, spread: 0.6, thick: 2.6
+      });
+    }
+    applyGrain(x, grain, storm ? 0.16 : 0.2, W, H);
+    return p;
   }
 
-  function steamWeather(c, cx, cy, t, intensity) {
-    // steam as cloud bands / weather system — monumental
-    const rng = R(15);
-    for (let i = 0; i < 8; i++) {
-      const phase = t * (0.4 + i*0.08) + i;
-      const x = cx + Math.sin(phase)*40*(1+i*0.15) + (i-4)*18;
-      const y = cy - 80 - i*45 - Math.sin(t*2+i)*10;
-      const rw = (50 + i*12) * intensity;
-      const rh = (28 + i*6) * intensity;
-      c.beginPath();
-      c.ellipse(x, y, rw, rh, Math.sin(phase)*0.3, 0, Math.PI*2);
-      c.fillStyle = mix(P.steam, i%2?P.turquoise:P.mist, 0.15 + i*0.04);
-      c.globalAlpha = 0.25 + (1-i/8)*0.35 * intensity;
-      c.fill();
-      c.globalAlpha = 1;
-      // bristle soft edge
-      for (let j = 0; j < 4; j++) {
-        bristle(c, x-rw*0.6, y+(rng()-0.5)*rh, x+rw*0.6, y+(rng()-0.5)*rh,
-          3, mix(P.steam, P.ink, 0.05), rng, {bristles:2, alpha:0.15});
-      }
+  /* ---------------- the heat ----------------
+     Her habit is a large quiet ground with the warmth put in one place. On the
+     dog it is a scumbled orange halo pushed into the wall behind the head; the
+     flame gets the same treatment, bloomed into the ground rather than drawn
+     as a ring of tongues. */
+  function heat(x, cx, cy, f, big) {
+    if (f <= 0) return;
+    var r = rnd(3301);
+    /* The halo in the refs is scumbled into the wall around and behind the
+       form, so the warmth belongs to the ground. Kept low and wide at the
+       foot it was only a smear of highlighter on the bench. */
+    for (var g = 0; g < 46; g++) {
+      var ga = r() * TAU;
+      var gd = (50 + Math.pow(r(), 0.8) * (big ? 310 : 250)) * (0.55 + 0.45 * f);
+      var gx = cx + Math.cos(ga) * gd * 0.92;
+      var gy = cy - 210 + Math.sin(ga) * gd * 0.82;
+      var rad = 70 + r() * (big ? 180 : 140);
+      x.save();
+      x.globalCompositeOperation = 'lighter';
+      var gr = x.createRadialGradient(gx, gy, 0, gx, gy, rad);
+      gr.addColorStop(0, rgba(r() < 0.34 ? P.amber : P.cad, (0.045 + r() * 0.1) * f));
+      gr.addColorStop(1, rgba(P.cad, 0));
+      x.fillStyle = gr;
+      x.fillRect(gx - rad, gy - rad, rad * 2, rad * 2);
+      x.restore();
     }
-    // rain-from-steam drizzle returning — weather cycle joke
-    if (intensity > 0.7) {
-      for (let i = 0; i < 12; i++) {
-        const x = cx - 100 + rng()*200;
-        const y0 = cy - 350 + ((t*60 + i*40) % 200);
-        bristle(c, x, y0, x+1, y0+20, 1.5, mix(P.turquoise, P.navy, 0.3), R(300+i), {bristles:1, alpha:0.25});
-      }
+    /* and dragged about with a dry brush, the way she works it in */
+    for (var w0 = 0; w0 < 26; w0++) {
+      var wa = r() * TAU, wd = 120 + r() * 220;
+      var wx = cx + Math.cos(wa) * wd, wy = cy - 220 + Math.sin(wa) * wd * 0.8;
+      brush(x, [[wx, wy], [wx + (r() - 0.5) * 220, wy + (r() - 0.5) * 170]], {
+        col: jit(r() < 0.5 ? P.cad : P.amber, r, 30), w: 44 + r() * 110,
+        alpha: (0.025 + r() * 0.055) * f, bristles: 4, seed: 3350 + w0,
+        dens: 5, taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+    /* what it does to the bench directly under the body */
+    x.save();
+    x.globalCompositeOperation = 'lighter';
+    for (var b = 0; b < 10; b++) {
+      var bx = cx + (r() - 0.5) * 300, by = cy + 18 + (r() - 0.5) * 46;
+      var brad = 60 + r() * 110;
+      var bg = x.createRadialGradient(bx, by, 0, bx, by, brad);
+      bg.addColorStop(0, rgba(P.amber, (0.08 + r() * 0.14) * f));
+      bg.addColorStop(1, rgba(P.cad, 0));
+      x.fillStyle = bg;
+      x.fillRect(bx - brad, by - brad, brad * 2, brad * 2);
+    }
+    x.restore();
+    /* the gas itself: short blue-hearted licks, uneven, some missing */
+    var n = 13;
+    for (var i = 0; i < n; i++) {
+      var la = -Math.PI / 2 + (i / n - 0.5) * 2.5;
+      if (r() < 0.18) continue;
+      var L = (26 + r() * 46) * f;
+      var bx = cx + Math.cos(la) * 128, by = cy + Math.sin(la) * 34;
+      var lick = [[bx, by], [bx + (r() - 0.5) * 14, by - L * 0.6], [bx + (r() - 0.5) * 22, by - L]];
+      brush(x, lick, {
+        col: mix(P.cad, P.amber, r()), w: 13 + r() * 12, alpha: 0.34 + r() * 0.3,
+        bristles: 3, seed: 3400 + i, dens: 6, taper: 0.5, spread: 0.6,
+        thick: 2.2, fade: true
+      });
+      brush(x, lick, {
+        col: '#3b7fd8', w: 5 + r() * 5, alpha: 0.2 + r() * 0.2,
+        bristles: 1, seed: 3440 + i, dens: 6, taper: 0.6, ribbon: true
+      });
     }
   }
 
-  function pressureDiagram(c, t) {
-    slateBoil(c);
-    // concentric pressure rings — chaos→grid
-    const cx = W*0.5, cy = H*0.52;
-    const snap = (Math.sin(t*1.8)+1)*0.5;
-    for (let i = 1; i <= 6; i++) {
-      c.beginPath();
-      if (snap < 0.4) {
-        // wobble chaos rings
-        const rng = R(100+i);
-        c.moveTo(cx + i*55, cy);
-        for (let a = 0; a < Math.PI*2; a += 0.3) {
-          const j = (rng()-0.5)*12*(1-snap);
-          c.lineTo(cx + Math.cos(a)*(i*55+j), cy + Math.sin(a)*(i*55+j));
+  /* ---------------- the kettle ---------------- */
+  var KX = 404, KY = 690;
+  /* Wider at the foot than the shoulder, and not quite upright: an enamel
+     kettle that has been knocked about. The wonk is deliberate. */
+  var BODY = [[KX - 176, KY + 228], [KX - 196, KY + 60], [KX - 168, KY - 96],
+    [KX - 96, KY - 156], [KX + 86, KY - 162], [KX + 164, KY - 88],
+    [KX + 192, KY + 66], [KX + 178, KY + 232], [KX + 40, KY + 254]];
+  var LID = [[KX - 104, KY - 150], [KX - 78, KY - 206], [KX + 6, KY - 224],
+    [KX + 86, KY - 204], [KX + 108, KY - 148]];
+  /* The spout is a shape with a taper in it, not a stroke. Drawn as a ribbon
+     of even weight with a chevron on the end it came out as a black hook
+     stuck to the side of the kettle. */
+  var SPOUT = [[KX - 150, KY - 96], [KX - 252, KY - 150], [KX - 330, KY - 232],
+    [KX - 374, KY - 300], [KX - 320, KY - 314], [KX - 298, KY - 262],
+    [KX - 236, KY - 184], [KX - 146, KY - 10]];
+  var SPOUT_MID = [[KX - 150, KY - 54], [KX - 246, KY - 168], [KX - 340, KY - 288]];
+  var HANDLE = [[KX - 132, KY - 172], [KX - 106, KY - 288], [KX + 10, KY - 326],
+    [KX + 126, KY - 288], [KX + 150, KY - 170]];
+  var CUP = [[796, 806], [790, 906], [816, 938], [906, 940], [934, 906],
+    [928, 804], [862, 792]];
+
+  function paintKettle(x, storm) {
+    var st = function (a, b, t) { return storm ? mix(a, b, t) : a; };
+
+    /* Spout and handle go down first so the body is laid over their joins and
+       there is no seam to explain. */
+    var sf = function (k) { curve(k, SPOUT, true); };
+    envelope(x, SPOUT, {
+      w: 13, seed: 509, col: '#0d1518', fillCol: st(P.enamelDk, P.stormDk, 0.5),
+      halo: 1, blur: 22, haloA: 0.46, hox: 7, hoy: 10
+    });
+    impasto(x, sf, {
+      base: st(P.enamel, P.stormDk, 0.44),
+      cols: [st(P.enamel, P.stormDk, 0.44), st(P.enamelLt, P.stormLt, 0.5), st('#12414c', '#071620', 0.5)],
+      bb: [KX - 400, KY - 340, 280, 360], seed: 510, n: 18, kw: 19,
+      angle: -0.85, spreadA: 0.9, stipple: 60, crease: 16,
+      lit: st('#b8e2e6', '#9ab4c4', 0.5), shade: st('#06222a', '#03080e', 0.5)
+    });
+    brush(x, SPOUT_MID, {
+      col: st(P.enamelLt, P.stormLt, 0.5), w: 11, alpha: 0.34, bristles: 1,
+      seed: 512, dens: 9, arc: 0.35, ribbon: true
+    });
+    contour(x, SPOUT, { col: '#0d1518', w: 14, seed: 511, arc: 0.44, vary: 18 });
+    /* the dark of the bore, so the lip is a hole and not a point */
+    wash(x, [[KX - 372, KY - 298], [KX - 324, KY - 310], [KX - 304, KY - 272], [KX - 350, KY - 262]], {
+      col: '#040d12', seed: 513, layers: 3, alpha: 0.34, edge: 0
+    });
+
+    /* handle: bakelite, the one warm note on the object itself */
+    brush(x, HANDLE, {
+      col: '#1b0d06', w: 40, alpha: 0.9, bristles: 2, seed: 520, dens: 11,
+      ribbon: true, spread: 0.5
+    });
+    brush(x, HANDLE, {
+      col: st('#5a2d16', '#22150c', 0.5), w: 29, alpha: 0.97, bristles: 3,
+      seed: 521, dens: 11, vary: 22, ribbon: true, spread: 0.46
+    });
+    brush(x, movePts(HANDLE, 0, -8), {
+      col: st('#a8683a', '#5c4530', 0.5), w: 8, alpha: 0.4, bristles: 1,
+      seed: 522, dens: 11, arc: 0.35, ribbon: true
+    });
+
+    contact(x, KX + 16, KY + 254, 206, 42, storm ? '#04090f' : '#4a3a28', 5001);
+    var pf = function (k) { curve(k, BODY, true); };
+    envelope(x, BODY, {
+      w: 20, seed: 501, col: '#0d1518', fillCol: st(P.enamelDk, P.stormDk, 0.5),
+      halo: 2, blur: 38, haloA: 0.5, hox: 10, hoy: 16
+    });
+    impasto(x, pf, {
+      base: st(P.enamel, P.stormDk, 0.44),
+      cols: [st(P.enamel, P.stormDk, 0.44), st(P.enamelLt, P.stormLt, 0.5),
+        st(P.enamelDk, '#06121a', 0.5), st('#4a97a2', '#2c4e5e', 0.5)],
+      bb: [KX - 230, KY - 220, 460, 510], seed: 502, n: 46, kw: 26, len: 0.42,
+      angle: -1.42, spreadA: 1.5, stipple: 180, crease: 44, drift: 30,
+      lit: st('#b8e2e6', '#9ab4c4', 0.5), shade: st('#06222a', '#03080e', 0.5)
+    });
+    /* a few strokes taken round the barrel, so the form turns */
+    x.save(); x.beginPath(); pf(x); x.clip();
+    var rb = rnd(505);
+    for (var w1 = 0; w1 < 14; w1++) {
+      var wy1 = KY - 170 + rb() * 420;
+      brush(x, [[KX - 210, wy1 + (rb() - 0.5) * 30], [KX - 40, wy1 - 16 - rb() * 20],
+        [KX + 200, wy1 + (rb() - 0.5) * 26]], {
+        col: rb() < 0.45 ? st('#b8e2e6', '#9ab4c4', 0.5) : st('#0c3038', '#04101a', 0.5),
+        w: 14 + rb() * 44, alpha: 0.05 + rb() * 0.1, bristles: 4,
+        seed: 560 + w1, dens: 6, taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+    x.restore();
+    textureThrough(x, craze, pf, 0.62, -160, -260);
+    /* Chipped enamel down to the black tin beneath, because everything of
+       hers has been used. */
+    var r = rnd(506);
+    /* A few chips, small, and mostly near the foot where it gets knocked.
+       Sixteen of them ringed in pale enamel read as spots on a cow. */
+    x.save(); x.beginPath(); pf(x); x.clip();
+    for (var c = 0; c < 9; c++) {
+      var ca = r() * TAU, cd = 96 + r() * 96;
+      var chy = KY + 90 + Math.sin(ca) * cd * 1.15;
+      var ch = blobPts(KX + Math.cos(ca) * cd, chy,
+        3.5 + r() * 8, 3 + r() * 7, (r() * 1e5) | 0, 8, 0.34);
+      wash(x, ch, { col: '#0a1418', seed: (r() * 1e5) | 0, layers: 2, alpha: 0.22, edge: 0 });
+      brush(x, shrinkPts(ch, 1.4).slice(0, 5), {
+        col: st('#cfe8ea', '#7f96a6', 0.5), w: 2.4, alpha: 0.26, bristles: 1,
+        seed: (r() * 1e5) | 0, dens: 6, arc: 0.6, ribbon: true
+      });
+    }
+    x.restore();
+    contour(x, BODY, { col: '#0d1518', w: 21, seed: 503, arc: 0.4, vary: 20 });
+
+    /* lid and knob */
+    var lf = function (k) { curve(k, LID, true); };
+    envelope(x, LID, { w: 13, seed: 530, col: '#0d1518', fillCol: st(P.enamelDk, P.stormDk, 0.5), halo: 1, blur: 20, haloA: 0.45 });
+    impasto(x, lf, {
+      base: st(P.enamel, P.stormDk, 0.44),
+      cols: [st(P.enamel, P.stormDk, 0.44), st(P.enamelLt, P.stormLt, 0.5), st('#1a4c58', '#0a1a26', 0.5)],
+      bb: [KX - 130, KY - 240, 260, 110], seed: 531, n: 14, kw: 24,
+      angle: 0.1, spreadA: 0.9, stipple: 60, crease: 14,
+      lit: st('#c2e8ec', '#9ab4c4', 0.5), shade: st('#06222a', '#03080e', 0.5)
+    });
+    contour(x, LID, { col: '#0d1518', w: 13, seed: 532, arc: 0.4, goes: 2 });
+    brush(x, [[KX + 4, KY - 222], [KX + 6, KY - 254]], {
+      col: '#1b0d06', w: 19, alpha: 0.92, bristles: 2, seed: 533, dens: 6, ribbon: true
+    });
+    x.beginPath(); x.ellipse(KX + 6, KY - 262, 24, 17, 0.1, 0, TAU);
+    x.fillStyle = rgba('#1b0d06', 0.95); x.fill();
+    x.beginPath(); x.ellipse(KX - 2, KY - 268, 8, 5, 0.1, 0, TAU);
+    x.fillStyle = rgba(st('#a8683a', '#5c4530', 0.5), 0.5); x.fill();
+  }
+
+  /* Both objects need to be standing on something. Without a pool of shade
+     where they meet the bench they hover, which is the sticker complaint in
+     another form. */
+  function contact(x, cx, cy, rx, ry, col, seed) {
+    var r = rnd(seed);
+    for (var i = 0; i < 7; i++) {
+      wash(x, blobPts(cx + (r() - 0.5) * 20, cy + i * 3, rx * (1 - i * 0.09),
+        ry * (1 - i * 0.07), seed + i, 13, 0.2), {
+        col: col, seed: seed + i * 3, layers: 2, alpha: 0.07, edge: 0
+      });
+    }
+    for (var k = 0; k < 10; k++) {
+      var kx0 = cx - rx + r() * rx * 2;
+      brush(x, [[kx0, cy - 6 + r() * 16], [kx0 + 40 + r() * 130, cy - 4 + r() * 18]], {
+        col: col, w: 12 + r() * 34, alpha: 0.06 + r() * 0.11, bristles: 4,
+        seed: seed + 40 + k, dens: 5, taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+  }
+
+  function paintCup(x, storm) {
+    var st = function (a, b, t) { return storm ? mix(a, b, t) : a; };
+    contact(x, 866, 942, 84, 20, storm ? '#04090f' : '#4a3a28', 6001);
+    var pf = function (k) { curve(k, CUP, true); };
+    envelope(x, CUP, {
+      w: 12, seed: 601, col: '#1a1208', fillCol: st('#8d7a5c', P.stormDk, 0.5),
+      halo: 2, blur: 22, haloA: 0.46, hox: 7, hoy: 11
+    });
+    impasto(x, pf, {
+      base: st(P.cream, P.stormLt, 0.42),
+      cols: [st(P.cream, P.stormLt, 0.42), st('#e2d8c0', '#7f95a6', 0.45), st('#bfae90', '#4a5d6c', 0.5)],
+      bb: [766, 770, 200, 200], seed: 602, n: 16, kw: 22,
+      angle: -1.4, spreadA: 0.9, stipple: 80, crease: 18,
+      lit: st('#fffaf0', '#c4d4dc', 0.5), shade: st('#8a7a5c', '#1a2832', 0.5)
+    });
+    textureThrough(x, craze, pf, 0.5, -700, -640);
+    /* One band of colour round the rim. Everything of hers has a bit of
+       decoration on it that does not quite line up. */
+    brush(x, [[794, 828], [862, 818], [932, 826]], {
+      col: st(P.cad, '#7a3a20', 0.5), w: 11, alpha: 0.7, bristles: 2,
+      seed: 603, dens: 8, arc: 0.4, ribbon: true
+    });
+    contour(x, CUP, { col: '#1a1208', w: 13, seed: 604, arc: 0.44, vary: 16 });
+    /* handle, on the far side, slightly too small */
+    var hl = [[930, 842], [972, 846], [976, 890], [936, 896]];
+    brush(x, hl, { col: '#1a1208', w: 17, alpha: 0.88, bristles: 2, seed: 605, dens: 9, ribbon: true });
+    brush(x, hl, { col: st(P.cream, P.stormLt, 0.42), w: 9, alpha: 0.9, bristles: 2, seed: 606, dens: 9, ribbon: true });
+  }
+
+  /* ---------------- the cloud ----------------
+     Built as mass, lit on the shoulder and heavy underneath, so it reads as
+     weather rather than a cartoon bubble. Never outlined: an outlined cloud
+     is a speech balloon. */
+  var CLOUD = (function () {
+    var lobes = [], r = rnd(701);
+    var spine = [[186, 236], [300, 176], [434, 146], [566, 162], [688, 206], [780, 268]];
+    for (var i = 0; i < spine.length; i++) {
+      for (var k = 0; k < 3; k++) {
+        lobes.push({
+          x: spine[i][0] + (r() - 0.5) * 120, y: spine[i][1] + (r() - 0.5) * 96 + k * 22,
+          rx: 84 + r() * 96, ry: 54 + r() * 62, s: r()
+        });
+      }
+    }
+    return lobes;
+  })();
+
+  function paintCloud(x, dark, f) {
+    if (f <= 0) return;
+    var r = rnd(711);
+    var base = mix('#d4d8d6', '#2a2f36', dark);
+    var lit = mix('#fdfdfb', '#7d8a96', dark);
+    var low = mix('#a3a8a6', '#0d1218', dark);
+    /* Painted as one mass, not lobe by lobe. Giving each lobe its own impasto
+       pass scattered short dark marks all over the top of the square, which
+       read as debris blown about rather than a body of cloud. So: the lobes
+       only establish the silhouette, and the knife work runs across the whole
+       of it in one direction, with the weight below and the light above. */
+    var grown = [];
+    CLOUD.forEach(function (lo, i) {
+      var g = clamp01(f * CLOUD.length * 0.62 - i * 0.34);
+      if (g > 0) grown.push({ lo: lo, g: g });
+    });
+    if (!grown.length) return;
+    /* The silhouette is torn, not scalloped. Stacked clean ellipses gave a
+       thought balloon, which is the one shape a cloud must not be. */
+    var silo = function (k) {
+      grown.forEach(function (e, i) {
+        var lp = blobPts(e.lo.x, e.lo.y, e.lo.rx * e.g, e.lo.ry * e.g, 721 + i, 13, 0.3);
+        k.moveTo(lp[0][0], lp[0][1]);
+        curve(k, jagPoly(lp, 760 + i, 9, 26), true);
+      });
+    };
+    grown.forEach(function (e, i) {
+      wash(x, jagPoly(blobPts(e.lo.x, e.lo.y, e.lo.rx * e.g, e.lo.ry * e.g, 721 + i, 13, 0.3),
+        760 + i, 9, 26), {
+        col: mix(base, low, e.lo.s * 0.55), seed: 730 + i, layers: 3,
+        alpha: 0.17 + 0.09 * e.lo.s, edge: 0, bleed: 4
+      });
+    });
+    var bb = [110, 60, 760, 330];
+    x.save();
+    x.beginPath(); silo(x); x.clip();
+    /* An opaque core. Left translucent all the way through, the torn-paper
+       newsprint on the wall behind printed straight through the cloud and
+       tiled it with little grey blocks. */
+    x.globalAlpha = 0.66 * Math.min(1, f * 1.4);
+    x.fillStyle = mix(base, lit, 0.28);
+    x.fillRect(0, 0, W, H);
+    x.globalAlpha = 1;
+    /* the roll of it: broad slow strokes lying along the cloud, lightening
+       upward, so the mass turns over */
+    for (var s = 0; s < 54; s++) {
+      var sy = bb[1] + r() * bb[3];
+      var up = 1 - (sy - bb[1]) / bb[3];
+      var sx = bb[0] - 120 + r() * (bb[2] + 180);
+      var L = 130 + r() * 330;
+      /* No dry gaps on the wide passes. At this width the gaps land at a
+         similar size all over and tile the cloud into grey brickwork. */
+      brush(x, [[sx, sy], [sx + L * 0.5, sy + (r() - 0.5) * 34], [sx + L, sy + (r() - 0.5) * 44]], {
+        col: jit(mix(low, lit, Math.pow(up, 0.8) * (0.35 + r() * 0.65)), r, 14),
+        w: 40 + r() * 90, alpha: 0.08 + r() * 0.13, bristles: 4,
+        seed: 740 + s, dens: 5, taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+    /* curdling at the top where it is piling up */
+    for (var c = 0; c < 26; c++) {
+      var cx0 = bb[0] + r() * bb[2], cy0 = bb[1] + r() * bb[3] * 0.45;
+      var cr = 26 + r() * 62;
+      wash(x, blobPts(cx0, cy0, cr, cr * (0.5 + r() * 0.5), (r() * 1e5) | 0, 9, 0.3), {
+        col: r() < 0.62 ? lit : mix(base, lit, 0.5), seed: (r() * 1e5) | 0,
+        layers: 2, alpha: 0.075, edge: 0
+      });
+    }
+    /* and the flat wet underside it will rain out of */
+    for (var w0 = 0; w0 < 20; w0++) {
+      var wx = bb[0] - 60 + r() * (bb[2] + 120);
+      var wy = bb[1] + bb[3] * (0.66 + r() * 0.38);
+      brush(x, [[wx, wy], [wx + 120 + r() * 240, wy + (r() - 0.5) * 30]], {
+        col: mix(low, '#05090e', 0.3 + r() * 0.4), w: 46 + r() * 92,
+        alpha: 0.07 + r() * 0.12, bristles: 4, seed: 790 + w0, dens: 5,
+        taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+    textureThrough(x, craze, function (k) { k.rect(0, 0, W, H); }, 0.3, -200, -140);
+    x.restore();
+    /* the lit shoulder, laid over the silhouette edge so the top catches */
+    for (var t = 0; t < 18; t++) {
+      var tx = 190 + r() * 580;
+      brush(x, [[tx, 128 + r() * 58], [tx + 80 + r() * 160, 120 + r() * 62]], {
+        col: mix('#ffffff', '#93a4b4', dark), w: 24 + r() * 52,
+        alpha: (0.05 + r() * 0.09) * f, bristles: 4, seed: 780 + t, dens: 5,
+        taper: 0.85, spread: 0.6, thick: 2.6
+      });
+    }
+  }
+
+  /* ---------------- steam: the column that feeds it ---------------- */
+  function steam(x, u, f, dark) {
+    if (f <= 0) return;
+    var step = Math.floor(u * 12), r = rnd(step * 6151 + 29);
+    var sx0 = KX - 340, sy0 = KY - 330;
+    for (var i = 0; i < 16; i++) {
+      var sway = Math.sin(step * 0.31 + i) * 34;
+      var climb = 90 + r() * 320;
+      var pts = [[sx0 + (r() - 0.5) * 30, sy0 - r() * 20],
+        [sx0 + sway * 0.5 + (r() - 0.5) * 44, sy0 - climb * 0.45],
+        [sx0 + sway + (r() - 0.5) * 70, sy0 - climb]];
+      brush(x, pts, {
+        col: mix(P.steam, '#8d9aa6', dark), w: 30 + r() * 62,
+        alpha: (0.04 + r() * 0.08) * f, bristles: 4, seed: (r() * 1e6) | 0,
+        dens: 6, taper: 0.8, spread: 0.6, thick: 2.6, fade: true
+      });
+    }
+    /* a few whole curls, so the column has drawing in it as well as haze */
+    for (var c = 0; c < 4; c++) {
+      var cy0 = sy0 - 40 - r() * 260, cr = 18 + r() * 40;
+      brush(x, blobPts(sx0 + (r() - 0.5) * 150, cy0, cr, cr * 0.7, (r() * 1e5) | 0, 9, 0.3), {
+        col: mix('#ffffff', '#a4b2be', dark), w: 4 + r() * 5,
+        alpha: (0.08 + r() * 0.12) * f, bristles: 1, close: true,
+        seed: (r() * 1e6) | 0, dens: 7, arc: 1.2
+      });
+    }
+  }
+
+  /* ---------------- rain out of the cloud into the cup ---------------- */
+  function rain(x, u, f) {
+    if (f <= 0) return;
+    var step = Math.floor(u * 12), r = rnd(step * 4409 + 71);
+    /* Rain falls; it does not radiate. Long strokes converging on the cup
+       turned the square into a ray diagram, and at full length and near-white
+       they were scratches in the film. Each drop is now a short fast dash,
+       leaning the same way as its neighbours, mostly barely there. */
+    var lean = 0.1 + 0.05 * Math.sin(step * 0.27);
+    var n = Math.round(230 * f);
+    for (var i = 0; i < n; i++) {
+      var x0 = 40 + r() * 1000, y0 = 250 + r() * 700;
+      var L = 26 + Math.pow(r(), 1.7) * 150;
+      brush(x, [[x0, y0], [x0 - L * lean * 0.5, y0 + L * 0.5], [x0 - L * lean, y0 + L]], {
+        col: mix('#b4c2cc', '#ffffff', r() * 0.45), w: 1 + r() * 2.2,
+        alpha: (0.05 + Math.pow(r(), 1.8) * 0.3) * f, bristles: 1,
+        seed: (r() * 1e6) | 0, dens: 5, taper: 0.85, ribbon: true
+      });
+    }
+    /* Over the cup it comes down harder, which is the whole joke: the weather
+       has an opinion about where the tea goes. */
+    for (var j = 0; j < Math.round(46 * f); j++) {
+      var jx = 862 + (r() - 0.5) * 150, jy = 330 + r() * 470;
+      var jL = 40 + r() * 130;
+      brush(x, [[jx, jy], [jx - jL * lean, jy + jL]], {
+        col: mix('#ccd8e0', '#ffffff', r() * 0.6), w: 1.3 + r() * 2.4,
+        alpha: (0.14 + r() * 0.3) * f, bristles: 1,
+        seed: (r() * 1e6) | 0, dens: 5, taper: 0.8, ribbon: true
+      });
+    }
+    /* veils behind it, so the air is wet and not just striped */
+    for (var v = 0; v < 18; v++) {
+      var vx = 120 + r() * 800, vy = 260 + r() * 300;
+      brush(x, [[vx, vy], [vx + 60, vy + 240], [vx + 130, vy + 480]], {
+        col: '#9fadb8', w: 50 + r() * 120, alpha: (0.014 + r() * 0.03) * f,
+        bristles: 4, seed: (r() * 1e6) | 0, dens: 6, taper: 0.85, spread: 0.6,
+        thick: 2.6, fade: true
+      });
+    }
+    /* splash in the cup, and a couple that miss */
+    for (var s = 0; s < 7; s++) {
+      var px = 806 + r() * 120, py = 812 + r() * 16;
+      brush(x, [[px, py], [px + (r() - 0.5) * 40, py - 20 - r() * 34]], {
+        col: '#f0f6f8', w: 2 + r() * 3.4, alpha: (0.2 + r() * 0.3) * f,
+        bristles: 1, seed: (r() * 1e6) | 0, dens: 5, taper: 0.6, ribbon: true
+      });
+    }
+    spatter(x, 862, 818, 74, 14, '#e8f0f4', step * 13 + 3, 2.4);
+  }
+
+  /* how full the cup is: the payoff */
+  function tea(x, f) {
+    if (f <= 0) return;
+    var top = 830 - f * 26;
+    var surf = [[798 + (1 - f) * 14, top], [862, top - 5], [930 - (1 - f) * 14, top + 3]];
+    x.save();
+    x.beginPath(); curve(x, CUP, true); x.clip();
+    wash(x, [[790, top], [934, top - 6], [934, 944], [790, 944]], {
+      col: '#6b3a12', seed: 901, layers: 4, alpha: 0.22, edge: 0
+    });
+    var r = rnd(902);
+    for (var i = 0; i < 16; i++) {
+      var iy = top + 6 + r() * (944 - top);
+      brush(x, [[794, iy], [862 + (r() - 0.5) * 40, iy + (r() - 0.5) * 8], [932, iy + (r() - 0.5) * 9]], {
+        col: jit(r() < 0.5 ? '#8a4f18' : '#4a2408', r, 26), w: 6 + r() * 16,
+        alpha: 0.1 + r() * 0.2, bristles: 3, seed: 910 + i, dens: 5, dry: 0.3
+      });
+    }
+    x.restore();
+    brush(x, surf, {
+      col: '#c98a3a', w: 7, alpha: 0.5 * f, bristles: 2, seed: 903,
+      dens: 8, arc: 0.5, ribbon: true
+    });
+  }
+
+  /* ---------------- plates, baked once ---------------- */
+  var gRoom = room(false), gStorm = room(true);
+
+  var kettleRoom = plate(W, H), kettleStorm = plate(W, H);
+  paintKettle(kettleRoom.x, false); paintCup(kettleRoom.x, false);
+  paintKettle(kettleStorm.x, true); paintCup(kettleStorm.x, true);
+
+  /* Stroke order for painting the kettle on: the way you would actually
+     build it — body, then the spout out of it, then the handle over, then
+     the lid down, then the cup last because it is only waiting. */
+  var kettleRev = new Reveal(W, H, (function () {
+    var s = [], r = rnd(1201);
+    var bandY = [KY + 250, KY + 170, KY + 90, KY + 10, KY - 70, KY - 140];
+    bandY.forEach(function (y, i) {
+      var half = 176 + (i < 2 ? 14 : -i * 8);
+      s.push({
+        pts: [[KX - half - 20, y + (r() - 0.5) * 18], [KX, y - 12 + (r() - 0.5) * 20],
+          [KX + half + 24, y + (r() - 0.5) * 18]],
+        w: 132
+      });
+    });
+    s.push({ pts: SPOUT_MID, w: 132 });
+    s.push({ pts: HANDLE, w: 96 });
+    s.push({ pts: [[KX - 120, KY - 190], [KX + 10, KY - 240], [KX + 120, KY - 186]], w: 118 });
+    s.push({ pts: [[KX - 20, KY - 250], [KX + 20, KY - 280]], w: 74 });
+    return s;
+  })());
+
+  var cupRev = new Reveal(W, H, [
+    { pts: [[788, 820], [862, 800], [938, 818]], w: 96 },
+    { pts: [[790, 880], [862, 866], [936, 878]], w: 96 },
+    { pts: [[800, 934], [862, 948], [928, 932]], w: 84 },
+    { pts: [[928, 840], [980, 866], [934, 898]], w: 58 }
+  ]);
+
+  /* The front coming through. Same lesson as the other two films: an advancing
+     straight edge reads as a sheet of plastic sliding over the picture, so the
+     sweep goes on in bands of short overlapping scrubs and its face stays
+     torn. */
+  var frontStrokes = (function () {
+    var s = [], r = rnd(1301), bands = 24, per = 7;
+    for (var b = 0; b < bands; b++) {
+      var base = -240 + (b / (bands - 1)) * 1620;
+      var offs = [];
+      for (var k = 0; k < per; k++) offs.push(-780 + (k / (per - 1)) * 1560 + (r() - 0.5) * 160);
+      for (var k2 = offs.length - 1; k2 > 0; k2--) {
+        var sw = (r() * (k2 + 1)) | 0, tmp = offs[k2]; offs[k2] = offs[sw]; offs[sw] = tmp;
+      }
+      offs.forEach(function (off) {
+        var c = base + (r() - 0.5) * 72;
+        var cx = c + off * 0.2, cy = off;
+        var ang = 0.34 + (r() - 0.5) * 0.5;
+        var L = 430 + r() * 330;
+        s.push({
+          pts: [[cx - Math.cos(ang) * L / 2, cy - Math.sin(ang) * L / 2],
+            [cx + (r() - 0.5) * 40, cy + (r() - 0.5) * 40],
+            [cx + Math.cos(ang) * L / 2, cy + Math.sin(ang) * L / 2]],
+          w: 150 + r() * 90
+        });
+      });
+    }
+    return s;
+  })();
+  var frontRev = new Reveal(W, H, frontStrokes);
+
+  /* the belly holds the other weather, blurred in as reflection not decal */
+  var BELLY = blobPts(KX - 18, KY + 46, 128, 150, 1401, 15, 0.1);
+
+  function belly(x, src, f) {
+    if (f <= 0) return;
+    var b = bellyP.x;
+    b.clearRect(0, 0, W, H);
+    /* feathered mask: nested shrinks accumulating alpha, so the edge of the
+       reflection dissolves instead of being die-cut */
+    for (var i = 0; i < 9; i++) {
+      b.save();
+      b.beginPath(); curve(b, shrinkPts(BELLY, 1 - i * 0.055), true); b.clip();
+      b.globalAlpha = 0.13;
+      b.drawImage(src.c, 0, 0);
+      b.restore();
+    }
+    /* Laid in as light on curved tin, not as a picture pasted into a window.
+       Drawn straight over at strength it bleached a hole through the middle
+       of the kettle and the form went with it. */
+    x.save();
+    x.globalCompositeOperation = 'soft-light';
+    x.globalAlpha = f * 0.85;
+    x.drawImage(bellyP.c, 0, 0);
+    x.globalCompositeOperation = 'source-over';
+    x.globalAlpha = f * 0.2;
+    x.drawImage(bellyP.c, 0, 0);
+    x.restore();
+    /* the curve of the tin bending the light across it */
+    var r = rnd(1411);
+    for (var k = 0; k < 9; k++) {
+      var ky = KY - 80 + k * 30;
+      brush(x, [[KX - 130, ky + (r() - 0.5) * 16], [KX - 20, ky - 10], [KX + 110, ky + (r() - 0.5) * 14]], {
+        col: k < 3 ? '#cfe8ea' : '#0a1e26', w: 10 + r() * 22,
+        alpha: (0.05 + r() * 0.08) * f, bristles: 3, seed: 1420 + k,
+        dens: 6, dry: 0.3, taper: 0.8
+      });
+    }
+  }
+
+  /* ---------------- words ---------------- */
+  var wordsP = plate(W, H);
+  (function () {
+    var x = wordsP.x;
+    hand(x, 'showers later,', 96, 1000, 52, {
+      col: mix(P.cream, P.amber, 0.28), seed: 1501, w: 0.085, bristles: 2, alpha: 0.82
+    });
+    hand(x, 'mainly in the cup', 150, 1062, 52, {
+      col: mix(P.cream, P.amber, 0.28), seed: 1502, w: 0.085, bristles: 2, alpha: 0.82
+    });
+  })();
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+
+  /* ---------------- the eleven and a half seconds ---------------- */
+  window.draw = function (t) {
+    var u = ((t % DUR) + DUR) % DUR;
+    X.clearRect(0, 0, W, H);
+
+    /* --- ground, and the front that changes it --- */
+    var fp = clamp01((u - 7.2) / 1.25);
+    var back = clamp01((u - 10.75) / 0.75);
+    X.drawImage(gRoom.c, 0, 0);
+    if (fp > 0 && back < 1) {
+      var m = frontRev.mask(back > 0 ? fp * (1 - back) : fp);
+      X.save();
+      X.globalCompositeOperation = 'source-over';
+      var tmp = cloudP;
+      tmp.x.clearRect(0, 0, W, H);
+      tmp.x.drawImage(gStorm.c, 0, 0);
+      tmp.x.globalCompositeOperation = 'destination-in';
+      tmp.x.drawImage(m.plate.c, 0, 0);
+      tmp.x.globalCompositeOperation = 'source-over';
+      X.drawImage(tmp.c, 0, 0);
+      X.restore();
+      /* the loaded edge of the brush, live, so the sweep is a mark and not
+         a wipe between two bitmaps */
+      if (m.cur) {
+        var sc = ['#3c4c5e', '#22303e', P.stormLt, '#1a2530', '#54687c'];
+        for (var q = 0; q < 3; q++) {
+          brush(X, partial(m.cur.pts, clamp01(m.f * 1.3)), {
+            col: sc[(m.i + q) % sc.length], w: m.cur.w * (0.5 + q * 0.2),
+            alpha: 0.22 - q * 0.05, bristles: 5, seed: m.i * 37 + q,
+            dens: 5, dry: 0.3, taper: 0.8, spread: 1.05
+          });
         }
-        c.closePath();
-      } else {
-        c.arc(cx, cy, i*55, 0, Math.PI*2);
       }
-      c.strokeStyle = mix(P.amber, P.cadmium, i/6);
-      c.lineWidth = 2.5;
-      c.globalAlpha = 0.35 + i*0.08;
-      c.stroke();
-      c.globalAlpha = 1;
     }
-    // boil bubbles as data dots
-    for (let i = 0; i < 18; i++) {
-      const a = (i/18)*Math.PI*2 + t;
-      const r = 40 + (i%5)*35 + Math.sin(t*4+i)*8;
-      const x = cx + Math.cos(a)*r;
-      const y = cy + Math.sin(a)*r*0.7;
-      c.beginPath();
-      c.arc(x, y, 4+ (i%3), 0, Math.PI*2);
-      c.fillStyle = i%3===0 ? P.gold : P.cadmium;
-      c.globalAlpha = 0.8;
-      c.fill();
-      c.globalAlpha = 1;
-    }
-    // kettle silhouette ghost — match-cut continuity
-    drawKettle(c, cx, cy+40, 0.55, t, true);
-    // amber heat accent — reserved
-    c.beginPath();
-    c.arc(W-100, 100, 20, 0, Math.PI*2);
-    c.fillStyle = P.amber;
-    c.fill();
-    // HUD-ish temperature ticks (Gill satnav energy, not Kevin neon)
-    for (let i = 0; i < 8; i++) {
-      const y = 200 + i*70;
-      bristle(c, 60, y, 100 + (i===5?40:0), y, 2, mix(P.gold, P.cream, 0.3), R(400+i), {bristles:1, alpha:0.55});
-    }
-  }
+    var storm = fp > 0.45 && back < 0.6;
+    var dark = clamp01((u - 6.4) / 1.6) * (1 - back * 0.7);
 
-  function revealingLens(c, cx, cy, r, drawInside) {
-    c.save();
-    c.beginPath();
-    c.arc(cx, cy, r, 0, Math.PI*2);
-    c.clip();
-    drawInside();
-    c.restore();
-    c.beginPath();
-    c.arc(cx, cy, r, 0, Math.PI*2);
-    c.strokeStyle = P.ink;
-    c.lineWidth = 9;
-    c.stroke();
-    c.beginPath();
-    c.arc(cx, cy, r+6, 0, Math.PI*2);
-    c.strokeStyle = P.amber;
-    c.lineWidth = 3;
-    c.globalAlpha = 0.55;
-    c.stroke();
-    c.globalAlpha = 1;
-  }
+    /* --- the heat: on from 3.7, and the last thing the storm takes --- */
+    var hf = clamp01((u - 3.7) / 0.9);
+    var puls = 0.86 + 0.14 * Math.sin(u * 5.1) + 0.06 * Math.sin(u * 11.3);
+    heat(X, KX + 10, KY + 268, hf * puls, storm);
 
-  function drawKitchenScene(c, t) {
-    const heat = 0.3 + 0.7 * Math.min(1, (Math.sin(t*0.9)*0.5+0.5));
-    kitchenGround(c, heat);
-    const roaring = heat > 0.55;
-    // steam weather ABOVE — epic sky from kettle
-    steamWeather(c, W*0.52, H*0.42, t, 0.5 + heat*0.5);
-    drawKettle(c, W*0.48, H*0.62, 1.15, t, roaring);
-    // tiny lightning joke in steam when roaring
-    if (roaring && Math.sin(t*12) > 0.85) {
-      bristle(c, W*0.55, H*0.22, W*0.62, H*0.32, 3, P.gold, R(7), {bristles:2, alpha:0.7});
-      bristle(c, W*0.62, H*0.32, W*0.58, H*0.38, 2.5, P.cadmium, R(8), {bristles:2, alpha:0.7});
+    /* --- the kettle, painted on --- */
+    var kp = clamp01((u - 1.3) / 1.6);
+    var src = storm ? kettleStorm : kettleRoom;
+    if (kp >= 1) {
+      X.drawImage(src.c, 0, 0);
+    } else if (kp > 0) {
+      var km = kettleRev.mask(kp);
+      var kt = cloudP;
+      kt.x.clearRect(0, 0, W, H);
+      kt.x.drawImage(src.c, 0, 0);
+      kt.x.globalCompositeOperation = 'destination-in';
+      kt.x.drawImage(km.plate.c, 0, 0);
+      kt.x.globalCompositeOperation = 'source-over';
+      X.drawImage(kt.c, 0, 0);
+      if (km.cur) {
+        brush(X, partial(km.cur.pts, clamp01(km.f * 1.35)), {
+          col: km.i > 5 ? '#5a2d16' : P.enamel, w: km.cur.w * 0.62,
+          alpha: 0.5, bristles: 5, seed: km.i * 29 + 7, dens: 5,
+          dry: 0.22, taper: 0.7, spread: 1.05, vary: 24
+        });
+      }
     }
-  }
-
-  function draw(t) {
-    const u = ((t % DUR) + DUR) % DUR;
-    // breathe kitchen 0-3, lens into boil 3-4.5, slate pressure 4.5-7, hard wipe 7-8.2, kitchen 8.2-10
-    if (u < 3.0) {
-      drawKitchenScene(ctx, u);
-    } else if (u < 4.5) {
-      drawKitchenScene(ctx, u);
-      const p = (u - 3.0) / 1.5;
-      // lens centres on spout / boil
-      revealingLens(ctx, W*0.62, H*0.48, 30 + p*520, () => pressureDiagram(ctx, u));
-    } else if (u < 7.0) {
-      pressureDiagram(ctx, u);
-    } else if (u < 8.3) {
-      pressureDiagram(ctx, u);
-      const p = (u - 7.0) / 1.3;
-      // hard horizontal paint-over scrape
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, H - p*(H+40), W, H);
-      ctx.clip();
-      drawKitchenScene(ctx, u);
-      ctx.restore();
-      const y = H - p*(H+40);
-      bristle(ctx, 0, y, W, y+6, 16, mix(P.cream, P.amber, 0.3), R(11), {bristles:7, alpha:0.55});
-    } else {
-      drawKitchenScene(ctx, u);
+    /* the cup arrives after, and only waits */
+    var cp = clamp01((u - 2.9) / 0.8);
+    if (cp > 0 && cp < 1) {
+      var cm = cupRev.mask(cp);
+      var ct = bellyP;
+      ct.x.clearRect(0, 0, W, H);
+      ct.x.drawImage(src.c, 0, 0);
+      ct.x.globalCompositeOperation = 'destination-in';
+      ct.x.drawImage(cm.plate.c, 0, 0);
+      ct.x.globalCompositeOperation = 'source-over';
+      X.save();
+      X.beginPath(); curve(X, movePts(CUP, 0, 0), true);
+      X.rect(930, 830, 60, 80);
+      X.clip();
+      X.drawImage(ct.c, 0, 0);
+      X.restore();
     }
-  }
 
-  window.draw = draw;
-  let t0 = null;
+    /* --- the belly reflection: whichever weather the room is not in --- */
+    var bf = clamp01((u - 6.1) / 0.9) * (1 - clamp01((u - 10.4) / 0.6));
+    if (kp >= 1) belly(X, storm ? gRoom : gStorm, bf);
+
+    /* --- steam, gathering --- */
+    var sf = clamp01((u - 4.6) / 0.8) * (1 - clamp01((u - 9.9) / 1.2) * 0.55);
+    steam(X, u, sf, dark);
+
+    /* --- the cloud it becomes --- */
+    var cf = clamp01((u - 5.0) / 1.5);
+    if (back > 0) cf *= 1 - back * 0.9;
+    paintCloud(X, dark, cf);
+
+    /* --- and what it does --- */
+    var rf = clamp01((u - 8.4) / 0.8) * (1 - clamp01((u - 10.7) / 0.7));
+    rain(X, u, rf);
+    tea(X, clamp01((u - 8.7) / 1.9));
+
+    /* --- the forecast, in her hand --- */
+    var wf = clamp01((u - 9.8) / 0.8) * (1 - clamp01((u - 11.1) / 0.4));
+    if (wf > 0) {
+      X.save();
+      X.globalAlpha = wf;
+      X.drawImage(wordsP.c, 0, 0);
+      X.restore();
+    }
+
+    applyGrain(X, grain, 0.1, W, H);
+  };
+})();
+/* auto-start; ?t=SEC renders one frame and holds it, for frame review */
+(function () {
+  var q = new URLSearchParams(location.search);
+  if (q.has('t')) { window.draw(parseFloat(q.get('t')) || 0); return; }
+  var t0 = null;
   function frame(now) {
     if (t0 == null) t0 = now;
-    draw((now - t0) / 1000);
+    window.draw((now - t0) / 1000);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

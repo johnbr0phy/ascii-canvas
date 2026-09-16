@@ -352,17 +352,33 @@ function ground(x, W, H, o) {
     var pts = vert
       ? [[sx, sy], [sx + drift * 0.3, sy + len * 0.4], [sx + drift, sy + len]]
       : [[sx, sy], [sx + len * 0.4, sy + drift * 0.3], [sx + len, sy + drift]];
+    /* No dry gaps on a sweep this wide. The ink runs come out a similar
+       length across every bristle, so ninety of them tile the whole ground
+       into rows of little lozenges — the pattern reads as machine hatching
+       and it prints straight through anything translucent laid over it. */
     brush(x, pts, {
       col: jit(tints[(r() * tints.length) | 0], r, o.drift == null ? 26 : o.drift),
-      w: 18 + r() * 64, alpha: 0.05 + r() * 0.12, bristles: 5 + (r() * 4 | 0),
-      seed: (r() * 1e6) | 0, dens: 6, dry: 0.22, spread: 1.05
+      w: 18 + r() * 64, alpha: 0.04 + r() * 0.1, bristles: 4,
+      seed: (r() * 1e6) | 0, dens: 6, spread: 0.6, thick: 2.6, taper: 0.85
+    });
+  }
+  /* Broken touches instead, each its own short mark, so the break is in where
+     they fall rather than in a rhythm along a stroke. */
+  for (i = 0; i < (o.mottle == null ? 60 : o.mottle); i++) {
+    var tx = r() * W, ty = r() * H, ta = r() * TAU;
+    var tL = 10 + Math.pow(r(), 2) * 150;
+    brush(x, [[tx, ty], [tx + Math.cos(ta) * tL, ty + Math.sin(ta) * tL]], {
+      col: jit(tints[(r() * tints.length) | 0], r, o.drift == null ? 26 : o.drift),
+      w: 6 + r() * 42, alpha: 0.035 + r() * 0.1, bristles: 4,
+      seed: (r() * 1e6) | 0, dens: 5, taper: 0.9, spread: 0.6, thick: 2.6
     });
   }
   for (i = 0; i < (o.scrape == null ? 40 : o.scrape); i++) {
     var ax = r() * W, ay = r() * H, aa = (vert ? Math.PI / 2 : 0) + (r() - 0.5) * 0.7, aL = 60 + r() * 260;
     brush(x, [[ax, ay], [ax + Math.cos(aa) * aL, ay + Math.sin(aa) * aL]], {
       col: r() < 0.5 ? o.light || '#ffffff' : o.dark || '#4a4038',
-      w: 5 + r() * 16, alpha: 0.05 + r() * 0.1, bristles: 3, seed: (r() * 1e6) | 0, dens: 5, dry: 0.45
+      w: 5 + r() * 16, alpha: 0.05 + r() * 0.1, bristles: 3,
+      seed: (r() * 1e6) | 0, dens: 5, taper: 0.9, arc: 0.7
     });
   }
   if (o.vignette !== false) {
@@ -474,7 +490,7 @@ function impasto(x, pathFn, o) {
   for (var i = 0; i < n; i++) {
     var cx = bb[0] + r() * bb[2], cy = bb[1] + r() * bb[3];
     var a = ang + (r() - 0.5) * (o.spreadA == null ? 0.6 : o.spreadA);
-    var L = diag * (0.25 + r() * 0.55);
+    var L = diag * (0.25 + r() * 0.55) * (o.len == null ? 1 : o.len);
     var p0 = [cx - Math.cos(a) * L / 2, cy - Math.sin(a) * L / 2];
     var p1 = [cx + Math.cos(a) * L / 2 + (r() - 0.5) * 40, cy + Math.sin(a) * L / 2 + (r() - 0.5) * 40];
     var mid = [(p0[0] + p1[0]) / 2 + (r() - 0.5) * 50, (p0[1] + p1[1]) / 2 + (r() - 0.5) * 50];
