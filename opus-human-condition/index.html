@@ -576,7 +576,7 @@ function petalFlower(c,o,rng,k){
 const PROFILES = {
   bottle: [[0,0.90],[0.10,1.0],[0.40,0.96],[0.54,0.52],[0.66,0.26],[0.92,0.24],[1,0.30]],
   pot:    [[0,0.60],[0.20,0.93],[0.52,1.0],[0.80,0.85],[1,0.70]],
-  vase:   [[0,0.46],[0.26,0.90],[0.56,1.0],[0.82,0.78],[1,0.62]],
+  vase:   [[0,0.40],[0.18,0.86],[0.44,1.0],[0.66,0.90],[0.86,0.46],[1,0.54]],
   bowl:   [[0,0.34],[0.42,0.70],[0.78,0.94],[1,1.0]],
   tumbler:[[0,0.86],[0.5,0.92],[1,0.99]]
 };
@@ -593,7 +593,7 @@ function vesselPts(o,rng){
   return left.concat(right.reverse());
 }
 function vessel(c,o,rng,k){
-  const pts = vesselPts(o,rng);
+  const pts = o.pts || vesselPts(o,rng);
   if (o.wash){
     c.save(); poly(c,pts); c.clip();
     c.globalAlpha = clamp(k*1.6,0,1);
@@ -917,18 +917,30 @@ SCENES.push({
       const pl = pathLine(120,470,1080,462,{n:22,wob:6},rng);
       bristle(c,trim(pl,k),26,'#2F2C2C',rng,{alpha:0.9,bristles:4,taper:false,coreA:0.95});
     });
-    // five vessels, overlapping, each one visible through the next
+    // five vessels, overlapping, each one a different tone so they read as
+    // bodies and not as wire — and each one visible through the next
     const vs = [
-      { cx:262, baseY:930, h:474, w:168, shape:'bottle', at:1.05 },
-      { cx:404, baseY:952, h:330, w:246, shape:'pot',    at:1.55 },
-      { cx:598, baseY:944, h:252, w:132, shape:'tumbler',at:2.05 },
-      { cx:744, baseY:966, h:432, w:352, shape:'vase',   at:2.50 },
-      { cx:936, baseY:958, h:214, w:280, shape:'bowl',   at:3.05 }
+      { cx:250, baseY:934, h:492, w:172, shape:'bottle', at:1.05, col:'#8E9B95' },
+      { cx:408, baseY:952, h:396, w:250, shape:'pot',    at:1.55, col:'#EDE7DA' },
+      { cx:598, baseY:944, h:300, w:136, shape:'tumbler',at:2.05, col:'#B6C0C6' },
+      { cx:752, baseY:966, h:462, w:356, shape:'vase',   at:2.50, col:'#D5D2CA' },
+      { cx:944, baseY:958, h:262, w:284, shape:'bowl',   at:3.05, col:'#9E958C' }
     ];
-    vs.forEach(v=>{
+    // the drawing is fixed up front, so the charcoal can be re-stated later
+    // over the top of everything and the group goes transparent
+    const VP = vs.map((v,i)=>vesselPts(v,R(5540+i*37)));
+    vs.forEach((v,i)=>{
       b.add(v.at,0.85,(c,k,rng)=>{
-        vessel(c,{ cx:v.cx, baseY:v.baseY, h:v.h, w:v.w, shape:v.shape,
-                   wash:true, washA:0.36, col:rng.f()<0.5?P.warmgrey:'#C9CAC4' },rng,k);
+        vessel(c,{ pts:VP[i], wash:true, washA:0.86, col:v.col, inkW:3.6 },rng,k);
+      });
+    });
+    // back over the drawing with the charcoal, all of it, so every contour
+    // shows through every body
+    b.add(3.30,0.80,(c,k,rng)=>{
+      VP.forEach((pts,i)=>{
+        const a = clamp(k*VP.length*1.25-i,0,1);
+        if (a<=0) return;
+        contourLine(c,pts,4.4,'#33302E',rng,a,0.9);
       });
     });
     // a long thin neck rising out of the group
@@ -1037,7 +1049,7 @@ SCENES.push({
 SCENES.push({
   name:'weather / field & shore', dur:6.5,
   ground: c => {
-    ground(c,[P.earth,'#AB855E','#725B3D','#C7AA8F'],R(707),
+    ground(c,['#B08C4E','#C9A244','#8F704E','#D8BE84'],R(707),
            { dir:1.35, spread:0.6, cross:0.34, strokes:110, patches:36, speck:2200, light:1600 });
     const rng = R(7071);
     // gold sky, laid over the top quarter
@@ -1067,8 +1079,11 @@ SCENES.push({
       for (let i=0;i<54;i++){
         const x = rng.r(-40,W+40);
         const pl = pathLine(x,rng.r(250,340),x+rng.r(-110,110),rng.r(640,1120),{n:14,wob:rng.r(4,18)},rng);
-        bristle(c,pl,rng.r(18,60),mix(P.earth,rng.pick(['#725B3D','#C7AA8F','#AB855E']),rng.f()),rng,
-                {alpha:rng.r(0.12,0.45),bristles:3,core:rng.f()<0.4,coreA:0.6});
+        // stubble: gold and ochre with the green still in it, not mud
+        bristle(c,pl,rng.r(18,60),
+                mix(rng.pick(['#C9A244',P.gold,'#B8892E']),
+                    rng.pick(['#8F704E','#D8BE84','#6F7A3C','#C9A244']),rng.f()),rng,
+                {alpha:rng.r(0.16,0.5),bristles:3,core:rng.f()<0.4,coreA:0.6});
       }
       c.restore();
     });
@@ -1077,9 +1092,10 @@ SCENES.push({
     trees.forEach((tr,i)=>{
       b.add(0.85+i*0.14,0.40,(c,k,rng)=>{
         const pl = pathLine(tr[0],tr[1]+tr[2]*0.7,tr[0],tr[1]+tr[2]*1.9,{n:8,wob:1.8},rng);
-        bristle(c,trim(pl,k),6,P.wood,rng,{alpha:0.85,bristles:2,coreA:0.9});
-        disc(c,{ cx:tr[0], cy:tr[1], r:tr[2], col:P.wood, mixWith:P.leaf, mixK:0.5,
-                 dir:1.0, bw:5, wob:0.14, n:24 },rng,k);
+        bristle(c,trim(pl,k),6,mix(P.wood,P.ochre,0.35),rng,{alpha:0.85,bristles:2,coreA:0.9});
+        disc(c,{ cx:tr[0], cy:tr[1], r:tr[2], col:mix(P.leaf,P.wood,0.46),
+                 mixWith:i%3?'#2E4A38':P.gold, mixK:0.5,
+                 dir:1.0, bw:5, wob:0.2, n:24 },rng,k);
       });
     });
     // the path: wide at our feet, narrow at the horizon, bending as it goes
@@ -1095,21 +1111,23 @@ SCENES.push({
                 {alpha:rng.r(0.14,0.45),bristles:3,core:false});
       }
     });
-    // weather comes through from the right: woodland verticals, gold between.
-    // full height, so nothing dangles, and thin enough that the field survives
-    for (let g=0; g<3; g++){
-      b.add(2.70+g*0.85, 1.05, (c,k,rng)=>{
-        const n = 30;
+    // weather comes through from the right: rain combed down over the field,
+    // full height so nothing dangles, each one a mark and not a smear
+    for (let g=0; g<2; g++){
+      b.add(2.70+g*0.95, 1.05, (c,k,rng)=>{
+        const n = 12;
         const shown = k*n*1.12;
         for (let i=0;i<n;i++){
           const a = clamp(shown-i,0,1);
           if (a<=0) continue;
-          const x = W+80 - (g*0.3 + (i/n)*0.3)*(W+120) + rng.r(-26,26);
-          const pl = pathLine(x,-80,x+rng.r(-70,70),H+80,{n:22,wob:rng.r(5,22)},rng);
-          const col = rng.f()<0.26 ? mix(P.gold,'#F58B0C',rng.f())
-                                   : mix(P.wood, rng.pick(['#3F4A2C',P.leaf,P.night]), rng.f());
-          bristle(c,trim(pl,a),rng.r(10,44),col,rng,
-                  {alpha:rng.r(0.14,0.42)*a,bristles:4,tone:0.18,taper:false,core:false});
+          // it comes in off the right and stops short: the walker is still
+          // in the light when it reaches him
+          const x = W+80 - (g*0.26 + (i/n)*0.26)*(W+120) + rng.r(-30,30);
+          const pl = pathLine(x,-80,x+rng.r(-60,60),H+80,{n:22,wob:rng.r(5,22)},rng);
+          const col = rng.f()<0.34 ? mix(P.gold,'#F58B0C',rng.f())
+                                   : mix(rng.pick(['#3F4A2C',P.leaf,P.night]),'#6B6F5A',rng.f()*0.5);
+          bristle(c,trim(pl,a),rng.r(6,19),col,rng,
+                  {alpha:rng.r(0.22,0.46)*a,bristles:3,tone:0.2,taper:false,coreA:0.5});
         }
       });
     }
