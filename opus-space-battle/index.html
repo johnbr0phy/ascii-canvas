@@ -552,6 +552,15 @@ function callout(x, y, dx, dy, lines, o) {
   if (rev > 0.92) {
     const anchor = dx < 0 ? "end" : "start";
     const tx = kx + tail * 1.02;
+    /* knock the ground back under the block. A label laid straight on
+       top of the densest hatching on the sheet is a label nobody can
+       read, and the drawing office answer is to clear the lines. */
+    const pad = U * 0.009;
+    const bx = anchor === "end" ? tx - wmax - pad : tx - pad;
+    X.globalAlpha = (o.alpha === undefined ? 1 : o.alpha) * 0.82;
+    X.fillStyle = GROUND;
+    X.fillRect(bx, ky - U * 0.020, wmax + pad * 2, lines.length * U * 0.019 + pad);
+    X.globalAlpha = 1;
     lines.forEach((ln, i) => {
       text(ln, tx, ky - U * 0.006 + i * U * 0.019,
         { size: i ? U * 0.0125 : sz, weight: i ? 500 : 600, tracking: tr, color: i ? DIM : col, anchor: anchor, alpha: o.alpha });
@@ -563,14 +572,16 @@ function callout(x, y, dx, dy, lines, o) {
    it has not had time to name. */
 function tally(x, y, n, o) {
   o = o || {};
-  const h = o.h || U * 0.020, gap = o.gap || U * 0.0072, grp = o.grp || U * 0.016;
+  const h = o.h || U * 0.021, gap = o.gap || U * 0.0098, grp = o.grp || U * 0.019;
   let cx = x;
   for (let g = 0; g * 5 < n; g++) {
     const inGrp = Math.min(5, n - g * 5);
     for (let i = 0; i < Math.min(4, inGrp); i++) {
       stroke([[cx + i * gap, y], [cx + i * gap + h * 0.10, y - h]], { color: o.color || INK, w: 1.5, alpha: o.alpha, seed: 60 + g * 7 + i });
     }
-    if (inGrp === 5) stroke([[cx - gap * 0.45, y - h * 0.92], [cx + gap * 3.5, y + h * 0.10]], { color: o.color || INK, w: 1.5, alpha: o.alpha, seed: 70 + g });
+    /* the fifth is the gate: it crosses the other four, or the group
+       reads as five parallel strokes and stops being a tally */
+    if (inGrp === 5) stroke([[cx - gap * 0.55, y - h * 1.02], [cx + gap * 3.7, y + h * 0.16]], { color: o.color || INK, w: 2.0, alpha: o.alpha, seed: 70 + g });
     cx += gap * 4 + grp;
   }
   return cx - x;
@@ -878,15 +889,22 @@ function crown() {
 /* BROOD ELEVEN. Not a navy. The Shoal grows its vessels, so the spine
    arcs, the section wanders instead of fairing, and the limbs are not
    handed to each other. 447 m along the curve. */
+/* One spine, used by the drawing and by everything that has to fire
+   from her or break her — a gun that comes out of empty space beside
+   the hull is the fastest way to say nobody checked. */
+function shoalSpine(u) {
+  const x = lerp(-225, 222, u);
+  const y = 34 * sin(u * 2.1 - 0.3) - 10;
+  const r = (8 + 46 * Math.pow(sin(PI * Math.pow(u, 0.8)), 0.75)) * (1 + 0.16 * sin(u * 13.7));
+  return [x, y, Math.max(3, r)];
+}
+
 function shoal() {
   const B = [];
   const sp = [];
   for (let i = 0; i <= 12; i++) {
-    const u = i / 12;
-    const x = lerp(-225, 222, u);
-    const y = 34 * sin(u * 2.1 - 0.3) - 10;
-    const r = (8 + 46 * Math.pow(sin(PI * Math.pow(u, 0.8)), 0.75)) * (1 + 0.16 * sin(u * 13.7));
-    sp.push([x, y, 0, Math.max(3, r)]);
+    const s = shoalSpine(i / 12);
+    sp.push([s[0], s[1], 0, s[2]]);
   }
   B.push({ sts: sp, hatch: true, w: 2.2, sec: SEC.grown, key: "body" });
   /* the head is a separate mass, swollen, and it is not on the axis */
@@ -1282,8 +1300,18 @@ function scene4(t) {
   const cam = camera({ yaw: 0.52, pitch: 0.30, scale: U * 0.00105 * dolly, cx: W * 0.50 - u * 14, cy: H * 0.50 });
   stars(0.20, true);
 
-  const heroXf = place({ x: -180, y: -40, z: 100, yaw: -0.10 + swing(u * 0.25) * 0.02, roll: 0.06 });
-  const foeXf = place({ x: 210, y: 70, z: -120, yaw: 2.74, roll: -0.12 });
+  /* She is walking the line, so she is actually walking: the broadside
+     tracks aft along the mark because the ship is sliding along it,
+     not because the guns are wandering. */
+  const walk = smooth(u);
+  const heroXf = place({
+    x: -180 + walk * 74, y: -40 - walk * 20, z: 100 + walk * 44,
+    yaw: -0.10 + swing(u * 0.25) * 0.02 - walk * 0.11, roll: 0.06 - walk * 0.03
+  });
+  const foeXf = place({
+    x: 210 - walk * 34, y: 70 + walk * 16, z: -120 - walk * 28,
+    yaw: 2.74 + walk * 0.09, roll: -0.12 + walk * 0.05
+  });
 
   drawShip(FOE, foeXf, cam, { color: INK, hatch: true, hatchAlpha: 0.75, wScale: 1.0 });
   drawShip(HERO, heroXf, cam, { color: INK, hatch: true, hatchAlpha: 0.9, wScale: 1.15 });
@@ -1314,7 +1342,9 @@ function scene4(t) {
     const t0 = 10.1 + i * 0.20 + a1 * 0.09;
     const age = (t - t0) / 0.30;
     if (age < 0 || age > 1) continue;
-    const m = cam.project(foeXf([lerp(-180, 200, a2), lerp(-20, 50, a3), 0]));
+    /* she fires off her own spine, not out of the air beside it */
+    const sp = shoalSpine(0.18 + a2 * 0.68);
+    const m = cam.project(foeXf([sp[0], sp[1] + sp[2] * 0.55, (a3 < 0.5 ? -1 : 1) * sp[2] * 0.7]));
     const tgt = cam.project(heroXf([lerp(-170, 160, a4), lerp(-20, 35, a5), 40]));
     beam(m, tgt, PAL.foe, age, { w: 3.0 });
     const hit = (t - t0 - 0.12) / 0.5;
@@ -1570,7 +1600,10 @@ function wreckXf(p, el) {
   const d = Math.max(0, el);
   return place({
     x: FIELD.foeX + p.drift[0] * d * 0.42, y: FIELD.foeY + p.drift[1] * d * 0.42, z: FIELD.foeZ + p.drift[2] * d * 0.42,
-    yaw: 2.66 + p.spin * d * 0.30, roll: -0.10 + p.spin * d * 0.42
+    /* the shot gives her the spin all at once and the drift only
+       afterwards, so the break snaps and the masses then coast */
+    yaw: 2.66 + p.spin * (d * 0.24 + 0.40 * smooth(d * 2.2)),
+    roll: -0.10 + p.spin * (d * 0.34 + 0.55 * smooth(d * 2.2))
   });
 }
 
@@ -1600,6 +1633,23 @@ function scene8(t) {
   /* and then the heat, which belongs to neither of them */
   const bloom = (t - 23.75) / 2.4;
   if (bloom >= 0 && bloom <= 1) flash(mark[0], mark[1], 300, bloom, 0.19);
+
+  /* She does not come apart along a dotted line. The two stations tear
+     first — a hot cut at each, and the plating off them thrown clear
+     before the masses have moved anywhere. */
+  const still = place({ x: FIELD.foeX, y: FIELD.foeY, z: FIELD.foeZ, yaw: 2.66, roll: -0.10 });
+  for (let c = 0; c < 2; c++) {
+    const sp = shoalSpine(c ? 8 / 12 : 4 / 12);
+    const cut = cam.project(still([sp[0], sp[1], 0]));
+    const cage = (t - 23.86 - c * 0.05) / 0.75;
+    if (cage >= 0 && cage <= 1) flash(cut[0], cut[1], 168, cage, c ? 0.71 : 0.33);
+    const Rc = RNG(4100 + c * 17);
+    for (let i = 0; i < 26; i++) {
+      const a = Rc() * TAU, s2 = 150 + Rc() * 400, sz = 2 + Rc() * 7;
+      if (t < 23.86) break;
+      debris(cut[0], cut[1], cos(a) * s2, sin(a) * s2 * 0.7, t - 23.86, i + 200 + c * 40, sz, INK);
+    }
+  }
   const R = RNG(2301);
   for (let i = 0; i < 52; i++) {
     if (t < 23.85) break;
