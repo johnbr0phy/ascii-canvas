@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>02 — Umbrella Argument</title>
+<style>
+  html,body{margin:0;height:100%;background:#1a1612;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  canvas{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+/* 02-umbrella-argument — ~11s seamless loop
+   Two umbrellas arguing in the rain — relationship comedy, Gill warmth.
+   Fable dual: wet canvas rain scene ↔ slate 'argument diagram'. Magenta heat accent.
+   Hard cuts / revealing lens. NOT: catalogue motifs, Claude green, orbital navy. */
+(function () {
+  const W = 1080, H = 1080, DUR = 11;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  const P = {
+    cream: '#f1fafa', mist: '#d1d3cd', peach: '#F4BB8E',
+    magenta: '#D13478', fuchsia: '#E91E63', gold: '#DAA520',
+    turquoise: '#00CED1', teal: '#008080', navy: '#002B5B',
+    ink: '#2B2B2B', slate: '#1A1A1A', rain: '#47e5df',
+    coral: '#ed4204', pale: '#F9E4D4'
+  };
+
+  function R(seed) {
+    let s = seed | 0;
+    return () => { s = (s * 1664525 + 1013904223) | 0; return (s >>> 0) / 4294967296; };
+  }
+  function mix(a, b, t) {
+    const p = (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+    const A = p(a), B = p(b);
+    const r = (A[0]+(B[0]-A[0])*t)|0, g = (A[1]+(B[1]-A[1])*t)|0, bl = (A[2]+(B[2]-A[2])*t)|0;
+    return '#' + [r,g,bl].map(x => ('0'+Math.max(0,Math.min(255,x)).toString(16)).slice(-2)).join('');
+  }
+
+  function bristle(c, x0,y0,x1,y1, w, col, rng, opts) {
+    opts = opts || {};
+    const n = opts.bristles || 5;
+    const a0 = opts.alpha != null ? opts.alpha : 0.85;
+    for (let i = 0; i < n; i++) {
+      const o = (i - (n-1)/2) * (w / n) * 0.9;
+      const ang = Math.atan2(y1-y0, x1-x0) + Math.PI/2;
+      const ox = Math.cos(ang)*o + (rng()-0.5)*1.2;
+      const oy = Math.sin(ang)*o + (rng()-0.5)*1.2;
+      c.beginPath();
+      c.moveTo(x0+ox, y0+oy);
+      const mx = (x0+x1)/2 + (rng()-0.5)*w*0.3;
+      const my = (y0+y1)/2 + (rng()-0.5)*w*0.3;
+      c.quadraticCurveTo(mx, my, x1+ox*0.6, y1+oy*0.6);
+      c.strokeStyle = col;
+      c.globalAlpha = a0 * (0.55 + rng()*0.45);
+      c.lineWidth = Math.max(1.2, w/n * (0.7 + rng()*0.6));
+      c.lineCap = 'round';
+      c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+
+  function wetCanvas(c, t) {
+    const rng = R(19);
+    // pale active ground — rain air
+    c.fillStyle = mix(P.cream, P.turquoise, 0.12);
+    c.fillRect(0,0,W,H);
+    for (let i = 0; i < 80; i++) {
+      const x = rng()*W, y = rng()*H;
+      bristle(c, x, y, x+Math.cos(-0.4)* (40+rng()*100), y+Math.sin(-0.4)*(40+rng()*100),
+        5+rng()*14, mix(P.cream, rng()<0.5?P.mist:P.rain, rng()*0.4), rng, {bristles:3, alpha:0.18});
+    }
+    // rain streaks — vertical tempo
+    for (let i = 0; i < 55; i++) {
+      const x = (rng()*W + t*40*(0.5+rng())) % W;
+      const y0 = (rng()*H + t*180) % (H+40) - 20;
+      bristle(c, x, y0, x+2, y0+30+rng()*50, 1.5, mix(P.teal, P.navy, 0.3), R(i+3), {bristles:1, alpha:0.28});
+    }
+    // puddle band at bottom
+    c.beginPath();
+    c.ellipse(W/2, H-60, 420, 50, 0, 0, Math.PI*2);
+    c.fillStyle = mix(P.turquoise, P.navy, 0.45);
+    c.globalAlpha = 0.35;
+    c.fill();
+    c.globalAlpha = 1;
+  }
+
+  function slateDiagram(c) {
+    const rng = R(61);
+    c.fillStyle = P.slate;
+    c.fillRect(0,0,W,H);
+    for (let i = 0; i < 40; i++) {
+      bristle(c, rng()*W, rng()*H, rng()*W, rng()*H, 3+rng()*8,
+        mix(P.slate, P.navy, rng()), rng, {bristles:2, alpha:0.2});
+    }
+  }
+
+  function umbrella(c, cx, cy, lean, col, t, mood) {
+    // mood: -1 sulky, 1 jabbing
+    const tipY = cy - 160 + Math.sin(t*3+mood)*6;
+    const canopyR = 110;
+    const leanX = lean * 40 + mood * 12 * Math.sin(t*5);
+    // shaft
+    bristle(c, cx, cy+80, cx+leanX*0.3, tipY+20, 5, P.ink, R(Math.abs(lean*10+3)|0), {bristles:3, alpha:0.9});
+    // canopy — half-circle scallops
+    c.beginPath();
+    c.moveTo(cx+leanX - canopyR, tipY+30);
+    c.quadraticCurveTo(cx+leanX, tipY-70 + mood*8, cx+leanX + canopyR, tipY+30);
+    c.quadraticCurveTo(cx+leanX + canopyR*0.5, tipY+50, cx+leanX, tipY+40);
+    c.quadraticCurveTo(cx+leanX - canopyR*0.5, tipY+50, cx+leanX - canopyR, tipY+30);
+    c.closePath();
+    c.fillStyle = col;
+    c.globalAlpha = 0.92;
+    c.fill();
+    c.globalAlpha = 1;
+    // impasto bristle over canopy
+    const rng = R(70 + (lean>0?1:0));
+    for (let i = 0; i < 14; i++) {
+      const u = i/14;
+      const x0 = cx+leanX - canopyR + u*canopyR*2;
+      bristle(c, x0, tipY+20, x0+(rng()-0.5)*20, tipY-20+rng()*30,
+        4+rng()*6, mix(col, P.ink, rng()*0.2), rng, {bristles:3, alpha:0.35});
+    }
+    // thick outline
+    c.beginPath();
+    c.moveTo(cx+leanX - canopyR, tipY+30);
+    c.quadraticCurveTo(cx+leanX, tipY-70 + mood*8, cx+leanX + canopyR, tipY+30);
+    c.strokeStyle = P.ink;
+    c.lineWidth = 6;
+    c.stroke();
+    // ribs
+    for (let i = -2; i <= 2; i++) {
+      bristle(c, cx+leanX, tipY+35, cx+leanX + i*38, tipY-20, 2, mix(P.ink, col, 0.3), R(80+i), {bristles:1, alpha:0.5});
+    }
+    // handle crook
+    c.beginPath();
+    c.arc(cx - 18, cy+95, 22, 0.2, Math.PI*1.1);
+    c.strokeStyle = P.ink;
+    c.lineWidth = 7;
+    c.lineCap = 'round';
+    c.stroke();
+    // speech jab — little magenta spark when arguing
+    if (mood > 0.3) {
+      const sx = cx+leanX + (lean>0?70:-70);
+      const sy = tipY - 40;
+      for (let k = 0; k < 4; k++) {
+        const a = -Math.PI/2 + k*0.4 - 0.6;
+        bristle(c, sx, sy, sx+Math.cos(a)*28, sy+Math.sin(a)*28, 3, P.magenta, R(90+k), {bristles:2, alpha:0.7});
+      }
+    }
+  }
+
+  function drawRainScene(c, t) {
+    wetCanvas(c, t);
+    // left umbrella — coral/warm, leaning in
+    const moodL = Math.sin(t*2.2);
+    const moodR = Math.sin(t*2.2 + Math.PI);
+    umbrella(c, W*0.36, H*0.58, -0.6, mix(P.coral, P.gold, 0.25), t, moodL);
+    // right umbrella — turquoise cool, leaning in
+    umbrella(c, W*0.64, H*0.58, 0.6, mix(P.turquoise, P.teal, 0.3), t, moodR);
+    // magenta heat accent — the quarrel itself as a floating blob between them
+    const qx = W*0.5 + Math.sin(t*4)*8;
+    const qy = H*0.38 + Math.cos(t*3)*6;
+    c.beginPath();
+    c.ellipse(qx, qy, 28+Math.abs(moodL)*10, 18, Math.sin(t)*0.3, 0, Math.PI*2);
+    c.fillStyle = P.magenta;
+    c.globalAlpha = 0.55 + 0.2*Math.abs(moodL);
+    c.fill();
+    c.globalAlpha = 1;
+    // charcoal outline on quarrel blob
+    c.strokeStyle = P.ink;
+    c.lineWidth = 4;
+    c.stroke();
+    // drip kept on purpose from canopy tips
+    bristle(c, W*0.36-40, H*0.42, W*0.36-38, H*0.42+40+Math.sin(t*5)*10, 3, mix(P.navy, P.cream, 0.4), R(2), {bristles:2, alpha:0.4});
+    bristle(c, W*0.64+40, H*0.42, W*0.64+42, H*0.42+50+Math.cos(t*5)*10, 3, mix(P.navy, P.cream, 0.4), R(4), {bristles:2, alpha:0.4});
+  }
+
+  function drawArgumentDiagram(c, t) {
+    slateDiagram(c);
+    // two nodes
+    const L = {x: W*0.32, y: H*0.5};
+    const Rt = {x: W*0.68, y: H*0.5};
+    // chaos lines then snap to grid arrows
+    const snap = Math.min(1, Math.max(0, (Math.sin(t*1.5)+1)*0.5));
+    const rng = R(33);
+    if (snap < 0.55) {
+      // chaos scribble between them
+      for (let i = 0; i < 12; i++) {
+        bristle(c, L.x+(rng()-0.5)*40, L.y+(rng()-0.5)*80,
+          Rt.x+(rng()-0.5)*40, Rt.y+(rng()-0.5)*80,
+          2, mix(P.magenta, P.gold, rng()), rng, {bristles:2, alpha:0.4});
+      }
+    } else {
+      // ordered double arrow + labels as dashes
+      c.strokeStyle = P.magenta;
+      c.lineWidth = 4;
+      c.globalAlpha = 0.85;
+      c.beginPath();
+      c.moveTo(L.x+50, L.y-20); c.lineTo(Rt.x-50, Rt.y-20); c.stroke();
+      c.beginPath();
+      c.moveTo(Rt.x-50, Rt.y+20); c.lineTo(L.x+50, L.y+20); c.stroke();
+      c.globalAlpha = 1;
+      // arrow heads
+      bristle(c, Rt.x-50, Rt.y-20, Rt.x-70, Rt.y-35, 3, P.magenta, R(1), {bristles:2, alpha:0.9});
+      bristle(c, L.x+50, L.y+20, L.x+70, L.y+35, 3, P.magenta, R(2), {bristles:2, alpha:0.9});
+    }
+    // umbrella icons as simple canopies on slate
+    function mini(cx, cy, col) {
+      c.beginPath();
+      c.moveTo(cx-55, cy);
+      c.quadraticCurveTo(cx, cy-55, cx+55, cy);
+      c.fillStyle = col;
+      c.fill();
+      c.strokeStyle = mix(P.cream, P.gold, 0.2);
+      c.lineWidth = 3;
+      c.stroke();
+      bristle(c, cx, cy, cx, cy+70, 3, P.cream, R(cx|0), {bristles:2, alpha:0.8});
+    }
+    mini(L.x, L.y-30, mix(P.coral, P.gold, 0.2));
+    mini(Rt.x, Rt.y-30, mix(P.turquoise, P.teal, 0.25));
+    // heat accent orb
+    c.beginPath();
+    c.arc(W*0.5, H*0.28, 18, 0, Math.PI*2);
+    c.fillStyle = P.magenta;
+    c.fill();
+    // tally marks — "rounds" of the argument
+    for (let i = 0; i < 5; i++) {
+      const x = 120 + i*28;
+      bristle(c, x, H-140, x+2, H-100, 2, P.gold, R(200+i), {bristles:1, alpha:0.7});
+    }
+    bristle(c, 120, H-120, 250, H-90, 2, P.magenta, R(210), {bristles:1, alpha:0.5});
+  }
+
+  function revealingLens(c, cx, cy, r, drawInside) {
+    c.save();
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI*2);
+    c.clip();
+    drawInside();
+    c.restore();
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI*2);
+    c.strokeStyle = P.ink;
+    c.lineWidth = 8;
+    c.stroke();
+    c.beginPath();
+    c.arc(cx, cy, r+5, 0, Math.PI*2);
+    c.strokeStyle = P.magenta;
+    c.lineWidth = 3;
+    c.globalAlpha = 0.6;
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+
+  function draw(t) {
+    const u = ((t % DUR) + DUR) % DUR;
+    // 0-3.5 wet canvas argue, 3.5-4.8 lens to slate diagram, 4.8-8 slate, 8-9 hard paint-over, 9-11 canvas
+    if (u < 3.5) {
+      drawRainScene(ctx, u);
+    } else if (u < 4.8) {
+      drawRainScene(ctx, u);
+      const p = (u - 3.5) / 1.3;
+      revealingLens(ctx, W*0.5, H*0.48, 50 + p*480, () => drawArgumentDiagram(ctx, u));
+    } else if (u < 8.0) {
+      drawArgumentDiagram(ctx, u);
+    } else if (u < 9.2) {
+      drawArgumentDiagram(ctx, u);
+      const p = (u - 8.0) / 1.2;
+      // hard radial paint-over (not dissolve)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(W*0.5, H*0.5, p * 780, 0, Math.PI*2);
+      ctx.clip();
+      drawRainScene(ctx, u);
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(W*0.5, H*0.5, p * 780, 0, Math.PI*2);
+      ctx.strokeStyle = mix(P.cream, P.magenta, 0.3);
+      ctx.lineWidth = 12;
+      ctx.globalAlpha = 0.5;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    } else {
+      drawRainScene(ctx, u);
+    }
+  }
+
+  window.draw = draw;
+  let t0 = null;
+  function frame(now) {
+    if (t0 == null) t0 = now;
+    draw((now - t0) / 1000);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

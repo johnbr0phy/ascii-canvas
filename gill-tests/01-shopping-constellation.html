@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>01 — Shopping Constellation</title>
+<style>
+  html,body{margin:0;height:100%;background:#1a1612;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  canvas{width:min(100vw,100vh);height:min(100vw,100vh);display:block}
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+/* 01-shopping-constellation — ~10s seamless loop
+   Lost shopping list → night-sky grocery map.
+   Gill: cream paper ground, cadmium heat accent, charcoal outlines, bristle wash.
+   Dual: organic paper → slate star chart (Kevin toggle, Gill hexes). Hard cuts / paint-over.
+   NOT: pots, tulips, dogs, orbital navy, Claude green. */
+(function () {
+  const W = 1080, H = 1080, DUR = 10;
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  const P = {
+    cream: '#F5F0E6', paper: '#E9E5E2', peach: '#F4BB8E',
+    cadmium: '#E34F0C', vermilion: '#C8102E', gold: '#F3B616',
+    turquoise: '#00B7EB', navy: '#0a3a59', ink: '#1A1A1A',
+    mist: '#ded4d7', slate: '#211919', milk: '#f8f1e0'
+  };
+
+  const ITEMS = [
+    {label:'milk', x:0.28, y:0.32},
+    {label:'eggs', x:0.62, y:0.28},
+    {label:'butter', x:0.72, y:0.52},
+    {label:'bread', x:0.38, y:0.58},
+    {label:'tea', x:0.52, y:0.42},
+    {label:'jam', x:0.22, y:0.68},
+    {label:'soap', x:0.78, y:0.72}
+  ];
+
+  function R(seed) {
+    let s = seed | 0;
+    return () => { s = (s * 1664525 + 1013904223) | 0; return (s >>> 0) / 4294967296; };
+  }
+  function mix(a, b, t) {
+    const p = (h) => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+    const A = p(a), B = p(b);
+    const r = (A[0]+(B[0]-A[0])*t)|0, g = (A[1]+(B[1]-A[1])*t)|0, bl = (A[2]+(B[2]-A[2])*t)|0;
+    return '#' + [r,g,bl].map(x => ('0'+Math.max(0,Math.min(255,x)).toString(16)).slice(-2)).join('');
+  }
+
+  function bristle(c, x0,y0,x1,y1, w, col, rng, opts) {
+    opts = opts || {};
+    const n = opts.bristles || 5;
+    const a0 = opts.alpha != null ? opts.alpha : 0.85;
+    for (let i = 0; i < n; i++) {
+      const o = (i - (n-1)/2) * (w / n) * 0.9;
+      const ang = Math.atan2(y1-y0, x1-x0) + Math.PI/2;
+      const ox = Math.cos(ang)*o + (rng()-0.5)*1.2;
+      const oy = Math.sin(ang)*o + (rng()-0.5)*1.2;
+      c.beginPath();
+      c.moveTo(x0+ox, y0+oy);
+      const mx = (x0+x1)/2 + (rng()-0.5)*w*0.3;
+      const my = (y0+y1)/2 + (rng()-0.5)*w*0.3;
+      c.quadraticCurveTo(mx, my, x1+ox*0.6, y1+oy*0.6);
+      c.strokeStyle = col;
+      c.globalAlpha = a0 * (0.55 + rng()*0.45);
+      c.lineWidth = Math.max(1.2, w/n * (0.7 + rng()*0.6));
+      c.lineCap = 'round';
+      c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+
+  function paperGround(c) {
+    const rng = R(41);
+    c.fillStyle = P.cream;
+    c.fillRect(0,0,W,H);
+    for (let i = 0; i < 70; i++) {
+      const x = rng()*W, y = rng()*H;
+      const len = 30 + rng()*160;
+      const a = -0.3 + rng()*0.6;
+      bristle(c, x, y, x+Math.cos(a)*len, y+Math.sin(a)*len,
+        6+rng()*18, mix(P.cream, rng()<0.4?P.peach:P.mist, rng()*0.5), rng, {bristles:3, alpha:0.2});
+    }
+    // crumpled fold lines
+    for (let i = 0; i < 5; i++) {
+      const y = 180 + i*160 + (rng()-0.5)*30;
+      bristle(c, 80, y, W-80, y+(rng()-0.5)*40, 2, mix(P.ink, P.mist, 0.7), rng, {bristles:2, alpha:0.12});
+    }
+  }
+
+  function slateGround(c) {
+    const rng = R(88);
+    c.fillStyle = P.slate;
+    c.fillRect(0,0,W,H);
+    for (let i = 0; i < 50; i++) {
+      const x = rng()*W, y = rng()*H;
+      bristle(c, x, y, x+(rng()-0.5)*80, y+(rng()-0.5)*80,
+        4+rng()*10, mix(P.slate, P.navy, rng()*0.5), rng, {bristles:3, alpha:0.25});
+    }
+    // faint grid — chaos→order
+    c.strokeStyle = mix(P.navy, P.turquoise, 0.2);
+    c.globalAlpha = 0.18;
+    c.lineWidth = 1.5;
+    for (let i = 1; i < 8; i++) {
+      c.beginPath(); c.moveTo(i*W/8, 40); c.lineTo(i*W/8, H-40); c.stroke();
+      c.beginPath(); c.moveTo(40, i*H/8); c.lineTo(W-40, i*H/8); c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+
+  function drawList(c, t, inkOnly) {
+    const rng = R(12);
+    const cx = W*0.5, cy = H*0.52;
+    const wob = Math.sin(t*0.8)*4;
+    // paper scrap silhouette
+    if (!inkOnly) {
+      c.beginPath();
+      c.moveTo(cx-220+wob, cy-320);
+      c.lineTo(cx+200, cy-300+(rng()*8));
+      c.lineTo(cx+230-wob, cy+280);
+      c.lineTo(cx-240, cy+300);
+      c.closePath();
+      c.fillStyle = mix(P.milk, P.peach, 0.15);
+      c.fill();
+      // charcoal outline wobble
+      c.strokeStyle = P.ink;
+      c.lineWidth = 7;
+      c.globalAlpha = 0.85;
+      c.stroke();
+      c.globalAlpha = 1;
+      // cadmium corner stain — one heat accent
+      c.beginPath();
+      c.arc(cx-180, cy-260, 28, 0, Math.PI*2);
+      c.fillStyle = P.cadmium;
+      c.globalAlpha = 0.55;
+      c.fill();
+      c.globalAlpha = 1;
+    }
+    // handwritten lines as grocery words (path strokes, not fonts)
+    ITEMS.forEach((it, i) => {
+      const lx = cx - 160 + (i%2)*20;
+      const ly = cy - 220 + i*72;
+      // tick / dash
+      bristle(c, lx-40, ly+8, lx-12, ly+4, 3, P.ink, R(100+i), {bristles:2, alpha:0.7});
+      // word as scribbled zigzag approximating letters
+      const wordW = 40 + it.label.length * 18;
+      bristle(c, lx, ly, lx+wordW, ly+(rng()-0.5)*6, 3.5, P.ink, R(200+i), {bristles:2, alpha:0.75});
+      // second pass thicker mid stroke
+      bristle(c, lx+10, ly+6, lx+wordW*0.7, ly+4, 2.5, mix(P.ink, P.vermilion, 0.15), R(300+i), {bristles:2, alpha:0.4});
+      // little item dots as future stars
+      c.beginPath();
+      c.arc(lx + wordW + 30, ly+4, 5+rng()*3, 0, Math.PI*2);
+      c.fillStyle = inkOnly ? P.gold : mix(P.cadmium, P.gold, 0.4);
+      c.globalAlpha = 0.9;
+      c.fill();
+      c.globalAlpha = 1;
+    });
+    // title scribble "SHOPPING" — grocery humour
+    bristle(c, cx-100, cy-350, cx+120, cy-345, 5, P.cadmium, R(7), {bristles:3, alpha:0.8});
+  }
+
+  function drawConstellation(c, t) {
+    const rng = R(55);
+    // connecting lines first (slate diagram)
+    c.strokeStyle = mix(P.gold, P.cadmium, 0.5);
+    c.globalAlpha = 0.55;
+    c.lineWidth = 2.5;
+    c.setLineDash([6, 10]);
+    c.beginPath();
+    ITEMS.forEach((it, i) => {
+      const x = it.x*W, y = it.y*H;
+      if (i===0) c.moveTo(x,y); else c.lineTo(x,y);
+    });
+    c.stroke();
+    c.setLineDash([]);
+    c.globalAlpha = 1;
+    // stars = groceries
+    ITEMS.forEach((it, i) => {
+      const x = it.x*W + Math.sin(t*2+i)*3;
+      const y = it.y*H + Math.cos(t*1.7+i)*2;
+      const tw = 0.7 + 0.3*Math.sin(t*4+i*1.3);
+      // cadmium heat star
+      for (let k = 0; k < 6; k++) {
+        const ang = (k/6)*Math.PI*2 + t*0.2;
+        const r = 10 + k*2;
+        bristle(c, x, y, x+Math.cos(ang)*r*tw, y+Math.sin(ang)*r*tw,
+          2.5, mix(P.cadmium, P.gold, k/6), R(400+i*10+k), {bristles:2, alpha:0.7});
+      }
+      c.beginPath();
+      c.arc(x, y, 7*tw, 0, Math.PI*2);
+      c.fillStyle = P.gold;
+      c.fill();
+      // tiny label tick marks (not webfont — glyph dashes)
+      const lab = it.label;
+      bristle(c, x+14, y-8, x+14+lab.length*7, y-10, 1.8, mix(P.milk, P.gold, 0.3), R(500+i), {bristles:1, alpha:0.65});
+    });
+    // corner heat accent — reserved cadmium
+    c.beginPath();
+    c.arc(W-90, 90, 22, 0, Math.PI*2);
+    c.fillStyle = P.cadmium;
+    c.globalAlpha = 0.85;
+    c.fill();
+    c.globalAlpha = 1;
+  }
+
+  function revealingLens(c, cx, cy, r, drawInside) {
+    c.save();
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI*2);
+    c.clip();
+    drawInside();
+    c.restore();
+    // lens rim — charcoal wobble
+    c.beginPath();
+    c.arc(cx, cy, r, 0, Math.PI*2);
+    c.strokeStyle = P.ink;
+    c.lineWidth = 8;
+    c.globalAlpha = 0.7;
+    c.stroke();
+    c.globalAlpha = 1;
+    c.beginPath();
+    c.arc(cx, cy, r+6, 0, Math.PI*2);
+    c.strokeStyle = P.cadmium;
+    c.lineWidth = 3;
+    c.globalAlpha = 0.5;
+    c.stroke();
+    c.globalAlpha = 1;
+  }
+
+  function draw(t) {
+    const u = ((t % DUR) + DUR) % DUR;
+    // phases: 0-3 paper list, 3-4 lens opens slate, 4-7.5 constellation, 7.5-8.5 paint-over back, 8.5-10 list again
+    if (u < 3.0) {
+      paperGround(ctx);
+      drawList(ctx, u, false);
+    } else if (u < 4.2) {
+      paperGround(ctx);
+      drawList(ctx, u, false);
+      const p = (u - 3.0) / 1.2;
+      const r = 40 + p * 520;
+      revealingLens(ctx, W*0.5, H*0.48, r, () => {
+        slateGround(ctx);
+        drawConstellation(ctx, u);
+      });
+    } else if (u < 7.5) {
+      slateGround(ctx);
+      drawConstellation(ctx, u);
+      // hard paint-over flash of list ghosts at mid
+      if (u > 5.5 && u < 5.75) {
+        ctx.globalAlpha = 0.35;
+        drawList(ctx, u, true);
+        ctx.globalAlpha = 1;
+      }
+    } else if (u < 8.6) {
+      // hard cut paint-over: scrub cream over slate
+      slateGround(ctx);
+      drawConstellation(ctx, u);
+      const p = (u - 7.5) / 1.1;
+      const wipe = p * (H + 80);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, wipe);
+      ctx.clip();
+      paperGround(ctx);
+      drawList(ctx, u, false);
+      ctx.restore();
+      // scrape edge
+      bristle(ctx, 0, wipe, W, wipe-8, 14, mix(P.cream, P.ink, 0.2), R(9), {bristles:6, alpha:0.5});
+    } else {
+      paperGround(ctx);
+      drawList(ctx, u, false);
+    }
+  }
+
+  window.draw = draw;
+  let t0 = null;
+  function frame(now) {
+    if (t0 == null) t0 = now;
+    draw((now - t0) / 1000);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
