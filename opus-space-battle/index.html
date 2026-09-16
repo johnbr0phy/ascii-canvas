@@ -1196,7 +1196,9 @@ function scene2(t) {
   /* ISO chain centre line through the elevation */
   stroke([[U * 0.055, H * 0.43], [W - U * 0.055, H * 0.43]], { color: DIM, w: 1.0, dash: CHAIN, alpha: 0.8, seed: 600 });
 
-  drawShip(HERO, xf, cam, { color: INK, hatch: true, reveal: smooth(u / 0.36), hatchAlpha: 0.8 });
+  /* The cut lands on a drawing, not on an empty sheet: the masses are
+     already down and it is the fittings that arrive, back to front. */
+  drawShip(HERO, xf, cam, { color: INK, hatch: true, reveal: 0.42 + 0.58 * smooth(u / 0.30), hatchAlpha: 0.8 });
 
   /* the launch: her screen goes out from the ventral hangar in the
      last second, which is the only thing that moves in this shot */
