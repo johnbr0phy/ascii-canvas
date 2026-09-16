@@ -1,0 +1,1823 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>opus space battle</title>
+<style>
+  html,body{margin:0;height:100%;background:#131110;overflow:hidden}
+  body{display:grid;place-items:center}
+  canvas{display:block;width:min(100vw,100vh);height:min(100vw,100vh)}
+</style>
+<canvas id="c" width="1080" height="1080"></canvas>
+<script>
+/* opus space battle
+   ------------------------------------------------------------------
+   One file. No build, no npm, no library, no image, no webfont. Every
+   mark on the sheet is a path this file computed.
+
+   The whole piece is a pure function of time: draw(t), t in seconds
+   from start, 30 s, loops. Nothing is integrated frame to frame, so
+   the frame at t and the frame at t+30 are the same drawing and the
+   seam is not a seam. Scrub it, capture it, skip into the middle of
+   it — it comes out the same either way.
+
+   Style is answerable to STYLE.md, which is answerable to the repos.
+   The eight hard rules, short: two colourways and a hard cut between
+   them; twelve drawings a second; boil the ink and not the ship;
+   chrome is a drafting sheet and never a UI; fire is heat and not a
+   team colour; capitals hold range and the heavy gun telegraphs;
+   shade by hatching and texture by paper; one file.
+*/
+(() => {
+"use strict";
+
+/* ===================== 1. sheet ===================== */
+
+const W = 1080, H = 1080, U = 1080;
+const C = document.getElementById("c");
+const X = C.getContext("2d", { alpha: false });
+X.lineCap = "round";
+X.lineJoin = "round";
+
+const FONT = '"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
+
+/* ===================== 2. maths ===================== */
+
+const TAU = Math.PI * 2, PI = Math.PI;
+const cos = Math.cos, sin = Math.sin, hyp = Math.hypot, abs = Math.abs;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, u) => a + (b - a) * u;
+const smooth = u => { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); };
+
+/* His three easings, and his reasons for them. Nothing here is a
+   cubic-bezier: a body accelerating out of a pose is a sine, and a
+   pose that holds is a sine with the middle squared out of it. */
+const swing = x => sin(x * TAU);
+const holdSin = (x, p = 0.45) => { const s = sin(x * TAU); return (s < 0 ? -1 : 1) * Math.pow(abs(s), p); };
+
+function ih(a, b, c) {
+  let n = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263) ^ Math.imul(c | 0, 2147483647);
+  n = Math.imul(n ^ (n >>> 13), 1274126177);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+function vn(x, y, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = ih(xi, yi, s), b = ih(xi + 1, yi, s), c = ih(xi, yi + 1, s), d = ih(xi + 1, yi + 1, s);
+  return lerp(lerp(a, b, u), lerp(c, d, u), v);
+}
+function RNG(seed) {
+  let s = (seed >>> 0) || 1;
+  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+function norm(a) { const l = hyp(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
+
+/* ===================== 3. palette ===================== */
+
+/* Five hues and two grounds, and that is the whole range. The warm
+   pair and the cold pair are lifted unchanged from the block that
+   opens orbital-yard, mech-yard and moonbase; the fire ramp is the
+   flash shader out of armada-war.html. */
+const PAL = {
+  paper: "#E4DFD5", ink: "#17120E", rule: "#C7BFB2", dim: "#6E665C",
+  plate: "#0E2E52", plateInk: "#D9E6F2", plateDim: "#6E88A6",
+  hero: "#85C794", foe: "#C7756B",           /* everyday fire */
+  heroHot: "#73FF99", foeHot: "#FF5242",     /* the lance keeps the full voltage */
+  emberA: "#FFF7E0", emberB: "#FF7329",      /* heat, never a team colour */
+  alarm: "#F0450E", alarmInk: "#150F0B"
+};
+
+function hex(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function mix(a, b, u) {
+  const A = hex(a), B = hex(b);
+  return "rgb(" + Math.round(lerp(A[0], B[0], u)) + "," + Math.round(lerp(A[1], B[1], u)) + "," + Math.round(lerp(A[2], B[2], u)) + ")";
+}
+let MODE = "cold";      /* "warm" | "cold" | "alarm" */
+let GROUND = PAL.plate;
+let INK = PAL.plateInk;
+let DIM = PAL.plateDim;
+let WASH = PAL.paper;
+let BOIL = 0;           /* the noise field the nib wanders through, shifted once per drawn frame */
+
+function setMode(m) {
+  MODE = m;
+  if (m === "warm") { GROUND = PAL.paper; INK = PAL.ink; DIM = PAL.dim; WASH = mix(PAL.paper, PAL.ink, 0.055); }
+  else if (m === "alarm") { GROUND = PAL.alarm; INK = PAL.alarmInk; DIM = PAL.alarmInk; WASH = mix(PAL.alarm, PAL.alarmInk, 0.10); }
+  else { GROUND = PAL.plate; INK = PAL.plateInk; DIM = PAL.plateDim; WASH = PAL.plate; }
+}
+const warm = () => MODE !== "cold";
+
+/* ===================== 4. paper ===================== */
+
+/* Cartridge paper is not a flat tone: big soft blooms, then fibre
+   lying in the sheet, then tooth. Three sheets are made at load and
+   the drawing takes a different one each frame — the second drawing
+   is a second drawing, which is the whole of why a flipbook lives. */
+function makePaper(seed, base) {
+  const cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const c = cv.getContext("2d");
+  const rng = RNG(seed);
+  c.fillStyle = base; c.fillRect(0, 0, W, H);
+  for (let i = 0; i < 26; i++) {
+    c.fillStyle = rng() < 0.5 ? "rgba(92,78,52,0.010)" : "rgba(255,252,244,0.016)";
+    c.beginPath();
+    c.ellipse(rng() * (W + 80) - 40, rng() * (H + 80) - 40, 60 + rng() * 240, 40 + rng() * 170, rng() * 6, 0, TAU);
+    c.fill();
+  }
+  for (let i = 0; i < 2600; i++) {
+    const a = rng() * TAU, len = 4 + rng() * 26, x = rng() * W, y = rng() * H;
+    c.strokeStyle = rng() < 0.55 ? "rgba(74,60,40,0.075)" : "rgba(255,253,246,0.11)";
+    c.lineWidth = 0.4 + rng() * 0.6;
+    c.beginPath(); c.moveTo(x, y);
+    c.quadraticCurveTo(x + cos(a) * len * 0.5 + rng() * 4 - 2, y + sin(a) * len * 0.5 + rng() * 4 - 2, x + cos(a) * len, y + sin(a) * len);
+    c.stroke();
+  }
+  for (let i = 0; i < 9000; i++) {
+    c.fillStyle = rng() < 0.6 ? "rgba(48,36,22,0.055)" : "rgba(255,255,255,0.065)";
+    c.fillRect(rng() * W, rng() * H, 0.4 + rng() * 1.3, 0.3 + rng() * 0.9);
+  }
+  for (let i = 0; i < 70; i++) {
+    c.fillStyle = "rgba(58,44,28,0.10)";
+    c.beginPath();
+    c.ellipse(rng() * W, rng() * H, 0.6 + rng() * 1.5, 0.4 + rng() * 1.0, rng() * 6, 0, TAU);
+    c.fill();
+  }
+  return cv;
+}
+const SHEETS = { warm: null, alarm: null };
+
+/* The plate is not paper. It is a wet blueprint: a flat ground with
+   the odd bloom where the wash pooled. */
+function layPlate(sheet) {
+  X.fillStyle = GROUND; X.fillRect(0, 0, W, H);
+  X.save();
+  for (let i = 0; i < 14; i++) {
+    const r1 = ih(i, sheet, 11), r2 = ih(i, sheet, 23), r3 = ih(i, sheet, 31);
+    X.globalAlpha = 0.010 + r3 * 0.012;
+    X.fillStyle = r1 < 0.5 ? "#FFFFFF" : "#000000";
+    X.beginPath();
+    X.ellipse(r1 * W, r2 * H, 70 + r3 * 260, 50 + r1 * 180, r2 * 6, 0, TAU);
+    X.fill();
+  }
+  X.globalAlpha = 0.05;
+  X.fillStyle = "#FFFFFF";
+  for (let i = 0; i < 900; i++) X.fillRect(ih(i, sheet, 7) * W, ih(i, sheet, 9) * H, 1, 1);
+  X.restore();
+}
+
+/* The ground does not boil. A new shot is a new sheet — the ink is
+   redrawn twelve times a second on the same piece of paper, and paper
+   that rearranged its own fibres under a still drawing would be the
+   loudest tell on the page. */
+function lay(sheet) {
+  if (MODE === "cold") { layPlate(sheet); return; }
+  const set = SHEETS[MODE === "alarm" ? "alarm" : "warm"];
+  X.drawImage(set[sheet % set.length], 0, 0);
+}
+
+/* ===================== 5. the ink ===================== */
+
+/* One entry point for every mark. Warm mode runs a dry nib: a filled
+   variable-width ribbon with pressure running along it, pooling where
+   it lands and lifting on the way out. Cold mode runs a fineliner:
+   one dead-even width, no swell, no blot.
+
+   Both wander through the same noise field and the field is shifted
+   once per drawn frame, so the ink is redrawn rather than replayed
+   while every structural decision about the ship stays exactly where
+   it was. The boil is in the ink. It is never in the geometry. */
+
+function resample(pts, step) {
+  const out = [pts[0].slice(0, 2)];
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    let ax = pts[i - 1][0], ay = pts[i - 1][1];
+    const bx = pts[i][0], by = pts[i][1];
+    let seg = hyp(bx - ax, by - ay);
+    let guard = 0;
+    while (seg > 1e-6 && acc + seg >= step && guard++ < 4000) {
+      const u = (step - acc) / seg;
+      ax += (bx - ax) * u; ay += (by - ay) * u;
+      out.push([ax, ay]);
+      seg = hyp(bx - ax, by - ay); acc = 0;
+    }
+    acc += seg;
+  }
+  const L = pts[pts.length - 1], O = out[out.length - 1];
+  if (hyp(L[0] - O[0], L[1] - O[1]) > step * 0.3) out.push([L[0], L[1]]);
+  return out;
+}
+
+function wander(P, amp, seed) {
+  const n = P.length;
+  if (n < 2 || amp <= 0) return P;
+  const Q = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const a = P[Math.max(0, i - 1)], b = P[Math.min(n - 1, i + 1)];
+    let dx = b[0] - a[0], dy = b[1] - a[1];
+    const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+    const w = (vn(i * 0.33, seed * 0.017, seed) - 0.5) * 2 * amp;
+    Q[i] = [P[i][0] - dy * w, P[i][1] + dx * w];
+  }
+  return Q;
+}
+
+const _wid = new Map();
+function charW(ch, size, weight) {
+  const k = ch + "|" + size + "|" + weight;
+  let v = _wid.get(k);
+  if (v === undefined) { X.font = weight + " " + size + "px " + FONT; v = X.measureText(ch).width; _wid.set(k, v); }
+  return v;
+}
+
+function stroke(pts, o) {
+  o = o || {};
+  if (!pts || pts.length < 2) return;
+  const col = o.color || INK;
+  const w0 = o.w === undefined ? 1.5 : o.w;
+  const alpha = o.alpha === undefined ? 1 : o.alpha;
+  if (alpha <= 0.004 || w0 <= 0) return;
+  const seed = ((o.seed || 0) * 131 + BOIL * 37) | 0;
+  const flat = o.flat || !warm();
+  const step = flat ? 9 : 5.5;
+  let P = resample(pts, step);
+  if (P.length < 2) return;
+
+  /* amplitude off the run length, the way a hand's wobble grows with
+     the length of the stroke it is trying to keep straight */
+  let L = 0;
+  for (let i = 1; i < P.length; i++) L += hyp(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]);
+  const base = Math.min(2.2, 0.24 + L * 0.0085);
+  const amp = base * (o.wobble === undefined ? 1 : o.wobble) * (warm() ? 1 : 0.34);
+  P = wander(P, amp, seed);
+
+  X.globalAlpha = alpha;
+
+  if (flat) {
+    X.strokeStyle = col;
+    X.lineWidth = w0;
+    if (o.dash) X.setLineDash(o.dash); else X.setLineDash([]);
+    X.beginPath();
+    X.moveTo(P[0][0], P[0][1]);
+    for (let i = 1; i < P.length; i++) X.lineTo(P[i][0], P[i][1]);
+    X.stroke();
+    X.setLineDash([]);
+    X.globalAlpha = 1;
+    return;
+  }
+
+  /* pressure: one to five swells along the run, off the seed */
+  const swells = 1 + (Math.floor(ih(seed, 5, 3) * 5));
+  const phase = ih(seed, 9, 4) * TAU;
+  const press = o.press === undefined ? 1 : o.press;
+  const dry = o.dry === undefined ? 1 : o.dry;
+  const n = P.length;
+  const hw = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const u = i / (n - 1);
+    let k = 1 + 0.34 * press * sin(u * TAU * swells + phase);
+    /* lands heavy, lifts on the way out */
+    k *= lerp(1.18, 0.62, u) * 0.5 + 0.62;
+    k *= 0.86 + 0.28 * vn(i * 0.5, seed * 0.03 + 40, seed + 5);
+    hw[i] = Math.max(0.18, w0 * 0.5 * k);
+  }
+
+  /* the nib skips where the paper's tooth beats the wet */
+  const runs = [];
+  let cur = [];
+  for (let i = 0; i < n; i++) {
+    const skip = dry > 0 && ih(i, seed, 77) < 0.035 * dry && i > 0 && i < n - 1;
+    if (skip) { if (cur.length > 1) runs.push(cur); cur = []; }
+    else cur.push(i);
+  }
+  if (cur.length > 1) runs.push(cur);
+  if (!runs.length) runs.push([0, n - 1]);
+
+  X.fillStyle = col;
+  for (const run of runs) {
+    X.beginPath();
+    for (let j = 0; j < run.length; j++) {
+      const i = run[j];
+      const a = P[Math.max(run[0], i - 1)], b = P[Math.min(run[run.length - 1], i + 1)];
+      let dx = b[0] - a[0], dy = b[1] - a[1];
+      const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+      const x = P[i][0] - dy * hw[i], y = P[i][1] + dx * hw[i];
+      if (j === 0) X.moveTo(x, y); else X.lineTo(x, y);
+    }
+    for (let j = run.length - 1; j >= 0; j--) {
+      const i = run[j];
+      const a = P[Math.max(run[0], i - 1)], b = P[Math.min(run[run.length - 1], i + 1)];
+      let dx = b[0] - a[0], dy = b[1] - a[1];
+      const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+      X.lineTo(P[i][0] + dy * hw[i], P[i][1] - dx * hw[i]);
+    }
+    X.closePath();
+    X.fill();
+  }
+
+  /* pooling where the nib landed, filaments down the flanks of a fat mark */
+  if (o.pool !== 0 && w0 > 1.1) {
+    X.beginPath();
+    X.arc(P[0][0], P[0][1], hw[0] * 1.15, 0, TAU);
+    X.fill();
+  }
+  if (w0 > 1.9) {
+    X.globalAlpha = alpha * 0.32;
+    for (const s of [-1, 1]) {
+      X.strokeStyle = col; X.lineWidth = 0.5;
+      X.beginPath();
+      for (let i = 0; i < n; i++) {
+        const a = P[Math.max(0, i - 1)], b = P[Math.min(n - 1, i + 1)];
+        let dx = b[0] - a[0], dy = b[1] - a[1];
+        const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+        const k = hw[i] * (1 + 0.5 * vn(i * 0.9, seed * 0.05 + s * 11, seed + 3));
+        const x = P[i][0] - dy * k * s, y = P[i][1] + dx * k * s;
+        if (i === 0) X.moveTo(x, y); else X.lineTo(x, y);
+      }
+      X.stroke();
+    }
+  }
+  X.globalAlpha = 1;
+}
+
+function poly(pts, fill, strokeCol, w, o) {
+  if (pts.length < 3) return;
+  if (fill) {
+    X.globalAlpha = (o && o.fillAlpha !== undefined) ? o.fillAlpha : 1;
+    X.fillStyle = fill;
+    X.beginPath();
+    X.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) X.lineTo(pts[i][0], pts[i][1]);
+    X.closePath(); X.fill();
+    X.globalAlpha = 1;
+  }
+  if (strokeCol) stroke(pts.concat([pts[0]]), Object.assign({ color: strokeCol, w: w }, o || {}));
+}
+
+function text(s, x, y, o) {
+  o = o || {};
+  let size = o.size || 15;
+  const weight = o.weight || 500;
+  let tr = o.tracking === undefined ? size * 0.13 : o.tracking;
+  const str = o.lower ? s : String(s).toUpperCase();
+  const run = () => { let w = 0; for (const ch of str) w += charW(ch, size, weight) + tr; return w - tr; };
+  let wsum = run();
+  /* one estimator, both targets: a line never overruns its cell. A
+     title block that lets the designation run into the yard's name is
+     a title block nobody at a desk would have signed off. */
+  if (o.max && wsum > o.max) { const k = o.max / wsum; size *= k; tr *= k; wsum = run(); }
+  if (o.measure) return wsum;
+  let cx = o.anchor === "end" ? x - wsum : o.anchor === "middle" ? x - wsum / 2 : x;
+  X.save();
+  X.font = weight + " " + size + "px " + FONT;
+  X.fillStyle = o.color || INK;
+  X.globalAlpha = o.alpha === undefined ? 1 : o.alpha;
+  const jit = warm() ? 0.42 : 0.14;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    const jx = (vn(i * 1.7, BOIL * 0.31, 991) - 0.5) * jit;
+    const jy = (vn(i * 1.7 + 50, BOIL * 0.31, 993) - 0.5) * jit;
+    X.fillText(ch, cx + jx, y + jy);
+    cx += charW(ch, size, weight) + tr;
+  }
+  X.restore();
+  return wsum;
+}
+
+/* ===================== 6. drafting chrome ===================== */
+
+/* Four corner marks and nothing joining them. They sit outside
+   everything the scene repaints, so a frame never wipes them. */
+function cornerTicks(a) {
+  const m = U * 0.030, tk = U * 0.021, w = warm() ? 2.0 : 1.5;
+  const o = { color: INK, w: w, alpha: a === undefined ? 1 : a, seed: 4 };
+  stroke([[m, m + tk], [m, m], [m + tk, m]], o);
+  stroke([[W - m - tk, m], [W - m, m], [W - m, m + tk]], o);
+  stroke([[m, H - m - tk], [m, H - m], [m + tk, H - m]], o);
+  stroke([[W - m - tk, H - m], [W - m, H - m], [W - m, H - m - tk]], o);
+}
+
+/* A label sits under a rule the full width of its cell, in tracked
+   caps. It is not a caption and it is not a heading. */
+function plateLabel(s, x, y, wCell, o) {
+  o = o || {};
+  stroke([[x, y], [x + wCell, y]], { color: INK, w: 1.5, alpha: o.alpha, seed: 7 });
+  text(s, x, y + U * 0.030, { size: U * 0.0185, weight: 600, tracking: U * 0.0032, color: INK, alpha: o.alpha });
+}
+
+/* Left of the divider, who she is. Right, whose drawing it is. Under
+   the rule, five ruled columns of metric. CREW reads NIL, never 0. */
+function titleBlock(rows, right, a) {
+  const m = U * 0.055;
+  const bw = U * 0.50, bh = U * 0.128;
+  const bx = W - m - bw, by = H - m - bh;
+  const pad = bw * 0.026, div = bx + bw * 0.655, rMet = by + bh * 0.62;
+  const lw1 = div - bx - pad * 2, rw1 = bx + bw - pad - (div + pad * 0.6);
+  X.globalAlpha = (a === undefined ? 1 : a) * 0.90;
+  X.fillStyle = GROUND; X.fillRect(bx, by, bw, bh);
+  X.globalAlpha = 1;
+  const o = { color: INK, alpha: a, seed: 12 };
+  stroke([[bx, by], [bx + bw, by], [bx + bw, by + bh], [bx, by + bh], [bx, by]], Object.assign({ w: 1.7 }, o));
+  stroke([[bx, rMet], [bx + bw, rMet]], Object.assign({ w: 1.3 }, o));
+  stroke([[div, by], [div, rMet]], Object.assign({ w: 1.1 }, o));
+
+  text(rows[0], bx + pad, by + bh * 0.25, { size: bh * 0.185, weight: 700, tracking: bh * 0.020, color: INK, alpha: a, max: lw1 });
+  text(rows[1], bx + pad, by + bh * 0.40, { size: bh * 0.092, weight: 500, tracking: bh * 0.013, color: INK, alpha: a, max: lw1 });
+  text(rows[2], bx + pad, by + bh * 0.53, { size: bh * 0.092, weight: 500, tracking: bh * 0.013, color: DIM, alpha: a, max: lw1 });
+
+  text(right[0], bx + bw - pad, by + bh * 0.23, { size: bh * 0.100, weight: 600, tracking: bh * 0.020, color: INK, anchor: "end", alpha: a, max: rw1 });
+  text(right[1], bx + bw - pad, by + bh * 0.39, { size: bh * 0.100, weight: 500, tracking: bh * 0.020, color: INK, anchor: "end", alpha: a, max: rw1 });
+  text(right[2], bx + bw - pad, by + bh * 0.54, { size: bh * 0.085, weight: 500, tracking: bh * 0.015, color: DIM, anchor: "end", alpha: a, max: rw1 });
+
+  const cols = rows[3];
+  const colW = (bw - pad * 2) / cols.length;
+  cols.forEach((c, i) => {
+    const cx = bx + pad + colW * i;
+    if (i) stroke([[cx - pad * 0.6, rMet], [cx - pad * 0.6, by + bh]], Object.assign({ w: 1.0 }, o));
+    text(c[0], cx, by + bh * 0.775, { size: bh * 0.088, weight: 500, tracking: bh * 0.015, color: DIM, alpha: a, max: colW - pad });
+    text(c[1], cx, by + bh * 0.925, { size: bh * 0.125, weight: 600, tracking: bh * 0.010, color: INK, alpha: a, max: colW - pad });
+  });
+  return { x: bx, y: by, w: bw, h: bh };
+}
+
+/* Scale given twice: once as a ruler, once as a body. The figure is
+   1.8 m and at this scale it is four pixels tall, which is the whole
+   argument. */
+function scaleBar(x, y, px, label, a, figure) {
+  const o = { color: INK, w: 1.5, alpha: a, seed: 19 };
+  stroke([[x, y], [x + px, y]], o);
+  for (let i = 0; i <= 4; i++) stroke([[x + px * i / 4, y], [x + px * i / 4, y - (i % 2 ? U * 0.009 : U * 0.016)]], o);
+  text("0", x, y + U * 0.024, { size: U * 0.0155, weight: 500, tracking: U * 0.002, color: INK, alpha: a });
+  text(label, x + px, y + U * 0.024, { size: U * 0.0155, weight: 500, tracking: U * 0.002, color: INK, anchor: "end", alpha: a });
+  if (!figure) return;
+  const fx = x + px + U * 0.055, fh = figure.h, fw = Math.max(1.4, fh * 0.26);
+  poly([[fx - fw * 0.5, y], [fx - fw * 0.5, y - fh * 0.52], [fx - fw * 0.85, y - fh * 0.78],
+  [fx - fw * 0.35, y - fh * 0.80], [fx, y - fh * 0.62], [fx + fw * 0.35, y - fh * 0.80],
+  [fx + fw * 0.85, y - fh * 0.78], [fx + fw * 0.5, y - fh * 0.52], [fx + fw * 0.5, y]],
+    INK, null, 0, { fillAlpha: a === undefined ? 1 : a });
+  X.globalAlpha = a === undefined ? 1 : a;
+  X.fillStyle = INK; X.beginPath(); X.arc(fx, y - fh * 0.92, Math.max(0.9, fh * 0.11), 0, TAU); X.fill();
+  X.globalAlpha = 1;
+  text(figure.label, fx, y + U * 0.024, { size: U * 0.014, weight: 500, tracking: U * 0.0018, color: INK, anchor: "middle", alpha: a });
+}
+
+/* ===================== 7. tactical geometry ===================== */
+
+const CHAIN = [U * 0.016, U * 0.007, U * 0.004, U * 0.007];  /* ISO chain line */
+
+function ring(cx, cy, r, o) {
+  const n = Math.max(28, Math.round(r * 0.42));
+  const p = [];
+  for (let i = 0; i <= n; i++) { const a = i / n * TAU; p.push([cx + cos(a) * r, cy + sin(a) * r]); }
+  stroke(p, o);
+}
+
+function arc(cx, cy, r, a0, a1, o) {
+  const n = Math.max(8, Math.round(abs(a1 - a0) * r * 0.10));
+  const p = [];
+  for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); p.push([cx + cos(a) * r, cy + sin(a) * r]); }
+  stroke(p, o);
+  return p;
+}
+
+/* Range rings, labelled on the 045 radial the way a plot labels them. */
+function rangeRings(cx, cy, step, n, unit, o) {
+  for (let i = 1; i <= n; i++) {
+    const r = step * i;
+    ring(cx, cy, r, { color: INK, w: 1.0, alpha: (o.alpha || 1) * (i === n ? 0.9 : 0.55), dash: i % 2 ? CHAIN : null, seed: 30 + i });
+    const a = -PI * 0.25;
+    text((i * (o.per || 20)) + " " + unit, cx + cos(a) * r + 6, cy + sin(a) * r - 5,
+      { size: U * 0.0125, weight: 500, tracking: U * 0.0022, color: DIM, alpha: (o.alpha || 1) * 0.85 });
+  }
+}
+
+/* Coordinate ticks walk the inside of the sheet: a short mark every
+   five degrees of the plot, a long one and a bearing every thirty. */
+function coordTicks(cx, cy, r, a) {
+  for (let d = 0; d < 360; d += 5) {
+    const th = (d - 90) * PI / 180;
+    const long = d % 30 === 0;
+    const r0 = r, r1 = r + (long ? U * 0.020 : U * 0.009);
+    stroke([[cx + cos(th) * r0, cy + sin(th) * r0], [cx + cos(th) * r1, cy + sin(th) * r1]],
+      { color: long ? INK : DIM, w: long ? 1.3 : 0.9, alpha: a, seed: 40 + d });
+    if (long) {
+      const rr = r1 + U * 0.019;
+      text(String(d).padStart(3, "0"), cx + cos(th) * rr, cy + sin(th) * rr + U * 0.006,
+        { size: U * 0.0125, weight: 500, tracking: U * 0.0022, color: DIM, anchor: "middle", alpha: a });
+    }
+  }
+}
+
+/* A callout is a node, a kinked leader and a line of tracked caps.
+   It draws itself on rather than appearing. */
+function callout(x, y, dx, dy, lines, o) {
+  o = o || {};
+  const rev = clamp(o.reveal === undefined ? 1 : o.reveal, 0, 1);
+  if (rev <= 0.01) return;
+  const col = o.color || INK;
+
+  /* A leader that walks its label off the sheet is worse than no
+     leader. Measure the block, and if the side it wants does not fit,
+     take the other one. */
+  const sz = U * 0.0145, tr = U * 0.0025;
+  let wmax = 0;
+  for (let i = 0; i < lines.length; i++) wmax = Math.max(wmax, text(lines[i], 0, 0, { size: i ? U * 0.0125 : sz, tracking: tr, measure: true }));
+  const marg = U * 0.055;
+  const tailLen = o.tail === undefined ? U * 0.055 : o.tail;
+  if (dx >= 0 && x + dx + tailLen + wmax > W - marg) dx = -Math.abs(dx);
+  else if (dx < 0 && x + dx - tailLen - wmax < marg) dx = Math.abs(dx);
+  let kx = x + dx;
+  if (dx >= 0) kx = Math.min(kx, W - marg - tailLen - wmax);
+  else kx = Math.max(kx, marg + tailLen + wmax);
+  const ky = clamp(y + dy, marg + U * 0.020, H - marg - U * 0.050);
+  const tail = tailLen * (dx < 0 ? -1 : 1);
+  const path = [[x, y], [kx, ky], [kx + tail, ky]];
+  /* the leader draws on: cut the path at the revealed length */
+  let tot = 0; const segs = [];
+  for (let i = 1; i < path.length; i++) { const l = hyp(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]); segs.push(l); tot += l; }
+  let want = tot * rev, out = [path[0]];
+  for (let i = 0; i < segs.length; i++) {
+    if (want >= segs[i]) { out.push(path[i + 1]); want -= segs[i]; }
+    else { const u = want / (segs[i] || 1); out.push([lerp(path[i][0], path[i + 1][0], u), lerp(path[i][1], path[i + 1][1], u)]); want = 0; break; }
+  }
+  stroke(out, { color: col, w: 1.1, alpha: o.alpha, seed: o.seed || 51 });
+  X.globalAlpha = o.alpha === undefined ? 1 : o.alpha;
+  X.fillStyle = col; X.beginPath(); X.arc(x, y, 2.6, 0, TAU); X.fill();
+  X.globalAlpha = 1;
+  if (rev > 0.92) {
+    const anchor = dx < 0 ? "end" : "start";
+    const tx = kx + tail * 1.02;
+    /* knock the ground back under the block. A label laid straight on
+       top of the densest hatching on the sheet is a label nobody can
+       read, and the drawing office answer is to clear the lines. */
+    const pad = U * 0.009;
+    const bx = anchor === "end" ? tx - wmax - pad : tx - pad;
+    X.globalAlpha = (o.alpha === undefined ? 1 : o.alpha) * 0.82;
+    X.fillStyle = GROUND;
+    X.fillRect(bx, ky - U * 0.020, wmax + pad * 2, lines.length * U * 0.019 + pad);
+    X.globalAlpha = 1;
+    lines.forEach((ln, i) => {
+      text(ln, tx, ky - U * 0.006 + i * U * 0.019,
+        { size: i ? U * 0.0125 : sz, weight: i ? 500 : 600, tracking: tr, color: i ? DIM : col, anchor: anchor, alpha: o.alpha });
+    });
+  }
+}
+
+/* Four uprights and a diagonal. A tally is how a plot counts things
+   it has not had time to name. */
+function tally(x, y, n, o) {
+  o = o || {};
+  const h = o.h || U * 0.021, gap = o.gap || U * 0.0098, grp = o.grp || U * 0.019;
+  let cx = x;
+  for (let g = 0; g * 5 < n; g++) {
+    const inGrp = Math.min(5, n - g * 5);
+    for (let i = 0; i < Math.min(4, inGrp); i++) {
+      stroke([[cx + i * gap, y], [cx + i * gap + h * 0.10, y - h]], { color: o.color || INK, w: 1.5, alpha: o.alpha, seed: 60 + g * 7 + i });
+    }
+    /* the fifth is the gate: it crosses the other four, or the group
+       reads as five parallel strokes and stops being a tally */
+    if (inGrp === 5) stroke([[cx - gap * 0.55, y - h * 1.02], [cx + gap * 3.7, y + h * 0.16]], { color: o.color || INK, w: 2.0, alpha: o.alpha, seed: 70 + g });
+    cx += gap * 4 + grp;
+  }
+  return cx - x;
+}
+
+/* A dimension line: two witness ticks, a run between them with arrow
+   terminators, and the figure sitting on the run. */
+function dimension(x0, y0, x1, y1, label, o) {
+  o = o || {};
+  const col = o.color || DIM;
+  let dx = x1 - x0, dy = y1 - y0; const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+  stroke([[x0, y0], [x1, y1]], { color: col, w: 1.0, alpha: o.alpha, seed: 80 });
+  const a = U * 0.008;
+  for (const [px, py, s] of [[x0, y0, 1], [x1, y1, -1]]) {
+    stroke([[px + (dx * s - dy) * a, py + (dy * s + dx) * a], [px, py], [px + (dx * s + dy) * a, py + (dy * s - dx) * a]],
+      { color: col, w: 1.0, alpha: o.alpha, seed: 81 });
+    stroke([[px - dy * a * 1.5, py + dx * a * 1.5], [px + dy * a * 1.5, py - dx * a * 1.5]],
+      { color: col, w: 0.9, alpha: o.alpha, seed: 82 });
+  }
+  const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+  const wd = text(label, 0, 0, { size: U * 0.0135, measure: true });
+  X.globalAlpha = o.alpha === undefined ? 1 : o.alpha;
+  X.fillStyle = GROUND; X.fillRect(mx - wd / 2 - 4, my - U * 0.014, wd + 8, U * 0.020);
+  X.globalAlpha = 1;
+  text(label, mx, my, { size: U * 0.0135, weight: 500, tracking: U * 0.0022, color: col, anchor: "middle", alpha: o.alpha });
+}
+
+/* A small ruled box with its own subject inside it. A plot keeps one
+   of these open on whatever it is not looking at. */
+function inset(x, y, w, h, title, a, body) {
+  X.globalAlpha = (a === undefined ? 1 : a) * 0.92;
+  X.fillStyle = GROUND; X.fillRect(x, y, w, h);
+  X.globalAlpha = 1;
+  stroke([[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], { color: INK, w: 1.3, alpha: a, seed: 90 });
+  stroke([[x, y + U * 0.026], [x + w, y + U * 0.026]], { color: INK, w: 1.0, alpha: a, seed: 91 });
+  text(title, x + U * 0.010, y + U * 0.018, { size: U * 0.0128, weight: 600, tracking: U * 0.0026, color: INK, alpha: a });
+  X.save();
+  X.beginPath(); X.rect(x + 1, y + U * 0.027, w - 2, h - U * 0.028); X.clip();
+  body(x, y + U * 0.027, w, h - U * 0.028);
+  X.restore();
+}
+
+/* ===================== 8. bodies ===================== */
+
+function camera(o) {
+  const yaw = o.yaw || 0, pitch = o.pitch || 0, s = o.scale || 1;
+  const cx = o.cx === undefined ? W / 2 : o.cx, cy = o.cy === undefined ? H / 2 : o.cy;
+  const cyw = cos(yaw), syw = sin(yaw), cp = cos(pitch), sp = sin(pitch);
+  return {
+    s: s,
+    project(p) {
+      const x = p[0] * cyw - p[2] * syw;
+      const z = p[0] * syw + p[2] * cyw;
+      const y = p[1] * cp - z * sp;
+      const d = z * cp + p[1] * sp;
+      return [cx + x * s, cy - y * s, d];
+    }
+  };
+}
+
+function place(o) {
+  const cy = cos(o.yaw || 0), sy = sin(o.yaw || 0);
+  const cr = cos(o.roll || 0), sr = sin(o.roll || 0);
+  const cp = cos(o.pitch || 0), sp = sin(o.pitch || 0);
+  const k = o.k === undefined ? 1 : o.k;
+  return p => {
+    let px = p[0] * k, py = p[1] * k, pz = p[2] * k;
+    let t;
+    t = py * cr - pz * sr; pz = py * sr + pz * cr; py = t;
+    t = px * cp - py * sp; py = px * sp + py * cp; px = t;
+    t = px * cy - pz * sy; pz = px * sy + pz * cy; px = t;
+    return [px + (o.x || 0), py + (o.y || 0), pz + (o.z || 0)];
+  };
+}
+
+/* A body is a chain of stations [x,y,z,r]. Rings are circles of that
+   radius in the plane normal to the local spine. The fill is the
+   depth buffer: lay the whole silhouette down in ground first, then
+   only draw the half of every frame and stringer that faces us, and
+   nothing behind shows through. Crude next to real hidden-line
+   removal, and indistinguishable at this size. */
+const RN = 16;
+
+/* A warship is not a cylinder. The section is a superellipse squashed
+   in one axis and stretched in the other, so a hull comes out with a
+   deck on top and a chine down each flank — and a cylinder, when you
+   want one, is just e = 2 with both scales at one. */
+function secPt(th, e) {
+  const c = cos(th), s = sin(th), p = 2 / e;
+  return [Math.sign(c) * Math.pow(abs(c), p), Math.sign(s) * Math.pow(abs(s), p)];
+}
+
+function bodyRings(sts, xf, sec) {
+  const e = (sec && sec.e) || 2, ky = (sec && sec.ky) || 1, kz = (sec && sec.kz) || 1;
+  const rings = [];
+  for (let i = 0; i < sts.length; i++) {
+    const s = sts[i];
+    const a = sts[Math.max(0, i - 1)], b = sts[Math.min(sts.length - 1, i + 1)];
+    const d = norm([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
+    const up = abs(d[1]) > 0.92 ? [0, 0, 1] : [0, 1, 0];
+    const u = norm(cross(d, up)), v = cross(d, u);   /* u lateral, v vertical */
+    const R = [];
+    const c = xf([s[0], s[1], s[2]]);
+    for (let k = 0; k < RN; k++) {
+      const th = k / RN * TAU;
+      const sp = secPt(th, e);
+      const a2 = sp[0] * kz, b2 = sp[1] * ky;
+      const nx = u[0] * a2 + v[0] * b2;
+      const ny = u[1] * a2 + v[1] * b2;
+      const nz = u[2] * a2 + v[2] * b2;
+      const p = xf([s[0] + nx * s[3], s[1] + ny * s[3], s[2] + nz * s[3]]);
+      /* the normal has to turn with the ship or the terminator sits
+         still while the hull rotates under it, which is the tell */
+      const q = xf([s[0] + nx, s[1] + ny, s[2] + nz]);
+      R.push({ p: p, n: norm(sub(q, c)) });
+    }
+    R.c = c;
+    R.r = s[3];
+    rings.push(R);
+  }
+  return rings;
+}
+
+const LIGHT = norm([-0.55, 0.72, 0.42]);
+
+function drawBody(sts, xf, cam, o) {
+  o = o || {};
+  const rings = bodyRings(sts, xf, o.sec);
+  const PR = rings.map(R => {
+    const q = R.map(m => ({ s: cam.project(m.p), n: m.n }));
+    q.c = cam.project(R.c);
+    return q;
+  });
+  const col = o.color || INK;
+  const lw = o.w === undefined ? 1.6 : o.w;
+
+  /* 1. the silhouette, as one path, filled once */
+  const path = new Path2D();
+  for (let i = 0; i < PR.length - 1; i++) {
+    const A = PR[i], B = PR[i + 1];
+    path.moveTo(A[0].s[0], A[0].s[1]);
+    for (let k = 1; k < RN; k++) path.lineTo(A[k].s[0], A[k].s[1]);
+    for (let k = RN - 1; k >= 0; k--) path.lineTo(B[k].s[0], B[k].s[1]);
+    path.closePath();
+  }
+  const fa = o.fillAlpha === undefined ? (warm() ? 0.90 : 0.80) : o.fillAlpha;
+  if (fa > 0) {
+    X.globalAlpha = fa;
+    /* not flat ground: a hull carries the faintest wash of its own ink,
+       or it reads as a hole cut in the paper rather than a mass on it */
+    X.fillStyle = o.fill || (warm() ? WASH : GROUND);
+    X.fill(path, "nonzero");
+    X.globalAlpha = 1;
+    if (warm() && o.hatch) {
+      /* a flat field with speckle on it is the easiest thing on the
+         sheet to spot as printed: put the tooth back inside the hull */
+      let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      for (const R of PR) for (const m of R) {
+        if (m.s[0] < x0) x0 = m.s[0]; if (m.s[0] > x1) x1 = m.s[0];
+        if (m.s[1] < y0) y0 = m.s[1]; if (m.s[1] > y1) y1 = m.s[1];
+      }
+      X.save(); X.clip(path, "nonzero");
+      X.globalAlpha = 0.10; X.fillStyle = INK;
+      for (let i = 0; i < 140; i++) {
+        X.fillRect(x0 + vn(i * 0.71, BOIL * 0.2, 301) * (x1 - x0),
+          y0 + vn(i * 0.71 + 30, BOIL * 0.2, 303) * (y1 - y0), 1.1, 0.9);
+      }
+      X.globalAlpha = 1; X.restore();
+    }
+  }
+
+  /* 2. hatching, cut in the surface's own parameter space and kept on
+        the hull by the same path. Ordered dither over the slot index,
+        so density steps rather than fades. */
+  if (o.hatch) {
+    X.save(); X.clip(path, "nonzero");
+    for (let k = 0; k < RN; k++) {
+      const tone = clamp(0.5 + 0.5 * dot(rings[0][k].n, LIGHT), 0, 1);
+      const th = 0.40 + ((k * 7) % 5) * 0.080;
+      if (tone > th) continue;
+      const line = [];
+      for (let i = 0; i < PR.length; i++) line.push(PR[i][k].s);
+      const hwid = warm() ? 1.4 : 0.95;
+      stroke(line, { color: col, w: hwid, alpha: (o.hatchAlpha || 0.85) * (1 - tone), flat: true, seed: 110 + k });
+      /* the darkest pass gets a second family laid between the first,
+         which is how a hatch gets darker without getting thicker */
+      if (tone < 0.30) {
+        const k2 = (k + 1) % RN, l2 = [];
+        for (let i = 0; i < PR.length; i++) l2.push([(PR[i][k].s[0] + PR[i][k2].s[0]) / 2, (PR[i][k].s[1] + PR[i][k2].s[1]) / 2]);
+        stroke(l2, { color: col, w: hwid * 0.8, alpha: (o.hatchAlpha || 0.85) * 0.7, flat: true, seed: 130 + k });
+      }
+    }
+    X.restore();
+  }
+
+  /* 3. the outline: the top and bottom envelope of the projected rings */
+  const top = [], bot = [];
+  for (const R of PR) {
+    let a = R[0].s, b = R[0].s;
+    for (const m of R) { if (m.s[1] < a[1]) a = m.s; if (m.s[1] > b[1]) b = m.s; }
+    top.push(a); bot.push(b);
+  }
+  const so = { color: col, w: lw, alpha: o.alpha, seed: o.seed || 140, dry: o.dry, press: o.press };
+  stroke(top, so);
+  stroke(bot, so);
+  /* close the ends on the near half of the end rings. Depth runs the
+     one way throughout: a larger d is nearer the eye, which is also
+     why drawShip sorts ascending and lays the far bodies down first. */
+  for (const idx of [0, PR.length - 1]) {
+    const R = PR[idx], p = [];
+    for (let k = 0; k <= RN; k++) { const m = R[k % RN]; if (m.s[2] >= R.c[2]) p.push(m.s); else { if (p.length > 1) stroke(p, so); p.length = 0; } }
+    if (p.length > 1) stroke(p, so);
+  }
+
+  /* 4. frames, near half only */
+  if (o.frames !== false) {
+    for (let i = 1; i < PR.length - 1; i++) {
+      const R = PR[i], p = [];
+      for (let k = 0; k <= RN; k++) {
+        const m = R[k % RN];
+        if (m.s[2] >= R.c[2]) p.push(m.s);
+        else { if (p.length > 1) stroke(p, { color: col, w: lw * 0.55, alpha: (o.alpha === undefined ? 1 : o.alpha) * 0.8, seed: 150 + i }); p.length = 0; }
+      }
+      if (p.length > 1) stroke(p, { color: col, w: lw * 0.55, alpha: (o.alpha === undefined ? 1 : o.alpha) * 0.8, seed: 150 + i });
+    }
+  }
+
+  /* 5. stringers */
+  for (const k of [0, RN >> 2, RN >> 1, (RN * 3) >> 2]) {
+    const p = [];
+    for (let i = 0; i < PR.length; i++) {
+      const m = PR[i][k];
+      if (m.s[2] >= PR[i].c[2]) p.push(m.s);
+      else { if (p.length > 1) stroke(p, { color: col, w: lw * 0.45, alpha: (o.alpha === undefined ? 1 : o.alpha) * 0.7, seed: 170 + k }); p.length = 0; }
+    }
+    if (p.length > 1) stroke(p, { color: col, w: lw * 0.45, alpha: (o.alpha === undefined ? 1 : o.alpha) * 0.7, seed: 170 + k });
+  }
+
+  return { rings: PR, depth: PR[(PR.length / 2) | 0].c[2] };
+}
+
+/* ===================== 9. the two ships ===================== */
+
+/* BATELEUR. A crown ship is a keel with masses berthed along it, a
+   tower forward of amidships, four barbettes on the dorsal deck and
+   a lance the length of her. Everything in metres; she is 380 of
+   them, bow at +190. */
+const SEC = {
+  hull: { e: 3.4, ky: 0.62, kz: 1.22 },   /* deck on top, chine down each flank */
+  block: { e: 4.2, ky: 0.80, kz: 0.95 },
+  tube: { e: 2.0, ky: 1.00, kz: 1.00 },
+  fin: { e: 4.0, ky: 1.00, kz: 0.07 },   /* a plate, seen edge-on from abeam */
+  grown: { e: 2.3, ky: 1.10, kz: 0.86 }
+};
+
+function crown() {
+  const B = [];
+  /* the keel: a long flat mass, full amidships, cut to a wedge forward */
+  const prof = [[-192, 10], [-178, 30], [-152, 38], [-112, 42], [-58, 44], [-6, 42], [46, 37], [98, 30], [140, 21], [172, 11], [192, 3]];
+  B.push({ sts: prof.map(([x, r]) => [x, 0, 0, r]), hatch: true, w: 2.2, sec: SEC.hull, key: "hull" });
+
+  /* the two flanking masses — a crown berths more than one hull, and
+     the link is drawn because a link that is not drawn reads floating */
+  for (const s of [-1, 1]) {
+    B.push({
+      sts: [[-158, -14, s * 52, 5], [-126, -14, s * 56, 17], [-56, -14, s * 58, 20], [16, -14, s * 56, 16], [68, -14, s * 52, 5]],
+      hatch: true, w: 1.6, sec: SEC.hull, key: "pod"
+    });
+    B.push({ sts: [[-96, -10, s * 26, 5], [-96, -12, s * 50, 5]], hatch: false, w: 1.3, sec: SEC.tube, frames: false, key: "link" });
+    B.push({ sts: [[-8, -10, s * 24, 5], [-8, -12, s * 48, 5]], hatch: false, w: 1.3, sec: SEC.tube, frames: false, key: "link" });
+    /* radiator vanes: swept aft off the quarter, and the only part of
+       her that is a plate rather than a mass */
+    B.push({ sts: [[-132, 20, s * 16, 7], [-172, 52, s * 18, 19], [-214, 82, s * 20, 8]], hatch: true, w: 1.4, sec: SEC.fin, key: "vane" });
+  }
+
+  /* bridge tower, forward of amidships and narrow across */
+  B.push({ sts: [[-50, 22, 0, 20], [-46, 44, 0, 17], [-42, 70, 0, 12], [-40, 88, 0, 5]], hatch: true, w: 1.7, sec: SEC.block, key: "tower" });
+  B.push({ sts: [[-40, 88, 0, 1.6], [-38, 122, 0, 1.0]], hatch: false, w: 1.0, sec: SEC.tube, frames: false, key: "mast" });
+
+  /* the dorsal rail the barbettes stand on */
+  B.push({ sts: [[-150, 24, 0, 6], [0, 26, 0, 7], [140, 23, 0, 5]], hatch: false, w: 1.2, sec: SEC.block, frames: false, key: "rail" });
+
+  /* four barbettes, each with a twin mount */
+  for (const bx of [-124, -80, 20, 78]) {
+    B.push({ sts: [[bx, 22, 0, 15], [bx, 40, 0, 16], [bx, 50, 0, 13]], hatch: true, w: 1.4, sec: SEC.tube, key: "barbette" });
+    for (const s of [-1, 1]) B.push({ sts: [[bx, 47, s * 6, 2.6], [bx + 42, 47, s * 6, 2.0]], hatch: false, w: 1.2, sec: SEC.tube, frames: false, key: "barrel" });
+  }
+
+  /* the spinal lance runs inside her, and only the muzzle is outboard.
+     In blueprint mode the hull goes to a ghost and you read it straight
+     through her, which is the whole reason it is drawn inside. */
+  B.push({ sts: [[-140, 2, 0, 9], [60, 2, 0, 9], [160, 2, 0, 8], [196, 2, 0, 10], [206, 2, 0, 5]], hatch: false, w: 1.6, sec: SEC.tube, key: "lance" });
+
+  /* engine bells */
+  for (const s of [-1, 1]) {
+    B.push({ sts: [[-192, 4, s * 22, 15], [-210, 4, s * 22, 21], [-222, 4, s * 22, 24]], hatch: true, w: 1.6, sec: SEC.tube, key: "bell" });
+  }
+  B.push({ sts: [[-192, 4, 0, 12], [-206, 4, 0, 16]], hatch: true, w: 1.4, sec: SEC.tube, key: "bell" });
+
+  /* the hangar her screen comes out of */
+  B.push({ sts: [[-24, -32, 0, 16], [46, -34, 0, 19], [96, -31, 0, 10]], hatch: true, w: 1.4, sec: SEC.block, key: "hangar" });
+  return B;
+}
+
+/* BROOD ELEVEN. Not a navy. The Shoal grows its vessels, so the spine
+   arcs, the section wanders instead of fairing, and the limbs are not
+   handed to each other. 447 m along the curve. */
+/* One spine, used by the drawing and by everything that has to fire
+   from her or break her — a gun that comes out of empty space beside
+   the hull is the fastest way to say nobody checked. */
+function shoalSpine(u) {
+  const x = lerp(-225, 222, u);
+  const y = 34 * sin(u * 2.1 - 0.3) - 10;
+  const r = (8 + 46 * Math.pow(sin(PI * Math.pow(u, 0.8)), 0.75)) * (1 + 0.16 * sin(u * 13.7));
+  return [x, y, Math.max(3, r)];
+}
+
+function shoal() {
+  const B = [];
+  const sp = [];
+  for (let i = 0; i <= 12; i++) {
+    const s = shoalSpine(i / 12);
+    sp.push([s[0], s[1], 0, s[2]]);
+  }
+  B.push({ sts: sp, hatch: true, w: 2.2, sec: SEC.grown, key: "body" });
+  /* the head is a separate mass, swollen, and it is not on the axis */
+  B.push({ sts: [[182, 42, 0, 16], [206, 50, -6, 30], [228, 54, -8, 25], [244, 52, -6, 9]], hatch: true, w: 1.8, sec: SEC.grown, key: "head" });
+  /* barbs: five, none of them a mirror of another */
+  const R = RNG(1109);
+  for (let i = 0; i < 5; i++) {
+    const u = 0.20 + i * 0.15;
+    const bx = lerp(-225, 222, u), by = 34 * sin(u * 2.1 - 0.3) - 10;
+    const s = i % 2 ? 1 : -1;
+    const L = 78 + R() * 64;
+    B.push({
+      sts: [[bx, by, s * 10, 26], [bx - 14 + R() * 24, by + 30 + R() * 22, s * (34 + L * 0.42), 19],
+      [bx - 24 + R() * 30, by + 52 + R() * 34, s * (34 + L), 6]],
+      hatch: true, w: 1.6, sec: SEC.grown, key: "barb"
+    });
+  }
+  /* a hood over the head, thin enough to read as membrane */
+  B.push({ sts: [[148, 68, 0, 18], [196, 96, 0, 34], [234, 90, 0, 18]], hatch: true, w: 1.4, sec: SEC.fin, key: "hood" });
+  /* trailing filaments aft */
+  for (const s of [-1, 1]) {
+    B.push({ sts: [[-212, -16, s * 12, 8], [-268, -32, s * 26, 5], [-322, -38, s * 34, 2]], hatch: false, w: 1.2, sec: SEC.tube, key: "fil", frames: false });
+  }
+  return B;
+}
+
+const HERO = crown(), FOE = shoal();
+
+/* She breaks at two stations, so the wreck is three masses and not
+   nine loose parts: the spine is cut into thirds and every limb goes
+   with the third it grew out of. */
+const FOE_PIECES = (() => {
+  const spine = FOE[0].sts;
+  const cut = [[0, 5], [4, 9], [8, 13]];
+  const P = [[], [], []];
+  for (let k = 0; k < 3; k++) P[k].push({ sts: spine.slice(cut[k][0], cut[k][1]), hatch: true, w: 2.2, sec: SEC.grown });
+  for (let i = 1; i < FOE.length; i++) {
+    const b = FOE[i];
+    const x = b.sts[0][0];
+    const k = x > 90 ? 2 : x > -120 ? 1 : 0;
+    P[k].push(b);
+  }
+  /* each mass gets called out at its own centre of figure, not at the
+     origin of the ship it used to be part of */
+  for (const p of P) {
+    let n = 0, sx = 0, sy = 0, sz = 0;
+    for (const b of p) for (const s of b.sts) { sx += s[0]; sy += s[1]; sz += s[2]; n++; }
+    p.mid = [sx / n, sy / n, sz / n];
+  }
+  return P;
+})();
+
+/* Where the two of them stand once the shooting is the picture. Both
+   the lance and the wreck field are framed off these, so the cut
+   between them does not move the ships. */
+const FIELD = { heroX: -259, heroY: 90, heroZ: 160, foeX: 140, foeY: -110, foeZ: -140 };
+
+function drawShip(bodies, xf, cam, o) {
+  o = o || {};
+  const rev = o.reveal === undefined ? 1 : clamp(o.reveal, 0, 1);
+  /* order no longer decides what is visible — it only decides the
+     order in which bodies land during the reveal wipe, back to front */
+  const items = bodies.map((b, i) => {
+    const c = xf([b.sts[(b.sts.length / 2) | 0][0], b.sts[(b.sts.length / 2) | 0][1], b.sts[(b.sts.length / 2) | 0][2]]);
+    return { b, i, z: cam.project(c)[2] };
+  }).sort((a, c) => a.z - c.z || a.i - c.i);
+  const shown = Math.round(items.length * rev);
+  for (let j = 0; j < Math.min(items.length, shown); j++) {
+    const b = items[j].b;
+    drawBody(b.sts, xf, cam, {
+      color: o.color, w: (b.w || 1.5) * (o.wScale || 1), hatch: o.hatch !== false && b.hatch,
+      hatchAlpha: o.hatchAlpha, alpha: o.alpha, fill: o.fill, fillAlpha: o.fillAlpha,
+      frames: b.frames === false ? false : o.frames, seed: 200 + items[j].i * 13,
+      dry: o.dry, press: o.press, sec: b.sec
+    });
+  }
+}
+
+/* ===================== 10. ordnance ===================== */
+
+/* An explosion is heat, not a team colour: white going to ember, and
+   no two the same shape — the lobes come off the flash's own seed. */
+function flash(x, y, r, age, seed) {
+  if (age < 0 || age > 1) return;
+  const R = r * (0.30 + 0.78 * Math.pow(age, 0.5));
+  const a = Math.pow(1 - age, 1.7);
+  const k3 = 3 + Math.floor(seed * 4), k7 = 7 + Math.floor(seed * 5);
+  const lobe = t => 0.72 + 0.28 * sin(t * k3 + seed * 43) + 0.14 * sin(t * k7 - seed * 17);
+  const shell = (scale, col, al) => {
+    X.globalAlpha = clamp(al, 0, 1);
+    X.fillStyle = col;
+    X.beginPath();
+    for (let i = 0; i <= 44; i++) {
+      const t = i / 44 * TAU, rr = R * scale * lobe(t);
+      const px = x + cos(t) * rr, py = y + sin(t) * rr;
+      if (i === 0) X.moveTo(px, py); else X.lineTo(px, py);
+    }
+    X.closePath(); X.fill();
+    X.globalAlpha = 1;
+  };
+  shell(1.0, mix(PAL.emberA, PAL.emberB, clamp(age * 1.4, 0, 1)), a * 0.42);
+  shell(0.62, mix(PAL.emberA, PAL.emberB, clamp(age * 1.1, 0, 1)), a * 0.64);
+  shell(0.28, PAL.emberA, a * 0.95);
+  /* embers thrown off the rim, carrying the blast's own momentum */
+  for (let i = 0; i < 9; i++) {
+    const t = ih(i, Math.round(seed * 1e5), 5) * TAU;
+    const d = R * (1.0 + age * 1.5) * (0.6 + ih(i, Math.round(seed * 1e5), 9) * 0.9);
+    X.globalAlpha = a * 0.7;
+    X.fillStyle = mix(PAL.emberA, PAL.emberB, clamp(age * 1.6, 0, 1));
+    X.beginPath(); X.arc(x + cos(t) * d, y + sin(t) * d, Math.max(0.7, 2.6 * (1 - age)), 0, TAU); X.fill();
+    X.globalAlpha = 1;
+  }
+}
+
+function beam(a, b, col, u, o) {
+  o = o || {};
+  const heavy = o.w || 2.2;
+  const fade = o.fade === undefined ? 1 : o.fade;
+  /* the shot arrives: the head runs out along the line, the tail follows */
+  const head = clamp(u * 1.9, 0, 1), tail = clamp(u * 1.9 - 0.55, 0, 1);
+  const p0 = [lerp(a[0], b[0], tail), lerp(a[1], b[1], tail)];
+  const p1 = [lerp(a[0], b[0], head), lerp(a[1], b[1], head)];
+  stroke([p0, p1], { color: col, w: heavy * 3.2, alpha: 0.13 * fade, flat: true, seed: 210 });
+  stroke([p0, p1], { color: col, w: heavy * 1.5, alpha: 0.45 * fade, flat: true, seed: 211 });
+  stroke([p0, p1], { color: col, w: heavy * 0.7, alpha: 0.95 * fade, flat: true, seed: 212 });
+  stroke([p0, p1], { color: PAL.emberA, w: heavy * 0.26, alpha: 0.95 * fade, flat: true, seed: 213 });
+}
+
+/* A gatling walks a dashed line of tracer onto a led target. */
+function tracer(a, b, col, u, seed) {
+  const n = 7;
+  for (let i = 0; i < n; i++) {
+    const k = (u * 1.4 - i * 0.055);
+    if (k < 0 || k > 1) continue;
+    const x = lerp(a[0], b[0], k), y = lerp(a[1], b[1], k);
+    const dx = (b[0] - a[0]) * 0.022, dy = (b[1] - a[1]) * 0.022;
+    stroke([[x - dx, y - dy], [x, y]], { color: col, w: 1.7, alpha: 0.85 * (1 - i / n), flat: true, seed: 220 + i + seed });
+  }
+}
+
+/* Wreckage carries the dead ship's momentum and litters the field. */
+function debris(x, y, vx, vy, age, seed, size, col, alpha) {
+  const px = x + vx * age, py = y + vy * age;
+  const rot = age * (ih(seed, 3, 1) - 0.5) * 5.2;
+  const n = 4 + Math.floor(ih(seed, 5, 2) * 4);
+  const p = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / n * TAU + rot;
+    const r = size * (0.5 + ih(seed, i, 4) * 0.9);
+    p.push([px + cos(t) * r, py + sin(t) * r * 0.8]);
+  }
+  const a = alpha === undefined ? 1 : alpha;
+  poly(p, GROUND, col || INK, 1.1, { fillAlpha: 0.85 * a, alpha: a, seed: 230 + seed });
+}
+
+/* A fighter is a dart. At this size she is nine points and a bank. */
+function fighterMark(x, y, ang, k, col, o) {
+  o = o || {};
+  const c = cos(ang), s = sin(ang);
+  const P = [[1.7, 0], [0.4, 0.42], [-0.5, 0.35], [-0.35, 1.05], [-0.95, 1.0], [-1.0, 0.2],
+  [-1.3, 0], [-1.0, -0.2], [-0.95, -1.0], [-0.35, -1.05], [-0.5, -0.35], [0.4, -0.42]]
+    .map(p => [x + (p[0] * c - p[1] * k * s) * 1, y + (p[0] * s + p[1] * k * c) * 1]);
+  const Q = P.map(p => [x + (p[0] - x) * o.size, y + (p[1] - y) * o.size]);
+  poly(Q, o.fill || GROUND, col, o.w || 1.1, { fillAlpha: o.fillAlpha === undefined ? 0.9 : o.fillAlpha, seed: o.seed || 240, alpha: o.alpha });
+}
+
+/* Analytic fighter paths — position is a function of t and nothing
+   else, so a fighter is in the same place however you arrive at the
+   frame. A jink is a held sine, not a random walk. */
+function fighterAt(i, t, o) {
+  const r = RNG(700 + i * 37);
+  const ph = r(), sp = o.speed * (0.82 + r() * 0.4);
+  const a0 = o.ang + (r() - 0.5) * o.spread;
+  const s = t - o.t0 - i * o.stagger;
+  if (s < 0) return null;
+  const jink = holdSin(s * (0.30 + r() * 0.22) + ph, 0.55) * o.amp * (0.5 + r());
+  const dx = cos(a0), dy = sin(a0);
+  return {
+    x: o.x + dx * sp * s - dy * jink,
+    y: o.y + dy * sp * s + dx * jink,
+    a: a0 + Math.atan2(holdSin(s * 0.3 + ph, 0.55) * 0.5, 2),
+    k: 0.35 + 0.65 * abs(cos(s * 1.3 + ph * 6)),
+    s: s
+  };
+}
+
+/* ===================== 11. starfield ===================== */
+
+/* Stars are stippled, not plotted. A field of dots at one value is
+   the other thing that gives a drawing away. */
+const STARS = (() => {
+  const r = RNG(31337), out = [];
+  for (let i = 0; i < 420; i++) out.push([r(), r(), r()]);
+  return out;
+})();
+function stars(a, jitter) {
+  X.save();
+  for (let i = 0; i < STARS.length; i++) {
+    const s = STARS[i];
+    const j = jitter ? (vn(i * 0.9, BOIL * 0.5, 401) - 0.5) * 1.6 : 0;
+    X.globalAlpha = a * (0.22 + s[2] * 0.6);
+    X.fillStyle = INK;
+    const r = 0.5 + s[2] * 1.5;
+    X.beginPath(); X.arc(s[0] * W + j, s[1] * H - j, r, 0, TAU); X.fill();
+  }
+  X.restore();
+}
+
+/* ===================== 12. the plot ===================== */
+
+const LOOP = 30.0;
+const FPS = 12;
+
+const HERO_ID = ["BATELEUR", "HARRIER-CLASS CROWN", "THE YARD FLEET"];
+const FOE_ID = ["BROOD ELEVEN", "GROWN — BODY PLAN VII", "THE SHOAL"];
+const RIGHT = n => ["SPACE BATTLE", "ACTION 4417", "SHEET " + n + " OF 9"];
+
+/* Where the two fleets are on the plot. p = 0 is the bearing they
+   hyperspaced in on; p = 1 is the merge. The scene at the end of the
+   loop renders p = 0 with everything else wiped, which is the same
+   drawing as the scene at the start, which is why the loop closes. */
+function plotPos(p) {
+  const cx = W * 0.5, cy = H * 0.47, R = U * 0.335;
+  const hb = (205 - 90) * PI / 180, fb = (25 - 90) * PI / 180;
+  const hr = lerp(R, R * 0.30, smooth(p)), fr = lerp(R, R * 0.34, smooth(p));
+  return {
+    cx, cy, R,
+    h: [cx + cos(hb) * hr, cy + sin(hb) * hr], hb,
+    f: [cx + cos(fb) * fr, cy + sin(fb) * fr], fb,
+    hr, fr
+  };
+}
+
+/* --- scene 1 / 10: the engagement plot ------------------------------ */
+function sceneP(t, p, ann) {
+  const P = plotPos(p);
+  coordTicks(P.cx, P.cy, P.R + U * 0.028, 1);
+  rangeRings(P.cx, P.cy, U * 0.083, 4, "KM", { alpha: 1, per: 20 });
+
+  /* radial spokes, thin, every thirty */
+  for (let d = 0; d < 360; d += 30) {
+    const th = (d - 90) * PI / 180;
+    stroke([[P.cx + cos(th) * U * 0.030, P.cy + sin(th) * U * 0.030],
+    [P.cx + cos(th) * P.R, P.cy + sin(th) * P.R]],
+      { color: DIM, w: 0.7, alpha: 0.38, seed: 500 + d });
+  }
+  /* the mark: a small cross where the two tracks will meet */
+  stroke([[P.cx - 10, P.cy], [P.cx + 10, P.cy]], { color: INK, w: 1.2, seed: 511 });
+  stroke([[P.cx, P.cy - 10], [P.cx, P.cy + 10]], { color: INK, w: 1.2, seed: 512 });
+
+  /* the two tracks, drawn from the bearing they came in on, with the
+     lead dashed out ahead of the mark */
+  const track = (b, r0, r1, col, seed) => {
+    const a = [], n = 26;
+    for (let i = 0; i <= n; i++) { const rr = lerp(r0, r1, i / n); a.push([P.cx + cos(b) * rr, P.cy + sin(b) * rr]); }
+    stroke(a, { color: col, w: 1.5, seed: seed });
+    const lead = [[P.cx + cos(b) * r1, P.cy + sin(b) * r1], [P.cx + cos(b) * (r1 - U * 0.09), P.cy + sin(b) * (r1 - U * 0.09)]];
+    stroke(lead, { color: col, w: 1.0, alpha: 0.55, dash: [7, 6], seed: seed + 1 });
+  };
+  track(P.hb, P.R, P.hr, PAL.hero, 520);
+  track(P.fb, P.R, P.fr, PAL.foe, 530);
+
+  /* markers: the yard fleet is a chevron, the shoal is a lozenge */
+  const chev = (x, y, a, col) => {
+    const c = cos(a), s = sin(a), k = U * 0.013;
+    poly([[x + c * k * 1.6, y + s * k * 1.6], [x - (c * 0.6 + s) * k, y - (s * 0.6 - c) * k],
+    [x - c * k * 0.3, y - s * k * 0.3], [x - (c * 0.6 - s) * k, y - (s * 0.6 + c) * k]],
+      GROUND, col, 1.7, { seed: 540 });
+  };
+  const loz = (x, y, a, col) => {
+    const c = cos(a), s = sin(a), k = U * 0.013;
+    poly([[x + c * k * 1.5, y + s * k * 1.5], [x - s * k * 0.8, y + c * k * 0.8],
+    [x - c * k * 1.5, y - s * k * 1.5], [x + s * k * 0.8, y - c * k * 0.8]],
+      GROUND, col, 1.7, { seed: 541 });
+  };
+  chev(P.h[0], P.h[1], P.hb + PI, PAL.hero);
+  loz(P.f[0], P.f[1], P.fb + PI, PAL.foe);
+
+  const rev = ann;
+  callout(P.h[0], P.h[1], -U * 0.070, -U * 0.055, [HERO_ID[0], HERO_ID[2], "BRG 205  380 M"],
+    { color: PAL.hero, reveal: rev, seed: 550 });
+  callout(P.f[0], P.f[1], U * 0.072, U * 0.050, [FOE_ID[0], FOE_ID[2], "BRG 025  447 M"],
+    { color: PAL.foe, reveal: rev, seed: 560 });
+
+  /* closure, as a dimension across the gap */
+  if (rev > 0.6) {
+    const km = (78 - 62 * smooth(p)).toFixed(1);
+    dimension(P.h[0], P.h[1], P.f[0], P.f[1], km + " KM", { alpha: (rev - 0.6) / 0.4, color: DIM });
+  }
+  scaleBar(U * 0.075, H - U * 0.072, U * 0.115, "20 KM", rev, null);
+  cornerTicks();
+  titleBlock(["ENGAGEMENT PLOT", "MERIDIAN REACH — 4417", "TWO FLEETS CLOSING",
+    [["RANGE", (78 - 62 * smooth(p)).toFixed(0) + " KM"], ["CLOSURE", "2.4 KM/S"],
+    ["HULLS", "2"], ["SCREEN", "38"], ["LOSS", "NIL"]]], RIGHT(1), rev);
+}
+
+/* --- scene 2: profile, starboard elevation -------------------------- */
+function scene2(t) {
+  const u = (t - 3.4) / 3.2;
+  const cam = camera({ yaw: 0, pitch: 0, scale: U * 0.00225, cx: W * 0.49, cy: H * 0.43 });
+  const xf = place({ x: 0, y: 0, z: 0, yaw: 0 });
+  stars(0.16, true);
+
+  /* ISO chain centre line through the elevation */
+  stroke([[U * 0.055, H * 0.43], [W - U * 0.055, H * 0.43]], { color: DIM, w: 1.0, dash: CHAIN, alpha: 0.8, seed: 600 });
+
+  /* The cut lands on a drawing, not on an empty sheet: the masses are
+     already down and it is the fittings that arrive, back to front. */
+  drawShip(HERO, xf, cam, { color: INK, hatch: true, reveal: 0.42 + 0.58 * smooth(u / 0.30), hatchAlpha: 0.8 });
+
+  /* the launch: her screen goes out from the ventral hangar in the
+     last second, which is the only thing that moves in this shot */
+  if (u > 0.62) {
+    for (let i = 0; i < 14; i++) {
+      const f = fighterAt(i, t, { x: W * 0.53, y: H * 0.50, ang: -0.35, spread: 0.55, speed: 240, amp: 8, t0: 5.4, stagger: 0.055 });
+      if (!f || f.x > W) continue;
+      fighterMark(f.x, f.y, f.a, f.k, PAL.hero, { size: 4.2, seed: 610 + i, w: 1.2 });
+      stroke([[f.x - cos(f.a) * 26, f.y - sin(f.a) * 26], [f.x - cos(f.a) * 8, f.y - sin(f.a) * 8]],
+        { color: PAL.hero, w: 1.0, alpha: 0.35, seed: 620 + i });
+    }
+  }
+
+  /* measured, because a general arrangement is measured */
+  const L = cam.s * 380;
+  dimension(W * 0.49 - L / 2, H * 0.635, W * 0.49 + L / 2, H * 0.635, "380.0 M", { alpha: smooth((u - 0.32) / 0.2) });
+  plateLabel("PROFILE — STARBOARD ELEVATION", U * 0.055, H * 0.695, U * 0.47, {});
+  scaleBar(U * 0.075, H - U * 0.072, cam.s * 100, "100 M", 1, { h: cam.s * 1.8, label: "1.8 M" });
+  cornerTicks();
+  titleBlock([HERO_ID[0], HERO_ID[1], "HULL 4417 · YARD SLOT C3 W1 T2 B4 G1",
+    [["LENGTH", "380.0 M"], ["BEAM", "104.2 M"], ["HEIGHT", "92.0 M"], ["DRY", "41 900 T"], ["CREW", "1 240"]]],
+    RIGHT(2), 1);
+}
+
+/* --- scene 3: contact ----------------------------------------------- */
+function scene3(t) {
+  const u = (t - 6.6) / 2.6;
+  const cx = W * 0.44, cy = H * 0.46;
+  coordTicks(cx, cy, U * 0.345, 1);
+  rangeRings(cx, cy, U * 0.086, 4, "KM", { alpha: 1, per: 15 });
+
+  /* the bearing needle sweeps, and every sweep leaves its contacts */
+  const sweep = (u * 2.2 % 1) * TAU - PI / 2;
+  arc(cx, cy, U * 0.345, sweep - 0.5, sweep, { color: PAL.foe, w: 1.4, alpha: 0.5, seed: 700 });
+  stroke([[cx, cy], [cx + cos(sweep) * U * 0.345, cy + sin(sweep) * U * 0.345]], { color: PAL.foe, w: 1.2, alpha: 0.55, seed: 701 });
+
+  const R = RNG(1109);
+  let n = 0;
+  for (let i = 0; i < 31; i++) {
+    const b = R() * TAU, rr = U * (0.12 + R() * 0.22);
+    const born = 0.06 + i * 0.026;
+    if (u < born) continue;
+    n++;
+    const x = cx + cos(b) * rr * (1 - (u - born) * 0.10), y = cy + sin(b) * rr * (1 - (u - born) * 0.10);
+    const k = U * 0.008;
+    poly([[x + k * 1.5, y], [x, y + k * 0.85], [x - k * 1.5, y], [x, y - k * 0.85]], GROUND, PAL.foe, 1.3, { seed: 710 + i });
+    if (i % 7 === 0) {
+      text("SH-" + (1109 + i * 13).toString(16).toUpperCase(), x + k * 2.2, y + 4,
+        { size: U * 0.0115, weight: 500, tracking: U * 0.002, color: DIM, alpha: 0.8 });
+    }
+  }
+  /* the crown herself, still holding the centre */
+  const k = U * 0.016;
+  poly([[cx + k * 1.7, cy], [cx - k * 0.6 - k, cy + k], [cx - k * 0.3, cy], [cx - k * 1.6, cy - k]], GROUND, PAL.hero, 1.9, { seed: 720 });
+
+  callout(cx, cy, -U * 0.10, -U * 0.085, [HERO_ID[0], "SCREEN AWAY", "38 EFFECTIVE"], { color: PAL.hero, reveal: smooth(u / 0.18), seed: 730 });
+
+  /* the tally: a plot counts what it has not had time to name */
+  text("CONTACTS", U * 0.062, U * 0.088, { size: U * 0.0165, weight: 600, tracking: U * 0.003, color: INK });
+  tally(U * 0.062, U * 0.128, n, { color: PAL.foe });
+  text(String(n).padStart(2, "0"), U * 0.062, U * 0.164, { size: U * 0.024, weight: 700, tracking: U * 0.004, color: INK });
+
+  /* what the plot is not looking at, kept open in the corner */
+  inset(W - U * 0.30, U * 0.055, U * 0.245, U * 0.215, "CONTACT — FORM", 1, (x, y, w, h) => {
+    const cam = camera({ yaw: 0.6 + t * 0.30, pitch: 0.28, scale: w * 0.00105, cx: x + w / 2, cy: y + h * 0.55 });
+    drawShip(FOE, place({ yaw: 0 }), cam, { color: PAL.foe, hatch: false, wScale: 0.55, fillAlpha: 0.25, frames: false });
+  });
+
+  scaleBar(U * 0.075, H - U * 0.072, U * 0.12, "15 KM", 1, null);
+  cornerTicks();
+  titleBlock(["CONTACT", "THE SHOAL — BROOD ELEVEN", "GROWN, NOT BUILT",
+    [["RANGE", "16 KM"], ["BEARING", "025"], ["CONTACTS", String(n)], ["SCREEN", "38"], ["LOSS", "NIL"]]],
+    RIGHT(3), 1);
+}
+
+/* --- scene 4: the broadside ----------------------------------------- */
+/* A crown fights at her own range: she advances to the reach of her
+   lances, wheels her broadside across the mark and walks the line.
+   She does not chase, and she is never bow-to-bow with the enemy's
+   crown, because that is a brawl. */
+function scene4(t) {
+  const u = (t - 9.2) / 4.0;
+  const dolly = 1 + 0.055 * smooth(u);
+  const cam = camera({ yaw: 0.52, pitch: 0.30, scale: U * 0.00105 * dolly, cx: W * 0.50 - u * 14, cy: H * 0.50 });
+  stars(0.20, true);
+
+  /* She is walking the line, so she is actually walking: the broadside
+     tracks aft along the mark because the ship is sliding along it,
+     not because the guns are wandering. */
+  const walk = smooth(u);
+  const heroXf = place({
+    x: -180 + walk * 74, y: -40 - walk * 20, z: 100 + walk * 44,
+    yaw: -0.10 + swing(u * 0.25) * 0.02 - walk * 0.11, roll: 0.06 - walk * 0.03
+  });
+  const foeXf = place({
+    x: 210 - walk * 34, y: 70 + walk * 16, z: -120 - walk * 28,
+    yaw: 2.74 + walk * 0.09, roll: -0.12 + walk * 0.05
+  });
+
+  drawShip(FOE, foeXf, cam, { color: INK, hatch: true, hatchAlpha: 0.75, wScale: 1.0 });
+  drawShip(HERO, heroXf, cam, { color: INK, hatch: true, hatchAlpha: 0.9, wScale: 1.15 });
+
+  /* The broadside walks: each barbette speaks in turn and the fall of
+     shot walks aft along her flank. Every random in the loop is drawn
+     before any test that could skip it — the frame has to come out the
+     same however you arrive at it. */
+  const R = RNG(9001);
+  for (let i = 0; i < 30; i++) {
+    const r1 = R(), r2 = R(), r3 = R(), r4 = R();
+    const t0 = 9.5 + i * 0.115 + r1 * 0.05;
+    const age = (t - t0) / 0.26;
+    const bx = [-124, -80, 20, 78][i % 4];
+    const m = cam.project(heroXf([bx + 42, 47, (i % 2 ? 6 : -6)]));
+    const tgt = cam.project(foeXf([lerp(-200, 200, ((i * 0.37) % 1)), lerp(-30, 40, r2), 0]));
+    if (age >= 0 && age <= 1) {
+      beam(m, tgt, PAL.hero, age, { w: 3.4 });
+      flash(m[0], m[1], 22, age, r3);
+    }
+    const hit = (t - t0 - 0.10) / 0.55;
+    if (hit >= 0 && hit <= 1) flash(tgt[0], tgt[1], 46 + r4 * 34, hit, ih(i, 3, 9));
+  }
+  /* she is fired on in return, and the shot that matters is late */
+  const R2 = RNG(9002);
+  for (let i = 0; i < 14; i++) {
+    const a1 = R2(), a2 = R2(), a3 = R2(), a4 = R2(), a5 = R2();
+    const t0 = 10.1 + i * 0.20 + a1 * 0.09;
+    const age = (t - t0) / 0.30;
+    if (age < 0 || age > 1) continue;
+    /* she fires off her own spine, not out of the air beside it */
+    const sp = shoalSpine(0.18 + a2 * 0.68);
+    const m = cam.project(foeXf([sp[0], sp[1] + sp[2] * 0.55, (a3 < 0.5 ? -1 : 1) * sp[2] * 0.7]));
+    const tgt = cam.project(heroXf([lerp(-170, 160, a4), lerp(-20, 35, a5), 40]));
+    beam(m, tgt, PAL.foe, age, { w: 3.0 });
+    const hit = (t - t0 - 0.12) / 0.5;
+    if (hit >= 0 && hit <= 1) flash(tgt[0], tgt[1], 36, hit, ih(i, 7, 2));
+  }
+  /* the screen crosses the field */
+  for (let i = 0; i < 16; i++) {
+    const f = fighterAt(i, t, { x: -60, y: H * 0.88, ang: -0.66, spread: 0.85, speed: 250, amp: 34, t0: 9.3, stagger: 0.16 });
+    if (!f || f.x > W + 40 || f.y < -40) continue;
+    fighterMark(f.x, f.y, f.a, f.k, i % 4 ? PAL.hero : PAL.foe, { size: 8.5, seed: 800 + i, w: 1.4 });
+  }
+
+  /* The plot does not stop plotting because the picture got
+     interesting. Perfect circles and a straight bearing go straight
+     over the boiled ink, and the contrast between them is the whole
+     trick. */
+  const hc = cam.project(heroXf([0, 20, 0])), fc = cam.project(foeXf([0, 0, 0]));
+  const rr = hyp(fc[0] - hc[0], fc[1] - hc[1]);
+  ring(hc[0], hc[1], rr, { color: INK, w: 1.0, alpha: 0.30, dash: CHAIN, seed: 810 });
+  ring(hc[0], hc[1], rr * 0.62, { color: INK, w: 0.9, alpha: 0.20, dash: CHAIN, seed: 811 });
+  const bear = Math.atan2(fc[1] - hc[1], fc[0] - hc[0]);
+  arc(hc[0], hc[1], U * 0.115, bear - 0.34, bear + 0.34, { color: INK, w: 1.1, alpha: 0.45, seed: 812 });
+  for (let i = -2; i <= 2; i++) {
+    const th = bear + i * 0.17;
+    stroke([[hc[0] + cos(th) * U * 0.115, hc[1] + sin(th) * U * 0.115],
+    [hc[0] + cos(th) * U * (i ? 0.126 : 0.137), hc[1] + sin(th) * U * (i ? 0.126 : 0.137)]],
+      { color: INK, w: 1.0, alpha: 0.45, seed: 813 + i });
+  }
+  ring(fc[0], fc[1], U * 0.052, { color: PAL.foe, w: 1.3, alpha: 0.75, seed: 820 });
+  ring(fc[0], fc[1], U * 0.027, { color: PAL.foe, w: 1.0, alpha: 0.5, seed: 821 });
+  callout(fc[0], fc[1], U * 0.058, -U * 0.235, [FOE_ID[0], "BRG 064 — 12.4 KM", "BROADSIDE ON"],
+    { color: INK, reveal: clamp((t - 9.6) * 1.8, 0, 1), seed: 822 });
+  callout(hc[0], hc[1], -U * 0.070, U * 0.185, [HERO_ID[0], "HOLDING RANGE", "WALKING THE LINE"],
+    { color: INK, reveal: clamp((t - 10.1) * 1.8, 0, 1), seed: 823 });
+
+  /* salvoes fired, four to a group, counted where the hand can see it */
+  const fired = Math.max(0, Math.min(30, Math.floor((t - 9.5) / 0.115)));
+  text("SALVO", U * 0.062, U * 0.088, { size: U * 0.0165, weight: 600, tracking: U * 0.003, color: INK });
+  tally(U * 0.062, U * 0.126, fired, { color: INK });
+
+  cornerTicks();   /* solo: the sheet is thrown away and the plate is the picture */
+}
+
+/* --- scene 5: screen engaged ---------------------------------------- */
+function scene5(t) {
+  const u = (t - 13.2) / 3.0;
+  const cx = W * 0.50, cy = H * 0.50;
+  coordTicks(cx, cy, U * 0.40, 0.75);
+  ring(cx, cy, U * 0.20, { color: DIM, w: 1.0, dash: CHAIN, alpha: 0.6, seed: 900 });
+  ring(cx, cy, U * 0.33, { color: DIM, w: 1.0, dash: CHAIN, alpha: 0.5, seed: 901 });
+
+  let kills = 0;
+  for (let i = 0; i < 22; i++) {
+    const side = i % 3 === 2;
+    const f = fighterAt(i, t, {
+      x: side ? W * 1.05 : -W * 0.05, y: H * (0.18 + ((i * 7) % 11) / 14),
+      ang: side ? PI - 0.10 : 0.10, spread: 0.9, speed: 300, amp: 46, t0: 12.5, stagger: 0.03
+    });
+    if (!f) continue;
+    /* trajectory arcs trail every mark: where she has been, dashed */
+    const trail = [];
+    for (let s = 0; s < 9; s++) {
+      const g = fighterAt(i, t - s * 0.14, {
+        x: side ? W * 1.05 : -W * 0.05, y: H * (0.18 + ((i * 7) % 11) / 14),
+        ang: side ? PI - 0.10 : 0.10, spread: 0.9, speed: 300, amp: 46, t0: 12.5, stagger: 0.03
+      });
+      if (g) trail.push([g.x, g.y]);
+    }
+    const col = side ? PAL.foe : PAL.hero;
+    const death = 13.9 + ((i * 13) % 17) * 0.12;
+    if (t > death && side) {
+      kills++;
+      const age = (t - death) / 0.7;
+      if (age <= 1) flash(f.x, f.y, 26, age, ih(i, 5, 3));
+      /* the kill mark stays on the plot */
+      const k = U * 0.010;
+      ring(f.x, f.y, k, { color: DIM, w: 1.1, alpha: 0.7, seed: 910 + i });
+      stroke([[f.x - k, f.y - k], [f.x + k, f.y + k]], { color: DIM, w: 1.1, alpha: 0.7, seed: 911 + i });
+      stroke([[f.x - k, f.y + k], [f.x + k, f.y - k]], { color: DIM, w: 1.1, alpha: 0.7, seed: 912 + i });
+      continue;
+    }
+    if (trail.length > 1) stroke(trail, { color: col, w: 1.2, alpha: 0.48, dash: [9, 8], seed: 920 + i });
+    fighterMark(f.x, f.y, f.a, f.k, col, { size: 14, seed: 930 + i, w: 1.5 });
+    /* tracer, walked onto a led mark */
+    if (!side && i % 3 === 0) {
+      const g = fighterAt(i + 2, t, { x: W * 1.05, y: H * (0.18 + (((i + 2) * 7) % 11) / 14), ang: PI - 0.10, spread: 0.9, speed: 300, amp: 46, t0: 12.5, stagger: 0.03 });
+      if (g) tracer([f.x, f.y], [g.x, g.y], PAL.hero, (t * 1.6 + i) % 1, i);
+    }
+  }
+
+  /* the gun camera, because a plot keeps one eye on the thing itself */
+  inset(W - U * 0.295, U * 0.055, U * 0.240, U * 0.200, "GUN CAMERA — 04", 1, (x, y, w, h) => {
+    const jx = x + w * (0.5 + holdSin(t * 0.7, 0.6) * 0.28);
+    const jy = y + h * (0.5 + holdSin(t * 0.52 + 0.3, 0.6) * 0.22);
+    fighterMark(jx, jy, 0.3 + swing(t * 0.4) * 0.4, 0.8, PAL.foe, { size: 20, seed: 940, w: 1.4 });
+    const r = U * 0.030;
+    ring(x + w / 2, y + h / 2, r, { color: INK, w: 1.1, alpha: 0.8, seed: 941 });
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]])
+      stroke([[x + w / 2 + dx * r * 0.55, y + h / 2 + dy * r * 0.55], [x + w / 2 + dx * r * 1.5, y + h / 2 + dy * r * 1.5]],
+        { color: INK, w: 1.0, alpha: 0.8, seed: 942 });
+  });
+
+  text("SCREEN", U * 0.062, U * 0.088, { size: U * 0.0165, weight: 600, tracking: U * 0.003, color: INK });
+  tally(U * 0.062, U * 0.126, Math.min(31, kills + Math.floor(u * 6)), { color: PAL.hero });
+  text("KILLS", U * 0.062, U * 0.158, { size: U * 0.0125, weight: 500, tracking: U * 0.0022, color: DIM });
+
+  cornerTicks();
+  titleBlock(["SCREEN ENGAGED", "38 AWAY — 31 EFFECTIVE", "DOCTRINE: SWARM / SCREEN",
+    [["RANGE", "9 KM"], ["BEARING", "021"], ["KILLS", String(kills + Math.floor(u * 6))], ["SCREEN", "31"], ["LOSS", "07"]]],
+    RIGHT(4), 1);
+}
+
+/* --- scene 6: hull breach ------------------------------------------- */
+function scene6(t) {
+  const u = (t - 16.2) / 3.4;
+  const cam = camera({ yaw: 0.22, pitch: 0.22, scale: U * 0.0025 - u * U * 0.00010, cx: W * 0.48, cy: H * 0.53 });
+  stars(0.14, true);
+  const xf = place({ x: 0, y: 0, z: 0, yaw: -0.05, roll: 0.03 + swing(u * 0.4) * 0.012 });
+  drawShip(HERO, xf, cam, { color: INK, hatch: true, hatchAlpha: 1.0, wScale: 1.25, dry: 1.4 });
+
+  /* the shot that matters lands amidships at 17.0 and the plating
+     goes with it. Debris keeps the hull's momentum: it is thrown, and
+     then it just carries on. */
+  const impact = cam.project(xf([-30, 14, 42]));
+  const age = (t - 17.0) / 1.9;
+  if (age >= 0) flash(impact[0], impact[1], 190, clamp(age, 0, 1), 0.41);
+  if (t < 17.0) {
+    /* the incoming: you see the shot before it speaks */
+    const inb = (t - 16.45) / 0.55;
+    if (inb > 0) beam([W * 1.1, H * 0.10], impact, PAL.foe, inb, { w: 5.0 });
+  }
+  if (t > 17.0) {
+    const R = RNG(1701);
+    for (let i = 0; i < 46; i++) {
+      const a = R() * TAU, sp = 40 + R() * 240;
+      debris(impact[0], impact[1], cos(a) * sp, sin(a) * sp * 0.75, t - 17.0, i, 3 + R() * 9, INK);
+    }
+    /* the breach itself: a torn edge, hatched hard */
+    const torn = [];
+    for (let i = 0; i <= 22; i++) {
+      const a = i / 22 * TAU;
+      const r = (26 + 16 * vn(i * 0.8, 3, 55)) * clamp((t - 17.0) * 2.2, 0, 1);
+      torn.push([impact[0] + cos(a) * r * 1.5, impact[1] + sin(a) * r]);
+    }
+    poly(torn, PAL.emberB, INK, 2.2, { fillAlpha: 0.20 * clamp(2 - (t - 17.0), 0, 1), seed: 1000 });
+  }
+
+  /* cold geometry over the hot picture: the breach gets measured
+     while it is still burning, because that is what the sheet is for */
+  if (t > 17.15) {
+    const ga = clamp((t - 17.15) * 1.8, 0, 1) * 0.8;
+    ring(impact[0], impact[1], U * 0.088, { color: INK, w: 1.1, alpha: ga * 0.7, dash: CHAIN, seed: 1005 });
+    ring(impact[0], impact[1], U * 0.150, { color: INK, w: 0.9, alpha: ga * 0.4, dash: CHAIN, seed: 1006 });
+    const fa = cam.project(xf([-86, 40, 44])), fb = cam.project(xf([26, 40, 44]));
+    dimension(fa[0], fa[1] - U * 0.10, fb[0], fb[1] - U * 0.10, "104 M", { alpha: ga, color: INK });
+  }
+
+  /* the alarm: one half-second on the vermilion sheet, and it is the
+     only time this drawing raises its voice */
+  cornerTicks();
+  if (MODE === "alarm") {
+    text("HULL BREACH", W * 0.5, H * 0.135, { size: U * 0.052, weight: 700, tracking: U * 0.014, color: INK, anchor: "middle" });
+    text("FRAME 118 — 126   ·   COMPARTMENTS 9", W * 0.5, H * 0.175, { size: U * 0.0165, weight: 500, tracking: U * 0.005, color: INK, anchor: "middle" });
+  } else if (t > 17.2) {
+    callout(impact[0] + 30, impact[1] + 10, U * 0.12, U * 0.13, ["BREACH", "FR 118 — 126", "9 COMPARTMENTS"],
+      { color: INK, reveal: clamp((t - 17.4) * 2.2, 0, 1), seed: 1010 });
+  }
+}
+
+/* --- scene 7: the lance, charging ----------------------------------- */
+/* White light gathering at the muzzle for two and a half seconds —
+   you see the shot coming before it speaks. */
+function scene7(t) {
+  const u = (t - 19.6) / 3.8;
+  const cam = camera({ yaw: 0.10, pitch: 0.16, scale: U * 0.00160, cx: W * 0.40, cy: H * 0.44 });
+  const xf = place({ x: 0, y: 0, z: 0, yaw: 0.02 });
+
+  coordTicks(W * 0.50, H * 0.46, U * 0.415, 0.55);
+
+  /* x-ray: the hull is a ghost and the structure inside her reads
+     straight through it */
+  drawShip(HERO, xf, cam, { color: INK, hatch: false, fillAlpha: 0.22, wScale: 0.85, alpha: 0.9 });
+
+  /* the lance highlighted along its whole run */
+  const a = cam.project(xf([-140, 2, 0])), b = cam.project(xf([206, 2, 0]));
+  stroke([a, b], { color: PAL.heroHot, w: 3.0, alpha: 0.30 + 0.45 * u, seed: 1100 });
+
+  /* the charge: rings contracting onto the muzzle, whitening */
+  const chg = clamp((t - 20.4) / 2.5, 0, 1);
+  for (let i = 0; i < 7; i++) {
+    const k = ((chg * 2.4 + i / 7) % 1);
+    const r = lerp(U * 0.085, U * 0.008, k);
+    ring(b[0], b[1], r, { color: mix(PAL.heroHot, PAL.emberA, k), w: 1.0 + k * 1.6, alpha: (0.18 + 0.6 * chg) * (0.35 + k * 0.65), seed: 1110 + i });
+  }
+  X.globalAlpha = chg * chg;
+  X.fillStyle = PAL.emberA;
+  X.beginPath(); X.arc(b[0], b[1], 4 + chg * chg * 17, 0, TAU); X.fill();
+  X.globalAlpha = 1;
+
+  /* the firing solution: an arc to the mark, ticked off in range */
+  const tgt = [W * 0.855, H * 0.275];
+  const sol = [];
+  for (let i = 0; i <= 40; i++) {
+    const k = i / 40;
+    sol.push([lerp(b[0], tgt[0], k), lerp(b[1], tgt[1], k) - sin(k * PI) * U * 0.085]);
+  }
+  stroke(sol.slice(0, Math.max(2, Math.round(41 * clamp(u * 2.1, 0, 1)))),
+    { color: DIM, w: 1.2, dash: [11, 8], alpha: 0.9, seed: 1120 });
+  for (let i = 1; i < 8; i++) {
+    const p = sol[Math.round(i / 8 * 40)];
+    const q = sol[Math.round(i / 8 * 40) + 1] || p;
+    let dx = q[0] - p[0], dy = q[1] - p[1]; const l = hyp(dx, dy) || 1; dx /= l; dy /= l;
+    if (u * 2.1 > i / 8) {
+      stroke([[p[0] + dy * 7, p[1] - dx * 7], [p[0] - dy * 7, p[1] + dx * 7]], { color: DIM, w: 1.0, alpha: 0.8, seed: 1130 + i });
+      if (i % 2 === 0) text((i * 5) + " KM", p[0], p[1] - 13, { size: U * 0.0112, weight: 500, tracking: U * 0.002, color: DIM, anchor: "middle" });
+    }
+  }
+  /* the mark */
+  ring(tgt[0], tgt[1], U * 0.030, { color: PAL.foe, w: 1.4, alpha: 0.9, seed: 1140 });
+  ring(tgt[0], tgt[1], U * 0.016, { color: PAL.foe, w: 1.0, alpha: 0.6, seed: 1141 });
+  callout(tgt[0], tgt[1], -U * 0.140, -U * 0.115, [FOE_ID[0], "SPINE — STATION 6", "LEAD 2.6°"],
+    { color: PAL.foe, reveal: clamp((t - 20.3) * 1.6, 0, 1), seed: 1150 });
+
+  callout(b[0], b[1], -U * 0.100, -U * 0.175, ["SPINAL LANCE", "CHARGE " + Math.round(chg * 100) + "%", "410 GJ"],
+    { color: PAL.heroHot, reveal: clamp((t - 19.9) * 1.8, 0, 1), tail: U * 0.075, seed: 1160 });
+
+  /* the count, ticked off along the bottom margin, short of the block */
+  const ticks = Math.round(chg * 16);
+  for (let i = 0; i < 16; i++) {
+    const x = U * 0.075 + i * U * 0.0165;
+    stroke([[x, H - U * 0.108], [x, H - U * 0.108 - (i < ticks ? U * 0.019 : U * 0.008)]],
+      { color: i < ticks ? PAL.heroHot : DIM, w: i < ticks ? 1.8 : 0.9, alpha: i < ticks ? 1 : 0.5, seed: 1170 + i });
+  }
+  text((2.5 - chg * 2.5).toFixed(1) + " S", U * 0.075 + 16 * U * 0.0165 + U * 0.016, H - U * 0.108,
+    { size: U * 0.019, weight: 700, tracking: U * 0.004, color: INK });
+
+  cornerTicks();
+  titleBlock(["LANCE — CHARGING", HERO_ID[0] + " · SPINAL MOUNT", "HOLD RANGE 41.2 KM",
+    [["RANGE", "41.2 KM"], ["LEAD", "2.6°"], ["CHARGE", Math.round(chg * 100) + "%"], ["SCREEN", "27"], ["LOSS", "11"]]],
+    RIGHT(5), 1);
+}
+
+/* --- scene 8: the lance --------------------------------------------- */
+/* Three masses adrift, and the same three however you arrive at the
+   frame: the drift is a straight function of how long she has been
+   dead, so scene 8 hands scene 9 a wreck field that has not moved. */
+const WRECK = [
+  { k: 0, drift: [-72, 28, -70], spin: -0.11, n: "AFT MASS", m: "2 431 T", co: [-0.085, 0.245] },
+  { k: 1, drift: [40, -46, 30], spin: 0.17, n: "MIDBODY", m: "5 090 T", co: [-0.120, -0.175] },
+  { k: 2, drift: [110, 66, 96], spin: 0.30, n: "BOW + HEAD", m: "1 118 T", co: [0.080, 0.150] }
+];
+function wreckXf(p, el) {
+  const d = Math.max(0, el);
+  return place({
+    x: FIELD.foeX + p.drift[0] * d * 0.42, y: FIELD.foeY + p.drift[1] * d * 0.42, z: FIELD.foeZ + p.drift[2] * d * 0.42,
+    /* the shot gives her the spin all at once and the drift only
+       afterwards, so the break snaps and the masses then coast */
+    yaw: 2.66 + p.spin * (d * 0.24 + 0.40 * smooth(d * 2.2)),
+    roll: -0.10 + p.spin * (d * 0.34 + 0.55 * smooth(d * 2.2))
+  });
+}
+
+function scene8(t) {
+  const cam = camera({ yaw: 0.44, pitch: 0.26, scale: U * 0.00098, cx: W * 0.520, cy: H * 0.500 });
+  stars(0.22, true);
+  const heroXf = place({ x: FIELD.heroX, y: FIELD.heroY, z: FIELD.heroZ, yaw: 0.02 });
+  const shot = (t - 23.55) / 0.45;
+
+  /* she breaks at two stations: three masses, each carrying the
+     momentum she had and the spin the shot gave her */
+  for (const p of WRECK) {
+    drawShip(FOE_PIECES[p.k], wreckXf(p, t - 23.9), cam, { color: INK, hatch: true, hatchAlpha: 0.7, wScale: 0.95 });
+  }
+  drawShip(HERO, heroXf, cam, { color: INK, hatch: true, hatchAlpha: 0.85 });
+
+  /* the one loud colour in the piece, spent once */
+  const muzzle = cam.project(heroXf([206, 2, 0]));
+  const mark = cam.project(place({ x: FIELD.foeX, y: FIELD.foeY, z: FIELD.foeZ, yaw: 2.66 })([0, 0, 0]));
+  if (shot >= 0 && shot < 4) {
+    const fade = clamp(1.6 - shot * 0.5, 0, 1);
+    stroke([muzzle, mark], { color: PAL.heroHot, w: 26 * fade, alpha: 0.10 * fade, flat: true, seed: 1200 });
+    stroke([muzzle, mark], { color: PAL.heroHot, w: 9 * fade, alpha: 0.55 * fade, flat: true, seed: 1201 });
+    stroke([muzzle, mark], { color: PAL.emberA, w: 2.6 * fade, alpha: 0.95 * fade, flat: true, seed: 1202 });
+    flash(muzzle[0], muzzle[1], 66, clamp(shot * 0.5, 0, 1), 0.63);
+  }
+  /* and then the heat, which belongs to neither of them */
+  const bloom = (t - 23.75) / 2.4;
+  if (bloom >= 0 && bloom <= 1) flash(mark[0], mark[1], 300, bloom, 0.19);
+
+  /* She does not come apart along a dotted line. The two stations tear
+     first — a hot cut at each, and the plating off them thrown clear
+     before the masses have moved anywhere. */
+  const still = place({ x: FIELD.foeX, y: FIELD.foeY, z: FIELD.foeZ, yaw: 2.66, roll: -0.10 });
+  for (let c = 0; c < 2; c++) {
+    const sp = shoalSpine(c ? 8 / 12 : 4 / 12);
+    const cut = cam.project(still([sp[0], sp[1], 0]));
+    const cage = (t - 23.86 - c * 0.05) / 0.75;
+    if (cage >= 0 && cage <= 1) flash(cut[0], cut[1], 168, cage, c ? 0.71 : 0.33);
+    const Rc = RNG(4100 + c * 17);
+    for (let i = 0; i < 26; i++) {
+      const a = Rc() * TAU, s2 = 150 + Rc() * 400, sz = 2 + Rc() * 7;
+      if (t < 23.86) break;
+      debris(cut[0], cut[1], cos(a) * s2, sin(a) * s2 * 0.7, t - 23.86, i + 200 + c * 40, sz, INK);
+    }
+  }
+  const R = RNG(2301);
+  for (let i = 0; i < 52; i++) {
+    if (t < 23.85) break;
+    const a = R() * TAU, sp = 60 + R() * 300, sz = 3 + R() * 11;
+    debris(mark[0], mark[1], cos(a) * sp, sin(a) * sp * 0.8, t - 23.85, i + 40, sz, INK);
+  }
+  for (let i = 0; i < 5; i++) {
+    const t0 = 24.2 + i * 0.28;
+    const age = (t - t0) / 1.3;
+    if (age >= 0 && age <= 1) {
+      const a = ih(i, 9, 4) * TAU, d = 70 + ih(i, 3, 8) * 180;
+      flash(mark[0] + cos(a) * d, mark[1] + sin(a) * d, 56 + ih(i, 5, 2) * 48, age, ih(i, 11, 6));
+    }
+  }
+
+  /* the lance axis carries on past her, ticked off in range — the
+     cold geometry does not stop because the picture got interesting */
+  const ax = Math.atan2(mark[1] - muzzle[1], mark[0] - muzzle[0]);
+  stroke([[mark[0] + cos(ax) * 40, mark[1] + sin(ax) * 40], [mark[0] + cos(ax) * 300, mark[1] + sin(ax) * 300]],
+    { color: DIM, w: 1.0, alpha: 0.5, dash: [12, 9], flat: true, seed: 1230 });
+  ring(mark[0], mark[1], U * 0.115, { color: DIM, w: 1.0, alpha: 0.35, dash: CHAIN, seed: 1231 });
+  callout(mark[0], mark[1], -U * 0.135, U * 0.145, ["BROOD ELEVEN", "SPINE PARTED — ST 4 / ST 8", "410 GJ ON THE MARK"],
+    { color: DIM, reveal: clamp((t - 24.4) * 1.8, 0, 1), seed: 1232 });
+
+  cornerTicks();
+}
+
+/* --- scene 9: wreck field ------------------------------------------- */
+function scene9(t, wipe) {
+  const u = (t - 26.4) / 2.6;
+  const cam = camera({ yaw: 0.44, pitch: 0.26, scale: U * 0.00082, cx: W * 0.47, cy: H * 0.50 });
+  const a = wipe === undefined ? 1 : wipe;
+
+  coordTicks(W * 0.5, H * 0.5, U * 0.425, 0.45 * a);
+  ring(W * 0.5, H * 0.5, U * 0.245, { color: DIM, w: 1.0, dash: CHAIN, alpha: 0.42 * a, seed: 1300 });
+
+  const heroXf = place({ x: FIELD.heroX, y: FIELD.heroY + swing(t * 0.06) * 6, z: FIELD.heroZ, yaw: 0.02, roll: 0.05 });
+  drawShip(HERO, heroXf, cam, { color: INK, hatch: false, fillAlpha: 0.5, wScale: 0.9, alpha: a });
+
+  /* the wrecks keep going. They were moving when she died and nobody
+     has stopped them. */
+  WRECK.forEach((p, i) => {
+    const foeXf = wreckXf(p, t - 23.9);
+    drawShip(FOE_PIECES[p.k], foeXf, cam, { color: INK, hatch: false, fillAlpha: 0.55, wScale: 0.95, alpha: a });
+    const c = cam.project(foeXf(FOE_PIECES[p.k].mid));
+    callout(c[0], c[1], U * p.co[0], U * p.co[1],
+      [p.n, "DERELICT — " + p.m, "DRIFT 0." + (3 + i) + " KM/S"],
+      { color: DIM, reveal: clamp((t - 26.7 - i * 0.22) * 2.4, 0, 1) * a, alpha: a, seed: 1310 + i });
+  });
+
+  const R = RNG(2301);
+  const seat = cam.project(place({ x: FIELD.foeX, y: FIELD.foeY, z: FIELD.foeZ })([0, 0, 0]));
+  for (let i = 0; i < 52; i++) {
+    const ang = R() * TAU, sp = 60 + R() * 300, sz = 3 + R() * 11;
+    debris(seat[0], seat[1], cos(ang) * sp * 0.26, sin(ang) * sp * 0.21, t - 23.85, i + 40, sz, INK, a);
+  }
+
+  const bp = cam.project(heroXf([-30, 14, 42]));
+  callout(bp[0], bp[1], U * 0.075, -U * 0.175, [HERO_ID[0], "HOLDS THE SKY", "BREACH FR 118 — 126"],
+    { color: PAL.hero, reveal: clamp((t - 26.55) * 2.4, 0, 1) * a, alpha: a, seed: 1330 });
+
+  text("ACTION CLOSED", U * 0.062, U * 0.088, { size: U * 0.0165, weight: 600, tracking: U * 0.003, color: INK, alpha: a });
+  tally(U * 0.062, U * 0.128, 31, { color: PAL.hero, alpha: a });
+  text("CONTACTS DESTROYED", U * 0.062, U * 0.158, { size: U * 0.0125, weight: 500, tracking: U * 0.0022, color: DIM, alpha: a });
+
+  /* the mark. Quiet, bottom right, on a leader like everything else
+     on this sheet. */
+  const mk = clamp((t - 27.0) * 1.6, 0, 1) * a;
+  if (mk > 0.02) {
+    const mx = W - U * 0.205, my = H - U * 0.212;
+    stroke([[mx - U * 0.052, my - U * 0.034], [mx - U * 0.016, my], [mx + U * 0.104, my]],
+      { color: DIM, w: 1.0, alpha: mk * 0.85, seed: 1340 });
+    X.globalAlpha = mk * 0.85; X.fillStyle = DIM;
+    X.beginPath(); X.arc(mx - U * 0.052, my - U * 0.034, 2.4, 0, TAU); X.fill();
+    X.globalAlpha = 1;
+    text("opus 5", mx - U * 0.006, my - U * 0.011,
+      { size: U * 0.0225, weight: 400, tracking: U * 0.0055, color: INK, alpha: mk, lower: true });
+  }
+
+  cornerTicks(a);
+  titleBlock(["WRECK FIELD", "THE YARD FLEET HOLDS THE SKY", "BROOD ELEVEN — THREE MASSES ADRIFT",
+    [["RANGE", "38 KM"], ["WRECKS", "3"], ["DRIFT", "0.4 KM/S"], ["SCREEN", "27"], ["LOSS", "11"]]],
+    RIGHT(9), a);
+}
+
+/* ===================== 13. the director ===================== */
+
+/* Ten shots, every transition a hard cut. Nothing cross-fades: the
+   drawing is either on the paper or on the plate, and it changes its
+   mind between one frame and the next. */
+const SCENES = [
+  { t0: 0.00, t1: 3.40, mode: "cold" },
+  { t0: 3.40, t1: 6.60, mode: "warm" },
+  { t0: 6.60, t1: 9.20, mode: "cold" },
+  { t0: 9.20, t1: 13.20, mode: "warm" },
+  { t0: 13.20, t1: 16.20, mode: "cold" },
+  { t0: 16.20, t1: 19.60, mode: "warm" },
+  { t0: 19.60, t1: 23.40, mode: "cold" },
+  { t0: 23.40, t1: 26.40, mode: "warm" },
+  { t0: 26.40, t1: 29.00, mode: "cold" },
+  { t0: 29.00, t1: 30.00, mode: "cold" }
+];
+
+function draw(tRaw) {
+  const t = ((tRaw % LOOP) + LOOP) % LOOP;
+  BOIL = Math.round(t * FPS) % (LOOP * FPS);
+
+  let si = 0;
+  for (let i = 0; i < SCENES.length; i++) if (t >= SCENES[i].t0) si = i;
+  const S = SCENES[si];
+
+  /* the alarm sheet: one half-second inside the breach, and the only
+     time the ground is not paper or plate */
+  let mode = S.mode;
+  if (t >= 18.35 && t < 18.85) mode = "alarm";
+  setMode(mode);
+  /* Scene 10 is scene 1 again, down to the sheet it is drawn on, so
+     the last frame of the loop and the first are the same drawing. */
+  lay(si === 9 ? 0 : si);
+
+  switch (si) {
+    case 0: sceneP(t, smooth(clamp((t - 0.15) / 3.25, 0, 1)), clamp((t - 0.30) / 0.9, 0, 1)); break;
+    case 1: scene2(t); break;
+    case 2: scene3(t); break;
+    case 3: scene4(t); break;
+    case 4: scene5(t); break;
+    case 5: scene6(t); break;
+    case 6: scene7(t); break;
+    case 7: scene8(t); break;
+    case 8: scene9(t); break;
+    case 9: {
+      /* The plot comes back up, empty, on the bearings the two fleets
+         came in on — which is frame zero, annotations and all. The
+         wreck field wipes off it and is gone by 29.85, so the last
+         fifteen hundredths of the loop are the same drawing as the
+         first. Wreckage litters the field until the next war, and the
+         loop is the next war. */
+      const wipe = clamp((29.85 - t) / 0.70, 0, 1);
+      if (wipe > 0.01) scene9(29.0, wipe * 0.55);
+      sceneP(t, 0, 0);
+      break;
+    }
+  }
+}
+window.draw = draw;
+
+/* ===================== 14. the clock ===================== */
+
+/* Twelve drawings a second. Not a frame rate chosen to be cheap — a
+   hand does not redraw a figure sixty times a second, and at sixty
+   the boil turns into a shimmer and the whole thing stops looking
+   drawn. rAF runs at the display's rate; the drawing does not. */
+let t0 = 0, last = -1;
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!t0) t0 = now;
+  const el = (now - t0) / 1000;
+  const f = Math.floor(el * FPS);
+  if (f === last) return;
+  last = f;
+  draw(f / FPS);
+}
+
+SHEETS.warm = [makePaper(9001, PAL.paper), makePaper(9002, PAL.paper), makePaper(9003, PAL.paper)];
+SHEETS.alarm = [makePaper(9101, PAL.alarm), makePaper(9102, PAL.alarm), makePaper(9103, PAL.alarm)];
+draw(0);
+requestAnimationFrame(tick);
+
+})();
+</script>
+</html>
