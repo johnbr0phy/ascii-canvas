@@ -253,6 +253,7 @@
       var countIn = document.getElementById("count");
       var current = Genart.DEFAULT_HASH;
       var sheetRoot = current;
+      var lastSize = 0;
 
       function freshHash() {
         var bytes = new Uint8Array(32);
@@ -282,7 +283,8 @@
       function setHash(h, push) {
         current = Genart.normalizeHash(h);
         hashIn.value = current;
-        var feat = Genart.render(piece, current, previewSize());
+        lastSize = previewSize();
+        var feat = Genart.render(piece, current, lastSize);
         showTraits(feat);
         try {
           var url = new URL(location.href);
@@ -329,7 +331,7 @@
       });
       document.getElementById("redraw").addEventListener("click", function () {
         var a = Genart.features(current);
-        Genart.render(piece, current, previewSize());
+        Genart.render(piece, current, lastSize || previewSize());
         var b = Genart.features(current);
         statusEl.textContent = JSON.stringify(a) === JSON.stringify(b)
           ? "Redrawn — traits unchanged for this hash."
