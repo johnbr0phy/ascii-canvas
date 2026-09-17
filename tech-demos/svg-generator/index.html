@@ -45,7 +45,7 @@
     border-radius: 0;
   }
   button, .chip {
-    padding: 8px 12px; cursor: pointer;
+    padding: 10px 14px; cursor: pointer; font-size: 13px;
     background: var(--accent); color: var(--bg); border-color: var(--accent);
   }
   button:active, .chip.on { background: var(--flash); border-color: var(--flash); color: var(--bg); }
@@ -200,7 +200,12 @@ function h(name, attrs, kids) {
   const n = document.createElement(name);
   for (const k in attrs || {}) {
     if (k === "class") n.className = attrs[k];
-    else if (k === "css") Object.assign(n.style, attrs[k]);
+    else if (k === "css") {
+      for (const [pk, pv] of Object.entries(attrs[k])) {
+        if (pk.slice(0, 2) === "--") n.style.setProperty(pk, pv);
+        else n.style[pk] = pv;
+      }
+    }
     else if (k.slice(0, 2) === "on" && typeof attrs[k] === "function") n.addEventListener(k.slice(2), attrs[k]);
     else if (k === "html") n.innerHTML = attrs[k];
     else if (attrs[k] === true) n.setAttribute(k, "");
@@ -479,17 +484,19 @@ function paintSeal(svg, seed) {
 
 const WIDE = { navbar: 1, crumbs: 1, search: 1, tabs: 1, pager: 1, media: 1 };
 function kindFor(rng, canWide) {
+  if (rng() < 0.16) return "seal";
   let k = pick(rng, KINDS);
-  if (k === "seal" && rng() > 0.55) k = pick(rng, KINDS);
+  if (k === "seal") k = pick(rng, KINDS);
   if (WIDE[k] && !canWide) k = pick(rng, ["buttons", "slider", "select", "checks", "toggles", "progress", "chips"]);
   return k;
 }
 
-function tileChrome(rng, pal) {
-  return {
-    "--bg": pal.bg, "--ink": pal.ink, "--paper": pal.paper,
-    "--accent": pal.accent, "--flash": pal.flash
-  };
+function paintVars(node, pal) {
+  node.style.setProperty("--bg", pal.bg);
+  node.style.setProperty("--ink", pal.ink);
+  node.style.setProperty("--paper", pal.paper);
+  node.style.setProperty("--accent", pal.accent);
+  node.style.setProperty("--flash", pal.flash);
 }
 
 function word(rng) { return pick(rng, WORDS); }
@@ -650,9 +657,12 @@ function bodyOf(kind, rng, pal) {
 
 function makeTile(def) {
   const rng = mulberry32(def.seed);
-  const pal = PALETTES[def.seed % PALETTES.length];
+  const pal = PALETTES[Math.floor(rng() * PALETTES.length)];
   const tile = h("article", { class: "tile" + (def.kind === "seal" ? " seal" : "") });
-  Object.assign(tile.style, tileChrome(rng, pal));
+  paintVars(tile, pal);
+  tile.style.backgroundColor = pal.paper;
+  tile.style.color = pal.ink;
+  tile.style.borderColor = pal.ink;
   tile.dataset.key = def.col + ":" + def.row;
   if (def.kind === "seal") {
     const svg = document.createElementNS(NS, "svg");
@@ -661,7 +671,7 @@ function makeTile(def) {
     tile.appendChild(svg);
     paintSeal(svg, def.seed);
   } else {
-    tile.appendChild(h("h3", {}, [def.kind]));
+    tile.appendChild(h("h3", {}, [word(rng)]));
     const body = h("div", { class: "body" });
     const inner = bodyOf(def.kind, rng, pal);
     const list = Array.isArray(inner) ? inner : [inner];
