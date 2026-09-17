@@ -184,6 +184,22 @@
       color: var(--mute);
       font-size: 13px;
     }
+    body.solo {
+      max-width: none;
+      padding: 0;
+      background: #000;
+    }
+    body.solo .stage { border: 0; padding: 0; }
+    body.solo h1,
+    body.solo .lede,
+    body.solo .traits,
+    body.solo label,
+    body.solo #hash,
+    body.solo .row,
+    body.solo .status,
+    body.solo .sheet-head,
+    body.solo #sheet,
+    body.solo footer { display: none; }
   </style>
 </head>
 <body>
@@ -364,9 +380,27 @@
         Genart.render(piece, current, previewSize());
       });
 
-      var start = new URL(location.href).searchParams.get("hash") || Genart.DEFAULT_HASH;
+      var params = new URL(location.href).searchParams;
+      if (params.get("solo") === "1") {
+        document.body.classList.add("solo");
+      }
+      var start = params.get("hash") || Genart.DEFAULT_HASH;
       setHash(start, false);
-      paintSheet();
+      if (!document.body.classList.contains("solo")) paintSheet();
+      if (params.get("verify") === "1") {
+        var c1 = document.createElement("canvas");
+        var c2 = document.createElement("canvas");
+        Genart.render(c1, current, 480);
+        Genart.render(c2, current, 480);
+        var a = c1.getContext("2d").getImageData(0, 0, 480, 480).data;
+        var b = c2.getContext("2d").getImageData(0, 0, 480, 480).data;
+        var same = a.length === b.length;
+        for (var i = 0; same && i < a.length; i++) if (a[i] !== b[i]) same = false;
+        var featA = JSON.stringify(Genart.features(current));
+        var featB = JSON.stringify(Genart.features(current));
+        document.title = same && featA === featB ? "VERIFY_OK" : "VERIFY_FAIL";
+        statusEl.textContent = document.title + " pixels " + (same ? "identical" : "differ");
+      }
     })();
   </script>
 </body>

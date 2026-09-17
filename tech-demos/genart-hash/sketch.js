@@ -221,8 +221,8 @@
     B: [[[0.18, 0.08], [0.18, 0.92]], [[0.18, 0.08], [0.7, 0.08], [0.82, 0.22], [0.7, 0.44], [0.18, 0.44]], [[0.18, 0.44], [0.74, 0.48], [0.84, 0.7], [0.72, 0.92], [0.18, 0.92]]],
     C: [[[0.82, 0.2], [0.7, 0.08], [0.28, 0.08], [0.15, 0.28], [0.15, 0.72], [0.28, 0.92], [0.7, 0.92], [0.82, 0.8]]],
     D: [[[0.18, 0.08], [0.18, 0.92], [0.62, 0.92], [0.85, 0.7], [0.85, 0.3], [0.62, 0.08], [0.18, 0.08]]],
-    E: [[[0.82, 0.08], [0.2, 0.08], [0.2, 0.92], [0.82, 0.92]], [[0.2, 0.5], [0.68, 0.5]]],
-    F: [[[0.2, 0.92], [0.2, 0.08], [0.82, 0.08]], [[0.2, 0.5], [0.64, 0.5]]],
+    E: [[[0.22, 0.08], [0.22, 0.92]], [[0.22, 0.08], [0.8, 0.08]], [[0.22, 0.5], [0.66, 0.5]], [[0.22, 0.92], [0.8, 0.92]]],
+    F: [[[0.22, 0.92], [0.22, 0.08], [0.8, 0.08]], [[0.22, 0.5], [0.64, 0.5]]],
     G: [[[0.82, 0.22], [0.68, 0.08], [0.28, 0.08], [0.15, 0.3], [0.15, 0.72], [0.3, 0.92], [0.72, 0.92], [0.85, 0.72], [0.85, 0.52], [0.52, 0.52]]],
     H: [[[0.18, 0.08], [0.18, 0.92]], [[0.82, 0.08], [0.82, 0.92]], [[0.18, 0.5], [0.82, 0.5]]],
     I: [[[0.28, 0.08], [0.72, 0.08]], [[0.5, 0.08], [0.5, 0.92]], [[0.28, 0.92], [0.72, 0.92]]],
@@ -354,92 +354,137 @@
 
   /* --- field + contours --- */
 
-  function makeBlobs(r, structure) {
+  function makeNoise(r, n) {
+    var g = [];
+    var i;
+    for (i = 0; i < n * n; i++) g.push(r());
+    return function (x, y) {
+      var fx = ((x % 1) + 1) % 1 * (n - 1);
+      var fy = ((y % 1) + 1) % 1 * (n - 1);
+      var x0 = Math.floor(fx);
+      var y0 = Math.floor(fy);
+      var tx = fx - x0;
+      var ty = fy - y0;
+      var x1 = Math.min(n - 1, x0 + 1);
+      var y1 = Math.min(n - 1, y0 + 1);
+      var v00 = g[y0 * n + x0];
+      var v10 = g[y0 * n + x1];
+      var v01 = g[y1 * n + x0];
+      var v11 = g[y1 * n + x1];
+      var sx = tx * tx * (3 - 2 * tx);
+      var sy = ty * ty * (3 - 2 * ty);
+      return v00 * (1 - sx) * (1 - sy) + v10 * sx * (1 - sy) + v01 * (1 - sx) * sy + v11 * sx * sy;
+    };
+  }
+
+  function makeField(r, structure) {
     var blobs = [];
     var i, n;
+    var noise = makeNoise(r, 12);
+    var phase = r() * Math.PI * 2;
+    var cx = 0.5 + (r() - 0.5) * 0.12;
+    var cy = 0.46 + (r() - 0.5) * 0.1;
     if (structure === "Basin") {
-      blobs.push({
-        x: 0.5 + (r() - 0.5) * 0.1,
-        y: 0.48 + (r() - 0.5) * 0.1,
-        rx: 0.26 + r() * 0.06,
-        ry: 0.22 + r() * 0.06,
-        amp: 1,
-      });
+      blobs.push({ x: cx, y: cy, rx: 0.3, ry: 0.26, amp: 0.85 });
     } else if (structure === "Channel") {
-      blobs.push({
-        x: 0.26 + (r() - 0.5) * 0.04,
-        y: 0.5 + (r() - 0.5) * 0.04,
-        rx: 0.16 + r() * 0.04,
-        ry: 0.4 + r() * 0.04,
-        amp: 1,
-      });
-      blobs.push({
-        x: 0.74 + (r() - 0.5) * 0.04,
-        y: 0.5 + (r() - 0.5) * 0.04,
-        rx: 0.16 + r() * 0.04,
-        ry: 0.4 + r() * 0.04,
-        amp: 1,
-      });
+      blobs.push({ x: 0.22 + (r() - 0.5) * 0.04, y: 0.48, rx: 0.14, ry: 0.42, amp: 0.7 });
+      blobs.push({ x: 0.78 + (r() - 0.5) * 0.04, y: 0.5, rx: 0.14, ry: 0.42, amp: 0.7 });
     } else if (structure === "Archipelago") {
-      n = 6 + int(r, 0, 3);
+      n = 7 + int(r, 0, 4);
       for (i = 0; i < n; i++) {
         blobs.push({
-          x: 0.2 + r() * 0.6,
-          y: 0.2 + r() * 0.6,
-          rx: 0.05 + r() * 0.07,
-          ry: 0.045 + r() * 0.07,
+          x: 0.18 + r() * 0.64,
+          y: 0.16 + r() * 0.58,
+          rx: 0.04 + r() * 0.05,
+          ry: 0.035 + r() * 0.05,
           amp: 0.55 + r() * 0.55,
         });
       }
     } else {
-      n = 2 + int(r, 0, 2);
+      n = 3 + int(r, 0, 2);
       for (i = 0; i < n; i++) {
         blobs.push({
-          x: 0.22 + r() * 0.56,
-          y: 0.24 + r() * 0.5,
-          rx: 0.12 + r() * 0.14,
-          ry: 0.1 + r() * 0.12,
-          amp: 0.7 + r() * 0.4,
+          x: 0.16 + ((i * 0.31 + r() * 0.12) % 0.68),
+          y: 0.18 + r() * 0.52,
+          rx: 0.07 + r() * 0.07,
+          ry: 0.06 + r() * 0.06,
+          amp: 0.45 + r() * 0.4,
         });
       }
     }
-    return blobs;
+    return { blobs: blobs, noise: noise, phase: phase, cx: cx, cy: cy, kind: structure, freq: 2.2 + r() * 1.4 };
   }
 
-  function heightAt(x, y, blobs) {
+  function heightAt(x, y, field) {
+    var n1 = field.noise(x * field.freq, y * field.freq);
+    var n2 = field.noise(x * field.freq * 2.1 + 3.1, y * field.freq * 2.1 + 1.7);
+    var n = n1 * 0.7 + n2 * 0.3;
     var h = 0;
-    for (var i = 0; i < blobs.length; i++) {
-      var b = blobs[i];
-      var dx = (x - b.x) / b.rx;
-      var dy = (y - b.y) / b.ry;
+    var i, b, dx, dy;
+    if (field.kind === "Channel") {
+      var mid = 0.5 + 0.1 * Math.sin(y * 6.4 + field.phase);
+      var d = Math.abs(x - mid);
+      h = d * 4.4 - 0.12 + n * 0.28;
+      for (i = 0; i < field.blobs.length; i++) {
+        b = field.blobs[i];
+        dx = (x - b.x) / b.rx;
+        dy = (y - b.y) / b.ry;
+        h += b.amp * Math.exp(-(dx * dx + dy * dy)) * 0.22;
+      }
+      return h;
+    }
+    if (field.kind === "Basin") {
+      h = 1.05 - Math.hypot((x - field.cx) / 0.4, (y - field.cy) / 0.34);
+      return h + (n - 0.5) * 0.42;
+    }
+    for (i = 0; i < field.blobs.length; i++) {
+      b = field.blobs[i];
+      dx = (x - b.x) / b.rx;
+      dy = (y - b.y) / b.ry;
       h += b.amp * Math.exp(-(dx * dx + dy * dy));
     }
+    if (field.kind === "Open Reach") h += (1 - y) * 0.18 + (n - 0.5) * 0.55;
+    else h += (n - 0.45) * 0.4;
     return h;
   }
 
-  function contourAround(blob, level, blobs, steps) {
-    var pts = [];
-    var i, a, lo, hi, mid, k;
-    for (i = 0; i < steps; i++) {
-      a = (i / steps) * Math.PI * 2;
-      var ux = Math.cos(a);
-      var uy = Math.sin(a);
-      lo = 0;
-      hi = 2.4;
-      for (k = 0; k < 14; k++) {
-        mid = (lo + hi) * 0.5;
-        var px = blob.x + ux * blob.rx * mid;
-        var py = blob.y + uy * blob.ry * mid;
-        if (heightAt(px, py, blobs) > level) lo = mid;
-        else hi = mid;
-      }
-      pts.push([blob.x + ux * blob.rx * hi, blob.y + uy * blob.ry * hi]);
-    }
-    return pts;
+  function lerpPt(ax, ay, ah, bx, by, bh, level) {
+    var t = (level - ah) / ((bh - ah) || 1e-9);
+    if (t < 0) t = 0;
+    if (t > 1) t = 1;
+    return [ax + (bx - ax) * t, ay + (by - ay) * t];
   }
 
-  function inPlate(x, y) {
-    return x > 0.09 && x < 0.91 && y > 0.09 && y < 0.82;
+  function marchingSegs(level, x0, y0, x1, y1, cols, rows, field) {
+    var segs = [];
+    var dx = (x1 - x0) / cols;
+    var dy = (y1 - y0) / rows;
+    var i, j;
+    var grid = [];
+    for (j = 0; j <= rows; j++) {
+      grid[j] = [];
+      for (i = 0; i <= cols; i++) grid[j][i] = heightAt(x0 + i * dx, y0 + j * dy, field);
+    }
+    for (j = 0; j < rows; j++) {
+      for (i = 0; i < cols; i++) {
+        var ha = grid[j][i];
+        var hb = grid[j][i + 1];
+        var hc = grid[j + 1][i + 1];
+        var hd = grid[j + 1][i];
+        var ax = x0 + i * dx;
+        var ay = y0 + j * dy;
+        var idx = (ha > level ? 1 : 0) | (hb > level ? 2 : 0) | (hc > level ? 4 : 0) | (hd > level ? 8 : 0);
+        if (idx === 0 || idx === 15) continue;
+        var e = [];
+        if ((idx & 1) !== (idx & 2) >> 1) e.push(lerpPt(ax, ay, ha, ax + dx, ay, hb, level));
+        if (((idx & 2) >> 1) !== ((idx & 4) >> 2)) e.push(lerpPt(ax + dx, ay, hb, ax + dx, ay + dy, hc, level));
+        if (((idx & 4) >> 2) !== ((idx & 8) >> 3)) e.push(lerpPt(ax + dx, ay + dy, hc, ax, ay + dy, hd, level));
+        if (((idx & 8) >> 3) !== (idx & 1)) e.push(lerpPt(ax, ay + dy, hd, ax, ay, ha, level));
+        if (e.length >= 2) segs.push([e[0], e[1]]);
+        if (e.length === 4) segs.push([e[2], e[3]]);
+      }
+    }
+    return segs;
   }
 
   function hatchBox(ctx, x0, y0, x1, y1, gap, angle, clipFn) {
@@ -581,14 +626,14 @@
 
     var i, j, x, y;
 
-    setStroke(ctx, ink.mute, 0.0012, 0.35);
-    var grain = feat.Density === "Crowded" ? 420 : feat.Density === "Charted" ? 280 : 160;
+    setFill(ctx, ink.mute, 0.22);
+    var grain = feat.Density === "Crowded" ? 900 : feat.Density === "Charted" ? 640 : 420;
     for (i = 0; i < grain; i++) {
       x = 0.03 + layout() * 0.94;
       y = 0.03 + layout() * 0.94;
-      var a = layout() * Math.PI;
-      var len = 0.004 + layout() * 0.01;
-      line(ctx, x, y, x + Math.cos(a) * len, y + Math.sin(a) * len);
+      ctx.beginPath();
+      ctx.arc(x, y, 0.0011 + layout() * 0.0014, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     setStroke(ctx, ink.ink, 0.006, 1);
@@ -629,37 +674,60 @@
       line(ctx, 0.92, y, 0.932, y);
     }
 
-    var blobs = makeBlobs(layout, feat.Structure);
+    var field = makeField(layout, feat.Structure);
     var levels =
       feat.Density === "Crowded"
-        ? [0.85, 0.62, 0.42, 0.28]
+        ? [0.72, 0.52, 0.36, 0.22]
         : feat.Density === "Charted"
-          ? [0.78, 0.5, 0.32]
-          : [0.7, 0.4];
+          ? [0.64, 0.42, 0.26]
+          : [0.58, 0.32];
 
     if (feat.Hatch !== "None") {
       var hatchLevel = feat.Hatch === "Shoal" ? levels[0] : levels[Math.min(1, levels.length - 1)];
-      setStroke(ctx, ink.mute, 0.001, 0.45);
-      hatchBox(ctx, 0.085, 0.085, 0.915, 0.83, feat.Hatch === "Contour Fill" ? 0.01 : 0.016, 0.55 + marks() * 0.2, function (px, py) {
-        return heightAt(px, py, blobs) > hatchLevel;
+      setStroke(ctx, ink.mute, 0.0012, 0.62);
+      hatchBox(ctx, 0.085, 0.085, 0.915, 0.83, feat.Hatch === "Contour Fill" ? 0.008 : 0.013, 0.52 + marks() * 0.25, function (px, py) {
+        return heightAt(px, py, field) > hatchLevel;
       });
-    }
-
-    for (i = 0; i < blobs.length; i++) {
-      for (j = 0; j < levels.length; j++) {
-        var ring = contourAround(blobs[i], levels[j], blobs, 36 + j * 4);
-        ring = wobblePts(ring, wobble, 0.004 - j * 0.0006);
-        var clipped = [];
-        for (var k = 0; k < ring.length; k++) {
-          if (inPlate(ring[k][0], ring[k][1])) clipped.push(ring[k]);
-        }
-        if (clipped.length < 8) continue;
-        setStroke(ctx, j === 0 ? ink.accent : ink.ink, j === 0 ? 0.0032 : 0.002, j === 0 ? 0.95 : 0.72);
-        if (j === levels.length - 1) ctx.setLineDash([0.008, 0.006]);
-        strokePts(ctx, clipped, clipped.length > 20);
-        ctx.setLineDash([]);
+      if (feat.Hatch === "Contour Fill") {
+        setStroke(ctx, ink.mute, 0.0009, 0.35);
+        hatchBox(ctx, 0.085, 0.085, 0.915, 0.83, 0.012, 0.52 + marks() * 0.25 + 1.2, function (px, py) {
+          return heightAt(px, py, field) > hatchLevel;
+        });
       }
     }
+
+    for (j = 0; j < levels.length; j++) {
+      var segs = marchingSegs(levels[j], 0.085, 0.085, 0.915, 0.83, 26, 22, field);
+      setStroke(ctx, j === 0 ? ink.accent : ink.ink, j === 0 ? 0.0034 : 0.002, j === 0 ? 0.95 : 0.78);
+      if (j === levels.length - 1) ctx.setLineDash([0.007, 0.006]);
+      for (i = 0; i < segs.length; i++) {
+        var a = segs[i][0];
+        var b = segs[i][1];
+        var ox = (wobble() - 0.5) * 0.004;
+        var oy = (wobble() - 0.5) * 0.004;
+        line(ctx, a[0] + ox, a[1] + oy, b[0] - ox, b[1] - oy);
+      }
+      ctx.setLineDash([]);
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0.08, 0.08, 0.84, 0.755);
+    ctx.clip();
+    setStroke(ctx, ink.accent, 0.0018, 0.55);
+    ctx.setLineDash([0.018, 0.01]);
+    var fx0 = 0.12 + layout() * 0.1;
+    var fy0 = 0.72 - layout() * 0.1;
+    var fx1 = 0.78 + layout() * 0.08;
+    var fy1 = 0.18 + layout() * 0.14;
+    var fxc = 0.4 + (layout() - 0.5) * 0.2;
+    var fyc = 0.42 + (layout() - 0.5) * 0.16;
+    ctx.beginPath();
+    ctx.moveTo(fx0, fy0);
+    ctx.quadraticCurveTo(fxc, fyc, fx1, fy1);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
 
     var stationN = feat.Density === "Crowded" ? 22 : feat.Density === "Charted" ? 14 : 8;
     var stations = [];
@@ -668,7 +736,7 @@
       guard++;
       x = 0.12 + layout() * 0.76;
       y = 0.12 + layout() * 0.66;
-      var hv = heightAt(x, y, blobs);
+      var hv = heightAt(x, y, field);
       if (hv < 0.12 || hv > 1.15) continue;
       var ok = true;
       for (i = 0; i < stations.length; i++) {
@@ -722,13 +790,20 @@
       if (chance(marks, 0.7)) coil(ctx, stations[i].x - 0.02, stations[i].y + 0.02, marks, ink.mute);
     }
 
-    var noteN = feat.Annotation === "Quiet" ? 2 : feat.Annotation === "Noted" ? 5 : 8;
-    for (i = 0; i < noteN && i < stations.length; i++) {
+    var noteN = feat.Annotation === "Quiet" ? 2 : feat.Annotation === "Noted" ? 4 : 7;
+    var usedNotes = [];
+    for (i = 0; i < stations.length && usedNotes.length < noteN; i++) {
       var ns = stations[i];
       var tx = ns.x + (notes() > 0.5 ? 0.08 : -0.14);
       var ty = ns.y + (notes() > 0.5 ? -0.06 : 0.05);
       tx = Math.max(0.1, Math.min(0.78, tx));
       ty = Math.max(0.1, Math.min(0.76, ty));
+      var clash = false;
+      for (j = 0; j < usedNotes.length; j++) {
+        if (Math.hypot(usedNotes[j][0] - tx, usedNotes[j][1] - ty) < 0.07) clash = true;
+      }
+      if (clash) continue;
+      usedNotes.push([tx, ty]);
       setStroke(ctx, ink.accent, 0.0014, 0.85);
       line(ctx, ns.x, ns.y, tx, ty + 0.012);
       setStroke(ctx, ink.ink, 0.0015, 1);
@@ -752,22 +827,57 @@
     northArrow(ctx, 0.84, 0.16, nrot, ink.ink, ink.accent, nl);
     scaleBar(ctx, 0.12, 0.8, ink.ink);
 
-    setFill(ctx, ink.paper, 0.92);
+    setStroke(ctx, ink.ink, 0.0016, 0.7);
+    ctx.beginPath();
+    ctx.moveTo(0.08, 0.72);
+    var profW = 0.84;
+    for (i = 0; i <= 48; i++) {
+      var u = i / 48;
+      var px = 0.08 + u * profW;
+      var depth = heightAt(px, 0.45, field);
+      var py = 0.825 - Math.min(0.09, depth * 0.07);
+      ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    setStroke(ctx, ink.mute, 0.0012, 0.55);
+    line(ctx, 0.08, 0.825, 0.92, 0.825);
+    drawText(ctx, "PROFILE E-W", 0.36, 0.81, 0.009, 0.0012);
+
+    setFill(ctx, ink.paper, 0.94);
+    ctx.fillRect(0.1, 0.1, 0.2, 0.078);
+    setStroke(ctx, ink.ink, 0.0018, 1);
+    ctx.strokeRect(0.1, 0.1, 0.2, 0.078);
+    setStroke(ctx, ink.ink, 0.0015, 1);
+    drawText(ctx, "LEGEND", 0.11, 0.108, 0.01, 0.0013);
+    setStroke(ctx, ink.ink, 0.0018, 1);
+    ctx.beginPath();
+    ctx.moveTo(0.118, 0.132);
+    ctx.lineTo(0.13, 0.144);
+    ctx.lineTo(0.106, 0.144);
+    ctx.closePath();
+    ctx.stroke();
+    drawText(ctx, "STATION", 0.138, 0.128, 0.009, 0.0012);
+    buoyGlyph(ctx, 0.122, 0.16, 1, ink.ink, ink.accent);
+    setStroke(ctx, ink.ink, 0.0015, 1);
+    drawText(ctx, "BUOY", 0.138, 0.152, 0.009, 0.0012);
+
+    setFill(ctx, ink.paper, 0.94);
     ctx.fillRect(0.58, 0.86, 0.35, 0.085);
     setStroke(ctx, ink.ink, 0.0022, 1);
     ctx.strokeRect(0.58, 0.86, 0.35, 0.085);
     setStroke(ctx, ink.ink, 0.0024, 1);
-    drawText(ctx, "SOUNDING PLATE", 0.592, 0.868, 0.016, 0.0018);
+    drawText(ctx, "SOUNDING PLATE", 0.592, 0.868, 0.015, 0.0016);
     setStroke(ctx, ink.mute, 0.0016, 1);
     drawText(ctx, feat.Structure.toUpperCase(), 0.592, 0.89, 0.011, 0.0014);
     var slug = normalizeHash(hash).slice(2, 10);
-    drawText(ctx, "HASH " + slug + "  /  " + feat.Palette.toUpperCase(), 0.592, 0.912, 0.01, 0.0012);
+    drawText(ctx, "HASH " + slug, 0.592, 0.908, 0.01, 0.0012);
+    drawText(ctx, feat.Palette.toUpperCase(), 0.592, 0.924, 0.01, 0.0012);
 
     setStroke(ctx, ink.ink, 0.0018, 0.8);
     drawText(ctx, "PLATE", 0.08, 0.86, 0.012, 0.0015);
-    var plateNo = String(100 + Math.floor(stream(hash, "plate-no")() * 800));
+    var plateNo = "PL-" + ("00" + (100 + Math.floor(stream(hash, "plate-no")() * 800))).slice(-3);
     setStroke(ctx, ink.accent, 0.0022, 1);
-    drawText(ctx, plateNo, 0.08, 0.88, 0.028, 0.002);
+    drawText(ctx, plateNo, 0.08, 0.88, 0.024, 0.002);
     setStroke(ctx, ink.mute, 0.0015, 1);
     drawText(ctx, feat.Density.toUpperCase() + "  " + feat.Hatch.toUpperCase(), 0.08, 0.922, 0.01, 0.0013);
 
