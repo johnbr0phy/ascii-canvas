@@ -8,7 +8,8 @@ Inspired by live SVG toys in the spirit of [Threeaio’s generator](https://x.co
 ## How to regenerate
 
 1. Open `tech-demos/svg-generator/index.html` (double-click, or any static server).
-2. A composition starts on its own. The seed is the quiet label at the bottom right.
+2. A composition starts on its own. The seed is the eight hex digits at the
+   bottom right.
 3. Same seed → same piece. Reload `index.html?s=<eight hex digits>` to redraw
    that composition. The query is updated as you generate; the back button steps
    through seeds you have already minted.
