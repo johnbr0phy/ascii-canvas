@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Sounding Plate — hash-seeded genart</title>
+  <style>
+    :root {
+      --bg: #0c0d0b;
+      --panel: #161712;
+      --ink: #e8e2d2;
+      --mute: #9a937f;
+      --line: #3a382e;
+      --accent: #d8a15a;
+      --flash: #f0d59a;
+      --pad: max(16px, env(safe-area-inset-left));
+      --pad-r: max(16px, env(safe-area-inset-right));
+      --pad-b: max(20px, env(safe-area-inset-bottom));
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+    body {
+      padding: 16px var(--pad-r) var(--pad-b) var(--pad);
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+      font-weight: 600;
+    }
+    .lede {
+      color: var(--mute);
+      font-size: 14px;
+      margin: 0 0 16px;
+    }
+    .stage {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      padding: 10px;
+    }
+    #piece {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+      background: #111;
+    }
+    .traits {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 14px 0;
+    }
+    .trait {
+      border: 2px solid var(--line);
+      padding: 10px 12px;
+      min-height: 56px;
+    }
+    .trait b {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mute);
+      font-weight: 600;
+    }
+    .trait span { font-size: 16px; }
+    label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin: 0 0 6px;
+    }
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      font: inherit;
+      font-size: 16px;
+      color: var(--ink);
+      background: var(--panel);
+      border: 2px solid var(--line);
+      padding: 14px 12px;
+      border-radius: 0;
+      min-height: 52px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    button {
+      font: inherit;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      min-height: 52px;
+      min-width: 52px;
+      padding: 12px 16px;
+      border: 2px solid var(--accent);
+      background: var(--accent);
+      color: #1a140c;
+      cursor: pointer;
+      border-radius: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active { background: var(--flash); border-color: var(--flash); }
+    button.ghost {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    .sheet-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 22px 0 10px;
+    }
+    .sheet-head h2 {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stepper input {
+      width: 72px;
+      text-align: center;
+    }
+    #sheet {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .tile {
+      border: 2px solid var(--line);
+      background: var(--panel);
+      padding: 6px;
+      min-height: 44px;
+      cursor: pointer;
+      color: inherit;
+      text-align: left;
+      width: 100%;
+    }
+    .tile canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1;
+    }
+    .tile .cap {
+      margin-top: 6px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--mute);
+      line-height: 1.35;
+    }
+    .tile:active { border-color: var(--accent); }
+    .status {
+      color: var(--mute);
+      font-size: 13px;
+      min-height: 1.3em;
+      margin: 8px 0 0;
+    }
+    a { color: var(--accent); }
+    footer {
+      margin-top: 28px;
+      color: var(--mute);
+      font-size: 13px;
+    }
+    body.solo {
+      max-width: none;
+      padding: 0;
+      background: #000;
+    }
+    body.solo .stage { border: 0; padding: 0; }
+    body.solo h1,
+    body.solo .lede,
+    body.solo .traits,
+    body.solo label,
+    body.solo #hash,
+    body.solo .row,
+    body.solo .status,
+    body.solo .sheet-head,
+    body.solo #sheet,
+    body.solo footer { display: none; }
+  </style>
+</head>
+<body>
+  <h1>Sounding Plate</h1>
+  <p class="lede">Same hex hash, same survey plate. Open this file — no build.</p>
+
+  <div class="stage">
+    <canvas id="piece" width="800" height="800" aria-label="Current sounding plate"></canvas>
+  </div>
+
+  <div class="traits" id="traits" aria-live="polite"></div>
+
+  <label for="hash">Hash</label>
+  <input id="hash" type="text" inputmode="text" autocomplete="off" spellcheck="false" autocapitalize="off">
+
+  <div class="row">
+    <button type="button" id="apply">Apply hash</button>
+    <button type="button" class="ghost" id="fresh">New hash</button>
+    <button type="button" class="ghost" id="redraw">Redraw</button>
+    <button type="button" class="ghost" id="export">Export PNG</button>
+  </div>
+  <p class="status" id="status"></p>
+
+  <div class="sheet-head">
+    <h2>Contact sheet</h2>
+    <div class="stepper">
+      <button type="button" class="ghost" id="fewer" aria-label="Fewer seeds">−</button>
+      <input id="count" type="number" min="1" max="24" value="9" inputmode="numeric">
+      <button type="button" class="ghost" id="more" aria-label="More seeds">+</button>
+    </div>
+  </div>
+  <div class="row">
+    <button type="button" id="sheetBtn">Make sheet</button>
+    <button type="button" class="ghost" id="reshuffle">Reshuffle sheet</button>
+  </div>
+  <div id="sheet"></div>
+
+  <footer>
+    Craft rules from <a href="https://github.com/camilleroux/genart-skill">camilleroux/genart-skill</a>.
+    Subject is original. <a href="README.md">How the hash works</a>.
+  </footer>
+
+  <script src="sketch.js"></script>
+  <script>
+    (function () {
+      var piece = document.getElementById("piece");
+      var hashIn = document.getElementById("hash");
+      var traitsEl = document.getElementById("traits");
+      var statusEl = document.getElementById("status");
+      var sheetEl = document.getElementById("sheet");
+      var countIn = document.getElementById("count");
+      var current = Genart.DEFAULT_HASH;
+      var sheetRoot = current;
+      var lastSize = 0;
+
+      function freshHash() {
+        var bytes = new Uint8Array(32);
+        if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(bytes);
+        else {
+          var t = Date.now();
+          for (var i = 0; i < 32; i++) bytes[i] = (t + i * 17 + (i * 31)) & 255;
+        }
+        var hex = "";
+        for (var i = 0; i < bytes.length; i++) hex += ("0" + bytes[i].toString(16)).slice(-2);
+        return "0x" + hex;
+      }
+
+      function previewSize() {
+        var css = piece.getBoundingClientRect().width || 360;
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        return Math.max(360, Math.round(css * dpr));
+      }
+
+      function showTraits(feat) {
+        var keys = ["Palette", "Density", "Structure", "Annotation", "North", "Hatch"];
+        traitsEl.innerHTML = keys.map(function (k) {
+          return '<div class="trait"><b>' + k + "</b><span>" + feat[k] + "</span></div>";
+        }).join("");
+      }
+
+      function setHash(h, push) {
+        current = Genart.normalizeHash(h);
+        hashIn.value = current;
+        lastSize = previewSize();
+        var feat = Genart.render(piece, current, lastSize);
+        showTraits(feat);
+        try {
+          var url = new URL(location.href);
+          url.searchParams.set("hash", current);
+          if (push) history.pushState({ hash: current }, "", url);
+          else history.replaceState({ hash: current }, "", url);
+        } catch (err) { /* file:// may refuse history */ }
+        statusEl.textContent = "Plate " + current.slice(0, 12) + "…";
+      }
+
+      function sheetCount() {
+        var n = parseInt(countIn.value, 10);
+        if (!(n > 0)) n = 9;
+        n = Math.max(1, Math.min(24, n));
+        countIn.value = String(n);
+        return n;
+      }
+
+      function paintSheet() {
+        var hashes = Genart.sheetHashes(sheetRoot, sheetCount());
+        sheetEl.innerHTML = "";
+        hashes.forEach(function (h) {
+          var feat = Genart.features(h);
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "tile";
+          var c = document.createElement("canvas");
+          Genart.render(c, h, 360);
+          var cap = document.createElement("div");
+          cap.className = "cap";
+          cap.textContent = h.slice(0, 12) + "  " + feat.Palette + " / " + feat.Structure;
+          btn.appendChild(c);
+          btn.appendChild(cap);
+          btn.addEventListener("click", function () { setHash(h, true); });
+          sheetEl.appendChild(btn);
+        });
+      }
+
+      document.getElementById("apply").addEventListener("click", function () {
+        setHash(hashIn.value, true);
+      });
+      document.getElementById("fresh").addEventListener("click", function () {
+        setHash(freshHash(), true);
+      });
+      document.getElementById("redraw").addEventListener("click", function () {
+        var a = Genart.features(current);
+        Genart.render(piece, current, lastSize || previewSize());
+        var b = Genart.features(current);
+        statusEl.textContent = JSON.stringify(a) === JSON.stringify(b)
+          ? "Redrawn — traits unchanged for this hash."
+          : "Trait mismatch (should never happen).";
+      });
+      document.getElementById("export").addEventListener("click", function () {
+        var c = document.createElement("canvas");
+        Genart.render(c, current, 2048);
+        c.toBlob(function (blob) {
+          if (!blob) {
+            statusEl.textContent = "Export failed.";
+            return;
+          }
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "sounding-plate_" + current.slice(0, 10) + ".png";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+          statusEl.textContent = "Exported 2048px PNG.";
+        }, "image/png");
+      });
+      document.getElementById("sheetBtn").addEventListener("click", paintSheet);
+      document.getElementById("reshuffle").addEventListener("click", function () {
+        sheetRoot = freshHash();
+        paintSheet();
+      });
+      document.getElementById("fewer").addEventListener("click", function () {
+        countIn.value = String(Math.max(1, sheetCount() - 1));
+      });
+      document.getElementById("more").addEventListener("click", function () {
+        countIn.value = String(Math.min(24, sheetCount() + 1));
+      });
+      hashIn.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") setHash(hashIn.value, true);
+      });
+      window.addEventListener("keydown", function (e) {
+        if (e.target.matches("input, textarea")) return;
+        if (e.key === "r" || e.key === "R") setHash(freshHash(), true);
+        if (e.key === "s" || e.key === "S") document.getElementById("export").click();
+      });
+      window.addEventListener("popstate", function () {
+        var q = new URL(location.href).searchParams.get("hash");
+        setHash(q || Genart.DEFAULT_HASH, false);
+      });
+      window.addEventListener("resize", function () {
+        Genart.render(piece, current, previewSize());
+      });
+
+      var params = new URL(location.href).searchParams;
+      if (params.get("solo") === "1") {
+        document.body.classList.add("solo");
+      }
+      var start = params.get("hash") || Genart.DEFAULT_HASH;
+      setHash(start, false);
+      if (!document.body.classList.contains("solo")) paintSheet();
+      if (params.get("verify") === "1") {
+        var c1 = document.createElement("canvas");
+        var c2 = document.createElement("canvas");
+        Genart.render(c1, current, 480);
+        Genart.render(c2, current, 480);
+        var a = c1.getContext("2d").getImageData(0, 0, 480, 480).data;
+        var b = c2.getContext("2d").getImageData(0, 0, 480, 480).data;
+        var same = a.length === b.length;
+        for (var i = 0; same && i < a.length; i++) if (a[i] !== b[i]) same = false;
+        var featA = JSON.stringify(Genart.features(current));
+        var featB = JSON.stringify(Genart.features(current));
+        document.title = same && featA === featB ? "VERIFY_OK" : "VERIFY_FAIL";
+        statusEl.textContent = document.title + " pixels " + (same ? "identical" : "differ");
+      }
+    })();
+  </script>
+</body>
+</html>
