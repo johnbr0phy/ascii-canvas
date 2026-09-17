@@ -4,76 +4,137 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>svg generator</title>
 <style>
-  html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
-    background: #0c0b0a;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
+  html, body { margin: 0; height: 100%; background: #0c0b0a; }
+  body { overflow: hidden; }
+  #scroller {
+    position: fixed; inset: 0;
+    overflow-x: hidden; overflow-y: scroll;
+    scrollbar-color: #f4efe644 transparent;
   }
-  #stage { position: fixed; inset: 0; }
-  #art { display: block; width: 100%; height: 100%; }
+  #world { position: relative; width: 100%; }
+  .tile {
+    position: absolute;
+    box-sizing: border-box;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    padding: 12px 14px 12px;
+    font: 12px/1.25 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    user-select: none;
+  }
+  .tile.seal { padding: 0; border-width: 0; }
+  .tile.seal svg { width: 100%; height: 100%; display: block; animation: spin 16s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) {
+    .tile.seal svg { animation: none; }
+  }
+  .tile h3 {
+    margin: 0 0 10px;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    opacity: 0.55;
+  }
+  .tile .body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  button, .chip, select, input[type="text"], input[type="search"], input[type="number"], textarea {
+    font: inherit; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink); background: var(--bg); border: 2px solid var(--ink);
+    border-radius: 0;
+  }
+  button, .chip {
+    padding: 8px 12px; cursor: pointer;
+    background: var(--accent); color: var(--bg); border-color: var(--accent);
+  }
+  button:active, .chip.on { background: var(--flash); border-color: var(--flash); color: var(--bg); }
+  button.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
+  select, input[type="text"], input[type="search"], input[type="number"] {
+    padding: 8px 10px; width: 100%; box-sizing: border-box; min-width: 0;
+    background: var(--bg); color: var(--ink);
+  }
+  textarea {
+    width: 100%; height: 72px; resize: none; padding: 8px; box-sizing: border-box;
+    background: var(--bg); text-transform: none;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 8px; background: var(--ink); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 22px;
+    background: var(--flash); border: 2px solid var(--ink); cursor: pointer;
+  }
+  label.check, label.radio {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: 16px; height: 16px; }
+  .switch {
+    width: 44px; height: 24px; background: var(--bg); border: 2px solid var(--ink);
+    position: relative; cursor: pointer; flex: 0 0 auto;
+  }
+  .switch i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--ink); }
+  .switch.on { background: var(--accent); border-color: var(--accent); }
+  .switch.on i { left: 22px; background: var(--bg); }
+  .tabs { display: flex; gap: 0; }
+  .tabs button { flex: 1; background: transparent; color: var(--ink); border-color: var(--ink); }
+  .tabs button.on { background: var(--ink); color: var(--paper); }
+  .bar { height: 10px; background: var(--bg); border: 2px solid var(--ink); }
+  .bar > b { display: block; height: 100%; background: var(--flash); }
+  .stars button { padding: 4px 7px; font-size: 16px; }
+  .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal i { display: grid; place-items: center; aspect-ratio: 1; font-size: 9px; background: var(--bg); }
+  .cal i.on { background: var(--accent); color: var(--bg); }
+  .crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; opacity: 0.9; }
+  .crumbs b { opacity: 0.4; }
+  .drop {
+    border: 2px dashed var(--ink); min-height: 64px;
+    display: grid; place-items: center; text-align: center; opacity: 0.8;
+  }
+  .swatch { width: 28px; height: 28px; border: 2px solid var(--ink); cursor: pointer; }
+  .nav { display: flex; gap: 6px; align-items: center; }
+  .nav strong { flex: 1; letter-spacing: 0.14em; }
+  .pager { display: flex; gap: 6px; justify-content: center; }
+  .acc { border: 2px solid var(--ink); }
+  .acc dt { padding: 7px 8px; cursor: pointer; background: var(--bg); }
+  .acc dd { margin: 0; padding: 8px; display: none; }
+  .acc.open dd { display: block; }
+  .media { display: flex; gap: 8px; align-items: center; }
+  .knob {
+    width: 72px; height: 72px; border-radius: 50%; margin: 0 auto;
+    border: 3px solid var(--ink); background: conic-gradient(var(--accent) var(--pct), var(--bg) 0);
+    position: relative;
+  }
+  .links { display: flex; flex-direction: column; gap: 4px; }
+  .links a { color: var(--accent); text-decoration: none; border-bottom: 2px solid var(--accent); width: fit-content; }
   #hint {
     position: fixed;
     left: max(12px, env(safe-area-inset-left));
     right: max(12px, env(safe-area-inset-right));
     bottom: max(10px, env(safe-area-inset-bottom));
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
+    display: flex; justify-content: space-between; gap: 16px;
     font: 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    letter-spacing: 0.08em;
-    pointer-events: none;
+    letter-spacing: 0.08em; pointer-events: none; z-index: 5;
   }
-  #dial {
-    position: fixed;
-    right: max(14px, env(safe-area-inset-right));
-    top: 50%;
-    width: 28px;
-    height: 160px;
-    transform: translateY(-50%);
-    touch-action: none;
-  }
-  #dial svg { display: block; width: 100%; height: 100%; }
 </style>
-<div id="stage">
-  <svg id="art" viewBox="-520 -520 1040 1040" preserveAspectRatio="xMidYMid meet">
-    <g id="spin"><g id="piece"></g></g>
-  </svg>
-</div>
-<div id="dial" aria-label="spin">
-  <svg viewBox="0 0 28 160">
-    <rect x="12.5" y="8" width="3" height="144" rx="1.5" fill="currentColor" opacity="0.28"/>
-    <circle id="knob" cx="14" cy="80" r="7" fill="currentColor" opacity="0.7"/>
-  </svg>
-</div>
+<div id="scroller"><div id="world"></div></div>
 <div id="hint">
-  <span>space / tap · new &nbsp; drag · spin</span>
+  <span>space · new world &nbsp; scroll · more</span>
   <span id="seedlab"></span>
 </div>
 <script>
-/* Interactive SVG generator
-   ------------------------------------------------------------------
-   One file. No build, no npm, no Three.js, no image, no webfont-as-art.
-   Every mark is an SVG path or shape this file computed from a seed.
-
-   Space / tap mints a new seed. The same seed always rebuilds the same
-   markup. Drag (or the side slider) sets rotation; a flick leaves spin.
-*/
+/* Infinite tessellation of page chrome + seeded SVG seals.
+   One file. No build, no npm, no Three.js, no image assets. */
 (() => {
 "use strict";
 
 const NS = "http://www.w3.org/2000/svg";
 const TAU = Math.PI * 2;
-const piece = document.getElementById("piece");
-const spinG = document.getElementById("spin");
 const seedlab = document.getElementById("seedlab");
 const hint = document.getElementById("hint");
-const knob = document.getElementById("knob");
-const stage = document.getElementById("stage");
-const dial = document.getElementById("dial");
+const scroller = document.getElementById("scroller");
+const world = document.getElementById("world");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const PALETTES = [
@@ -89,6 +150,9 @@ const PALETTES = [
   { bg: "#20150A", ink: "#F8E8C8", paper: "#4A2E12", accent: "#FF2D55", flash: "#8CFF3A" }
 ];
 
+const WORDS = ["HATCH","BITE","WONK","CLIP","SEED","ORBIT","GEAR","STACK","WEDGE","CHOP","RIM","FLASH","INK","PAPER","TOOTH","RAY","CORE","VOID","MARK","TILE","KNOB","DIAL","TAB","CHIP","STEP","RATE","DROP","SLIDE","TOGGLE","RADIO","CHECK","METER","PAGE","PATH","ARC","STAR","NEST","FORM","LINK","FILE","DATE","PLAY","SEEK","SORT","FILTER","SEND","OPEN","HOLD"];
+const KINDS = ["seal","buttons","slider","select","search","checks","radios","toggles","tabs","progress","chips","rating","accordion","pager","calendar","crumbs","upload","navbar","textarea","stepper","swatches","tooltip","meter","links","media","settings","combo"];
+
 function mulberry32(a) {
   return function () {
     a |= 0;
@@ -98,7 +162,6 @@ function mulberry32(a) {
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
-
 const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 const irange = (rng, a, b) => a + Math.floor(rng() * (b - a + 1));
 const frange = (rng, a, b) => a + rng() * (b - a);
@@ -106,10 +169,25 @@ const wob = (rng, amt) => 1 + (rng() * 2 - 1) * amt;
 const polar = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
 const hex = (n) => (n >>> 0).toString(16).padStart(8, "0");
 const deg = (a) => (a * 180 / Math.PI).toFixed(2);
-
 function isLight(h) {
   const n = parseInt(h.slice(1), 16);
   return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150;
+}
+function mix(world, x, y) {
+  let n = world >>> 0;
+  n = Math.imul(n ^ Math.imul(x | 0, 0x9e3779b9), 0x85ebca6b);
+  n = Math.imul(n ^ Math.imul(y | 0, 0xc2b2ae35), 0x27d4eb2f);
+  return (n ^ (n >>> 16)) >>> 0;
+}
+function parseSeed(s) {
+  if (!s) return null;
+  const n = parseInt(s, 16);
+  return Number.isFinite(n) ? (n >>> 0) : null;
+}
+function mintSeed() {
+  const a = new Uint32Array(1);
+  crypto.getRandomValues(a);
+  return a[0] || (Math.floor(Math.random() * 0xffffffff) || 1);
 }
 
 function el(name, attrs, parent) {
@@ -118,98 +196,83 @@ function el(name, attrs, parent) {
   if (parent) parent.appendChild(n);
   return n;
 }
+function h(name, attrs, kids) {
+  const n = document.createElement(name);
+  for (const k in attrs || {}) {
+    if (k === "class") n.className = attrs[k];
+    else if (k === "css") Object.assign(n.style, attrs[k]);
+    else if (k.slice(0, 2) === "on" && typeof attrs[k] === "function") n.addEventListener(k.slice(2), attrs[k]);
+    else if (k === "html") n.innerHTML = attrs[k];
+    else if (attrs[k] === true) n.setAttribute(k, "");
+    else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+  }
+  for (const kid of kids || []) {
+    if (kid == null) continue;
+    n.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+  }
+  return n;
+}
 
 function poly(pts, close) {
   let d = "M" + pts.map((p) => p[0].toFixed(2) + "," + p[1].toFixed(2)).join("L");
   return close === false ? d : d + "Z";
 }
-
 function starPts(n, ro, ri, rot, jit, rng) {
   const pts = [];
-  for (let i = 0; i < n * 2; i++) {
-    pts.push(polar(rot + (i * Math.PI) / n, (i % 2 === 0 ? ro : ri) * wob(rng, jit)));
-  }
+  for (let i = 0; i < n * 2; i++) pts.push(polar(rot + (i * Math.PI) / n, (i % 2 === 0 ? ro : ri) * wob(rng, jit)));
   return pts;
 }
-
 function gonPts(n, r, rot, jit, rng) {
   const pts = [];
   for (let i = 0; i < n; i++) pts.push(polar(rot + (i * TAU) / n, r * wob(rng, jit)));
   return pts;
 }
-
 function petalD(r0, r1, spread) {
   const a = spread * 0.5;
   const p0 = polar(-a, r0), tip = polar(0, r1), p1 = polar(a, r0);
-  const c0 = polar(-a * 1.05, r1 * 0.62);
-  const c1 = polar(a * 1.05, r1 * 0.62);
+  const c0 = polar(-a * 1.05, r1 * 0.62), c1 = polar(a * 1.05, r1 * 0.62);
   return `M${p0[0].toFixed(2)},${p0[1].toFixed(2)} Q${c0[0].toFixed(2)},${c0[1].toFixed(2)} ${tip[0].toFixed(2)},${tip[1].toFixed(2)} Q${c1[0].toFixed(2)},${c1[1].toFixed(2)} ${p1[0].toFixed(2)},${p1[1].toFixed(2)} Z`;
 }
-
 function chevronD(r0, r1, w) {
   const a = w * 0.5;
-  return poly([
-    polar(-a, r0), polar(0, r1), polar(a, r0),
-    polar(a * 0.42, r0 + (r1 - r0) * 0.2),
-    polar(0, r1 - (r1 - r0) * 0.26),
-    polar(-a * 0.42, r0 + (r1 - r0) * 0.2)
-  ]);
+  return poly([polar(-a, r0), polar(0, r1), polar(a, r0), polar(a * 0.42, r0 + (r1 - r0) * 0.2), polar(0, r1 - (r1 - r0) * 0.26), polar(-a * 0.42, r0 + (r1 - r0) * 0.2)]);
 }
-
 function bladeD(r0, r1, w) {
   const a = w * 0.5;
   return poly([polar(-a * 0.2, r0), polar(-a * 1.15, r1 * 0.7), polar(0.15, r1), polar(a * 0.35, r0)]);
 }
-
 function arcD(r, a0, a1) {
   const p0 = polar(a0, r), p1 = polar(a1, r);
   const large = ((a1 - a0 + TAU) % TAU) > Math.PI ? 1 : 0;
   return `M${p0[0].toFixed(2)},${p0[1].toFixed(2)} A${r.toFixed(2)},${r.toFixed(2)} 0 ${large} 1 ${p1[0].toFixed(2)},${p1[1].toFixed(2)}`;
 }
-
 function wedgeD(r, a0, a1) {
   const p0 = polar(a0, r), p1 = polar(a1, r);
   const large = ((a1 - a0 + TAU) % TAU) > Math.PI ? 1 : 0;
   return `M0,0 L${p0[0].toFixed(2)},${p0[1].toFixed(2)} A${r.toFixed(2)},${r.toFixed(2)} 0 ${large} 1 ${p1[0].toFixed(2)},${p1[1].toFixed(2)} Z`;
 }
 
-function parseSeed(s) {
-  if (!s) return null;
-  const n = parseInt(s, 16);
-  return Number.isFinite(n) ? (n >>> 0) : null;
-}
-
-function mintSeed() {
-  const a = new Uint32Array(1);
-  crypto.getRandomValues(a);
-  return a[0] || (Math.floor(Math.random() * 0xffffffff) || 1);
-}
-
-/* -------- composition -------- */
-
 function compose(seed) {
   const rng = mulberry32(seed);
   const pal = PALETTES[Math.floor(rng() * PALETTES.length)];
   const wonk = frange(rng, 0.04, 0.14);
   const family = pick(rng, ["corona", "petal", "orbit", "chop", "gear", "lattice", "wedge", "stack"]);
-  const rays = irange(rng, 7, 15);
-  const phase = frange(rng, 0, TAU);
-  const fieldN = pick(rng, [0, 0, 5, 6, 7, 8]);
-  const stampOff = rng() > 0.28 ? [frange(rng, 10, 22), frange(rng, -16, -6)] : null;
-  const stripe = rng() > 0.4;
-  const origin = [frange(rng, -26, 26), frange(rng, -22, 22)];
-  const skew = frange(rng, -7, 7);
   return {
-    seed, rng, pal, wonk, family, rays, phase, fieldN, stampOff, stripe,
-    origin, skew, clipId: "cf-" + hex(seed)
+    seed, rng, pal, wonk, family,
+    rays: irange(rng, 7, 15),
+    phase: frange(rng, 0, TAU),
+    fieldN: pick(rng, [0, 0, 5, 6, 7, 8]),
+    stampOff: rng() > 0.28 ? [frange(rng, 10, 22), frange(rng, -16, -6)] : null,
+    stripe: rng() > 0.4,
+    origin: [frange(rng, -26, 26), frange(rng, -22, 22)],
+    skew: frange(rng, -7, 7),
+    clipId: "cf-" + hex(seed)
   };
 }
-
 function fieldShape(c, r, jit) {
   if (c.fieldN === 0) return { circle: true, r };
   return { d: poly(gonPts(c.fieldN, r, c.phase * 0.12, jit, c.rng)) };
 }
-
 function drawField(g, c) {
   const r = frange(c.rng, 400, 468);
   c.fieldR = r;
@@ -222,24 +285,18 @@ function drawField(g, c) {
   const sh = fieldShape(c, r, c.wonk * 0.7);
   if (sh.circle) el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: c.pal.paper }, g);
   else el("path", { d: sh.d, fill: c.pal.paper }, g);
-
   if (c.stripe) {
     const clip = el("clipPath", { id: c.clipId }, c.defs);
     if (c.fieldN === 0) el("circle", { cx: "0", cy: "0", r: r.toFixed(1) }, clip);
     else el("path", { d: poly(gonPts(c.fieldN, r, c.phase * 0.12, 0, c.rng)) }, clip);
     const sg = el("g", { "clip-path": `url(#${c.clipId})`, fill: c.pal.ink, opacity: "0.16" }, g);
     const ang = c.phase + frange(c.rng, -0.5, 0.5);
-    const step = frange(c.rng, 12, 24);
-    const thick = frange(c.rng, 5, 13);
+    const step = frange(c.rng, 12, 24), thick = frange(c.rng, 5, 13);
     for (let x = -540; x < 540; x += step) {
-      el("rect", {
-        x: x.toFixed(1), y: "-540", width: thick.toFixed(1), height: "1080",
-        transform: `rotate(${deg(ang)})`
-      }, sg);
+      el("rect", { x: x.toFixed(1), y: "-540", width: thick.toFixed(1), height: "1080", transform: `rotate(${deg(ang)})` }, sg);
     }
   }
 }
-
 function drawRayRing(g, c, opts) {
   const { n, r1, r0, kind, phase, fill } = opts;
   const spread = (TAU / n) * frange(c.rng, 0.55, 1.08);
@@ -250,122 +307,76 @@ function drawRayRing(g, c, opts) {
     const rr0 = r0 * wob(c.rng, c.wonk * 0.6);
     const col = (i % 4 === 0 && c.rng() > 0.4) ? c.pal.accent : fill;
     const t = `rotate(${deg(a)})`;
-    if (kind === "petal") {
-      el("path", { d: petalD(rr0, rr1, spread * wob(c.rng, 0.22)), transform: t, fill: col }, g);
-    } else if (kind === "gear") {
+    if (kind === "petal") el("path", { d: petalD(rr0, rr1, spread * wob(c.rng, 0.22)), transform: t, fill: col }, g);
+    else if (kind === "gear") {
       const tooth = (TAU / n) * frange(c.rng, 0.3, 0.52);
-      el("path", {
-        d: poly([
-          polar(-tooth, rr0), polar(-tooth, rr1 * 0.84),
-          polar(-tooth * 0.4, rr1), polar(tooth * 0.4, rr1),
-          polar(tooth, rr1 * 0.84), polar(tooth, rr0)
-        ]),
-        transform: t, fill: col
-      }, g);
-    } else if (kind === "chevron") {
-      el("path", { d: chevronD(rr0, rr1, spread), transform: t, fill: col }, g);
-    } else if (kind === "bar") {
+      el("path", { d: poly([polar(-tooth, rr0), polar(-tooth, rr1 * 0.84), polar(-tooth * 0.4, rr1), polar(tooth * 0.4, rr1), polar(tooth, rr1 * 0.84), polar(tooth, rr0)]), transform: t, fill: col }, g);
+    } else if (kind === "chevron") el("path", { d: chevronD(rr0, rr1, spread), transform: t, fill: col }, g);
+    else if (kind === "bar") {
       const w = Math.max(14, spread * rr1 * 0.42);
-      el("rect", {
-        x: (-w * 0.5).toFixed(1), y: (-rr1).toFixed(1),
-        width: w.toFixed(1), height: (rr1 - rr0).toFixed(1),
-        transform: t, fill: col
-      }, g);
-    } else if (kind === "tri") {
-      el("path", { d: poly([polar(-spread * 0.62, rr0), polar(0, rr1), polar(spread * 0.5, rr0)]), transform: t, fill: col }, g);
-    } else {
-      el("path", { d: bladeD(rr0, rr1, spread), transform: t, fill: col }, g);
-    }
+      el("rect", { x: (-w * 0.5).toFixed(1), y: (-rr1).toFixed(1), width: w.toFixed(1), height: (rr1 - rr0).toFixed(1), transform: t, fill: col }, g);
+    } else if (kind === "tri") el("path", { d: poly([polar(-spread * 0.62, rr0), polar(0, rr1), polar(spread * 0.5, rr0)]), transform: t, fill: col }, g);
+    else el("path", { d: bladeD(rr0, rr1, spread), transform: t, fill: col }, g);
   }
 }
-
 function drawRays(g, c) {
   const r1 = c.fieldR * frange(c.rng, 0.9, 1.06);
   const r0 = r1 * frange(c.rng, 0.28, 0.52);
-  const kind = c.family === "petal" ? "petal"
-    : c.family === "gear" ? "gear"
-    : c.family === "corona" ? pick(c.rng, ["blade", "tri", "chevron"])
-    : pick(c.rng, ["blade", "chevron", "tri", "bar"]);
+  const kind = c.family === "petal" ? "petal" : c.family === "gear" ? "gear" : c.family === "corona" ? pick(c.rng, ["blade", "tri", "chevron"]) : pick(c.rng, ["blade", "chevron", "tri", "bar"]);
   drawRayRing(g, c, { n: c.rays, r1, r0, kind, phase: c.phase, fill: c.pal.ink });
   c.innerR = r0 * frange(c.rng, 0.7, 0.95);
 }
-
 function drawOrbit(g, c) {
   let r = c.fieldR * frange(c.rng, 0.82, 0.98);
-  const rings = irange(c.rng, 3, 5);
-  for (let i = 0; i < rings; i++) {
-    const sw = frange(c.rng, 10, 28);
+  for (let i = 0, rings = irange(c.rng, 3, 5); i < rings; i++) {
     const a0 = c.phase + frange(c.rng, 0, TAU);
-    const span = frange(c.rng, 2.0, TAU - 0.25);
-    el("path", {
-      d: arcD(r, a0, a0 + span),
-      fill: "none",
-      stroke: i % 2 ? c.pal.flash : c.pal.ink,
-      "stroke-width": sw.toFixed(1),
-      "stroke-linecap": "butt"
-    }, g);
+    el("path", { d: arcD(r, a0, a0 + frange(c.rng, 2, TAU - 0.25)), fill: "none", stroke: i % 2 ? c.pal.flash : c.pal.ink, "stroke-width": frange(c.rng, 10, 28).toFixed(1) }, g);
     r *= frange(c.rng, 0.68, 0.8);
   }
-  const sats = irange(c.rng, 6, 13);
-  const sr = c.fieldR * frange(c.rng, 0.5, 0.84);
+  const sats = irange(c.rng, 6, 13), sr = c.fieldR * frange(c.rng, 0.5, 0.84);
   for (let i = 0; i < sats; i++) {
     const a = c.phase + (i * TAU) / sats + (c.rng() * 2 - 1) * c.wonk;
     const [x, y] = polar(a, sr * wob(c.rng, c.wonk));
-    const rad = frange(c.rng, 10, 28);
-    const fill = i % 3 === 0 ? c.pal.flash : c.pal.accent;
+    const rad = frange(c.rng, 10, 28), fill = i % 3 === 0 ? c.pal.flash : c.pal.accent;
     if (c.rng() > 0.35) el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: rad.toFixed(1), fill }, g);
     else el("path", { d: poly(gonPts(irange(c.rng, 3, 5), rad, a, c.wonk, c.rng)), fill, transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, g);
   }
   c.innerR = r;
 }
-
 function drawChop(g, c) {
-  const r = c.fieldR * 0.94;
-  const cuts = irange(c.rng, 2, 5);
+  const r = c.fieldR * 0.94, cuts = irange(c.rng, 2, 5);
   let d = fieldShape(c, r, c.wonk * 0.3).circle
     ? `M ${(-r).toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${r.toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${(-r).toFixed(1)},0 Z`
     : poly(gonPts(c.fieldN || 7, r, c.phase, c.wonk * 0.3, c.rng));
   for (let i = 0; i < cuts; i++) {
     const a = c.phase + (i * TAU) / cuts + frange(c.rng, -0.25, 0.25);
-    const off = frange(c.rng, r * 0.1, r * 0.62);
-    const [cx, cy] = polar(a, off);
+    const [cx, cy] = polar(a, frange(c.rng, r * 0.1, r * 0.62));
     if (c.rng() > 0.4) {
       const cr = frange(c.rng, r * 0.22, r * 0.5) * wob(c.rng, c.wonk);
       d += ` M ${cx.toFixed(1)},${(cy - cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy + cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy - cr).toFixed(1)} Z`;
     } else {
-      const hole = gonPts(irange(c.rng, 3, 6), frange(c.rng, r * 0.18, r * 0.42), a, c.wonk, c.rng)
-        .map((p) => [p[0] + cx, p[1] + cy]);
-      d += " " + poly(hole);
+      d += " " + poly(gonPts(irange(c.rng, 3, 6), frange(c.rng, r * 0.18, r * 0.42), a, c.wonk, c.rng).map((p) => [p[0] + cx, p[1] + cy]));
     }
   }
   el("path", { d, fill: c.pal.ink, "fill-rule": "evenodd" }, g);
   el("circle", { cx: "0", cy: "0", r: (r * frange(c.rng, 0.18, 0.34)).toFixed(1), fill: c.pal.flash }, g);
   c.innerR = r * 0.24;
 }
-
 function drawLattice(g, c) {
-  const n = c.fieldN || irange(c.rng, 5, 8);
-  const r = c.fieldR * frange(c.rng, 0.78, 0.96);
+  const n = c.fieldN || irange(c.rng, 5, 8), r = c.fieldR * frange(c.rng, 0.78, 0.96);
   el("path", { d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)), fill: c.pal.ink }, g);
   el("path", { d: poly(gonPts(n, r * 0.72, c.phase + Math.PI / n, c.wonk, c.rng)), fill: c.pal.paper }, g);
   el("path", { d: poly(gonPts(n, r * 0.5, c.phase, c.wonk * 1.2, c.rng)), fill: c.pal.accent }, g);
-  const chords = irange(c.rng, 4, 8);
   const sw = frange(c.rng, 6, 16);
-  for (let i = 0; i < chords; i++) {
-    const a = c.phase + (i * TAU) / chords + frange(c.rng, -0.12, 0.12);
-    const p0 = polar(a, r * 0.96);
-    const p1 = polar(a + Math.PI * frange(c.rng, 0.48, 0.9), r * 0.96);
-    el("path", {
-      d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`,
-      fill: "none", stroke: i % 2 ? c.pal.flash : c.pal.ink, "stroke-width": sw.toFixed(1)
-    }, g);
+  for (let i = 0, chords = irange(c.rng, 4, 8); i < chords; i++) {
+    const a = c.phase + (i * TAU) / chords;
+    const p0 = polar(a, r * 0.96), p1 = polar(a + Math.PI * frange(c.rng, 0.48, 0.9), r * 0.96);
+    el("path", { d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`, fill: "none", stroke: i % 2 ? c.pal.flash : c.pal.ink, "stroke-width": sw.toFixed(1) }, g);
   }
   c.innerR = r * 0.36;
 }
-
 function drawWedge(g, c) {
-  const n = irange(c.rng, 6, 12);
-  const r = c.fieldR * frange(c.rng, 0.86, 1.02);
+  const n = irange(c.rng, 6, 12), r = c.fieldR * frange(c.rng, 0.86, 1.02);
   const cols = [c.pal.ink, c.pal.accent, c.pal.flash, c.pal.paper];
   let a = c.phase;
   for (let i = 0; i < n; i++) {
@@ -375,53 +386,28 @@ function drawWedge(g, c) {
   }
   c.innerR = r * frange(c.rng, 0.28, 0.42);
 }
-
 function drawStack(g, c) {
-  const n = irange(c.rng, 4, 7);
-  const sides = pick(c.rng, [4, 4, 5, 6, 8]);
+  const n = irange(c.rng, 4, 7), sides = pick(c.rng, [4, 4, 5, 6, 8]);
   let r = c.fieldR * frange(c.rng, 0.84, 1.0);
   const cols = [c.pal.ink, c.pal.paper, c.pal.accent, c.pal.flash];
   for (let i = 0; i < n; i++) {
-    el("path", {
-      d: poly(gonPts(sides, r, c.phase + i * 0.22, c.wonk * (0.4 + i * 0.15), c.rng)),
-      fill: cols[i % cols.length]
-    }, g);
+    el("path", { d: poly(gonPts(sides, r, c.phase + i * 0.22, c.wonk * (0.4 + i * 0.15), c.rng)), fill: cols[i % cols.length] }, g);
     r *= frange(c.rng, 0.62, 0.78);
   }
   c.innerR = r;
 }
-
 function drawSecondary(g, c) {
-  const n = pick(c.rng, [5, 7, 11, 13]);
   const r1 = c.fieldR * frange(c.rng, 0.42, 0.68);
-  const r0 = r1 * frange(c.rng, 0.2, 0.45);
-  drawRayRing(g, c, {
-    n, r1, r0,
-    kind: pick(c.rng, ["tri", "blade", "bar", "chevron"]),
-    phase: c.phase + 0.37,
-    fill: c.pal.flash
-  });
+  drawRayRing(g, c, { n: pick(c.rng, [5, 7, 11, 13]), r1, r0: r1 * frange(c.rng, 0.2, 0.45), kind: pick(c.rng, ["tri", "blade", "bar", "chevron"]), phase: c.phase + 0.37, fill: c.pal.flash });
 }
-
 function drawBeams(g, c) {
-  const n = irange(c.rng, 1, 3);
-  for (let i = 0; i < n; i++) {
-    const a = c.phase + frange(c.rng, 0, TAU);
-    const w = frange(c.rng, 14, 36);
-    const len = c.fieldR * frange(c.rng, 1.6, 2.05);
-    el("rect", {
-      x: (-w / 2).toFixed(1), y: (-len / 2).toFixed(1),
-      width: w.toFixed(1), height: len.toFixed(1),
-      fill: i === 0 ? c.pal.accent : c.pal.ink,
-      opacity: i === 0 ? "0.9" : "0.55",
-      transform: `rotate(${deg(a)})`
-    }, g);
+  for (let i = 0, n = irange(c.rng, 1, 3); i < n; i++) {
+    const a = c.phase + frange(c.rng, 0, TAU), w = frange(c.rng, 14, 36), len = c.fieldR * frange(c.rng, 1.6, 2.05);
+    el("rect", { x: (-w / 2).toFixed(1), y: (-len / 2).toFixed(1), width: w.toFixed(1), height: len.toFixed(1), fill: i === 0 ? c.pal.accent : c.pal.ink, opacity: i === 0 ? "0.9" : "0.55", transform: `rotate(${deg(a)})` }, g);
   }
 }
-
 function drawCore(g, c) {
-  const [ox, oy] = [frange(c.rng, -18, 18), frange(c.rng, -16, 16)];
-  const gC = el("g", { transform: `translate(${ox.toFixed(1)} ${oy.toFixed(1)})` }, g);
+  const gC = el("g", { transform: `translate(${frange(c.rng, -18, 18).toFixed(1)} ${frange(c.rng, -16, 16).toFixed(1)})` }, g);
   const r = Math.max(70, (c.innerR || c.fieldR * 0.32) * frange(c.rng, 0.85, 1.25));
   const kind = pick(c.rng, ["star", "nest", "split", "target", "void", "cross"]);
   if (kind === "star") {
@@ -445,65 +431,34 @@ function drawCore(g, c) {
     el("circle", { cx: "0", cy: "0", r: (r * 0.14).toFixed(1), fill: c.pal.flash }, gC);
   } else if (kind === "void") {
     const n = irange(c.rng, 5, 8);
-    el("path", {
-      d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)) + " " + poly(gonPts(n, r * 0.4, c.phase + 0.35, c.wonk, c.rng)),
-      fill: c.pal.ink, "fill-rule": "evenodd"
-    }, gC);
+    el("path", { d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)) + " " + poly(gonPts(n, r * 0.4, c.phase + 0.35, c.wonk, c.rng)), fill: c.pal.ink, "fill-rule": "evenodd" }, gC);
   } else {
-    const w = r * frange(c.rng, 0.24, 0.42);
-    const arm = r * frange(c.rng, 0.8, 1.15);
-    const rot = deg(c.phase);
+    const w = r * frange(c.rng, 0.24, 0.42), arm = r * frange(c.rng, 0.8, 1.15), rot = deg(c.phase);
     el("rect", { x: (-w / 2).toFixed(1), y: (-arm).toFixed(1), width: w.toFixed(1), height: (arm * 2).toFixed(1), fill: c.pal.flash, transform: `rotate(${rot})` }, gC);
     el("rect", { x: (-arm).toFixed(1), y: (-w / 2).toFixed(1), width: (arm * 2).toFixed(1), height: w.toFixed(1), fill: c.pal.flash, transform: `rotate(${rot})` }, gC);
     el("circle", { cx: "0", cy: "0", r: (w * 0.72).toFixed(1), fill: c.pal.paper }, gC);
   }
 }
-
 function drawRim(g, c) {
-  const ticks = irange(c.rng, 18, 40);
-  const r = c.fieldR * frange(c.rng, 0.97, 1.1);
-  const sw = frange(c.rng, 3, 7);
+  const ticks = irange(c.rng, 18, 40), r = c.fieldR * frange(c.rng, 0.97, 1.1), sw = frange(c.rng, 3, 7);
   for (let i = 0; i < ticks; i++) {
-    const a = c.phase * 0.35 + (i * TAU) / ticks + (c.rng() * 2 - 1) * c.wonk * 0.08;
-    const len = (i % 5 === 0 ? 28 : 12) * wob(c.rng, c.wonk);
-    const p0 = polar(a, r), p1 = polar(a, r + len);
-    el("path", {
-      d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`,
-      fill: "none", stroke: c.pal.ink, "stroke-width": sw.toFixed(1)
-    }, g);
+    const a = c.phase * 0.35 + (i * TAU) / ticks;
+    const p0 = polar(a, r), p1 = polar(a, r + (i % 5 === 0 ? 28 : 12) * wob(c.rng, c.wonk));
+    el("path", { d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`, fill: "none", stroke: c.pal.ink, "stroke-width": sw.toFixed(1) }, g);
   }
-  el("circle", {
-    cx: (c.rng() * 12 - 6).toFixed(1),
-    cy: (c.rng() * 12 - 6).toFixed(1),
-    r: (c.fieldR * 1.03).toFixed(1),
-    fill: "none",
-    stroke: c.pal.accent,
-    "stroke-width": frange(c.rng, 5, 14).toFixed(1)
-  }, g);
+  el("circle", { cx: (c.rng() * 12 - 6).toFixed(1), cy: (c.rng() * 12 - 6).toFixed(1), r: (c.fieldR * 1.03).toFixed(1), fill: "none", stroke: c.pal.accent, "stroke-width": frange(c.rng, 5, 14).toFixed(1) }, g);
 }
-
 function drawBite(g, c) {
   if (c.rng() > 0.55) return;
   const a = c.phase + frange(c.rng, 0, TAU);
   const [x, y] = polar(a, c.fieldR * frange(c.rng, 0.72, 1.02));
-  const r = c.fieldR * frange(c.rng, 0.18, 0.38);
-  el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: r.toFixed(1), fill: c.pal.bg }, g);
+  el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: (c.fieldR * frange(c.rng, 0.18, 0.38)).toFixed(1), fill: c.pal.bg }, g);
 }
-
-function render(seed) {
+function paintSeal(svg, seed) {
+  svg.replaceChildren();
   const c = compose(seed);
-  document.body.style.background = c.pal.bg;
-  const quiet = isLight(c.pal.bg) ? "rgba(18,16,14,0.48)" : "rgba(244,239,230,0.5)";
-  hint.style.color = quiet;
-  dial.style.color = isLight(c.pal.bg) ? "#12100E" : "#F4EFE6";
-  piece.replaceChildren();
-  c.defs = el("defs", {}, piece);
-
-  const mark = el("g", {
-    id: "mark",
-    transform: `translate(${c.origin[0].toFixed(1)} ${c.origin[1].toFixed(1)}) skewX(${c.skew.toFixed(2)})`
-  }, piece);
-
+  c.defs = el("defs", {}, svg);
+  const mark = el("g", { transform: `translate(${c.origin[0].toFixed(1)} ${c.origin[1].toFixed(1)}) skewX(${c.skew.toFixed(2)})` }, svg);
   drawField(mark, c);
   if (c.family === "orbit") drawOrbit(mark, c);
   else if (c.family === "chop") drawChop(mark, c);
@@ -511,138 +466,335 @@ function render(seed) {
   else if (c.family === "wedge") drawWedge(mark, c);
   else if (c.family === "stack") drawStack(mark, c);
   else drawRays(mark, c);
-
   if (c.rng() > 0.4) drawBeams(mark, c);
   if (c.family !== "wedge" && c.family !== "stack" && c.rng() > 0.25) drawSecondary(mark, c);
-
-  if (c.family !== "chop" && c.rng() > 0.55) {
-    el("circle", { cx: "0", cy: "0", r: (c.innerR || 120).toFixed(1), fill: c.pal.paper }, mark);
-  }
+  if (c.family !== "chop" && c.rng() > 0.55) el("circle", { cx: "0", cy: "0", r: (c.innerR || 120).toFixed(1), fill: c.pal.paper }, mark);
   drawCore(mark, c);
   if (c.rng() > 0.18) drawRim(mark, c);
   drawBite(mark, c);
-
-  seedlab.textContent = hex(seed);
   return c;
 }
 
-/* -------- live spin -------- */
+/* -------- tiles / infinite field -------- */
+
+const WIDE = { navbar: 1, crumbs: 1, search: 1, tabs: 1, pager: 1, media: 1 };
+function kindFor(rng, canWide) {
+  let k = pick(rng, KINDS);
+  if (k === "seal" && rng() > 0.55) k = pick(rng, KINDS);
+  if (WIDE[k] && !canWide) k = pick(rng, ["buttons", "slider", "select", "checks", "toggles", "progress", "chips"]);
+  return k;
+}
+
+function tileChrome(rng, pal) {
+  return {
+    "--bg": pal.bg, "--ink": pal.ink, "--paper": pal.paper,
+    "--accent": pal.accent, "--flash": pal.flash
+  };
+}
+
+function word(rng) { return pick(rng, WORDS); }
+function words(rng, n) { return Array.from({ length: n }, () => word(rng)); }
+
+function bodyOf(kind, rng, pal) {
+  const w = () => word(rng);
+  if (kind === "buttons") {
+    return h("div", { class: "row" }, [
+      h("button", {}, [w()]),
+      h("button", { class: "ghost" }, [w()]),
+      h("button", {}, [w()])
+    ]);
+  }
+  if (kind === "slider") {
+    const val = irange(rng, 8, 92);
+    const lab = h("h3", {}, [w() + "  " + val]);
+    const sl = h("input", { type: "range", min: "0", max: "100", value: String(val), oninput: (e) => { lab.textContent = w() + "  " + e.target.value; } });
+    return [lab, sl];
+  }
+  if (kind === "select") {
+    const opts = words(rng, irange(rng, 4, 7));
+    return h("select", {}, opts.map((o, i) => h("option", { selected: i === 0 }, [o])));
+  }
+  if (kind === "search") {
+    return h("div", { class: "row" }, [
+      h("input", { type: "search", value: w(), placeholder: w() }),
+      h("button", {}, ["GO"])
+    ]);
+  }
+  if (kind === "checks") {
+    return words(rng, 3).map((name, i) => h("label", { class: "check" }, [
+      h("input", { type: "checkbox", checked: i === 0 }), name
+    ]));
+  }
+  if (kind === "radios") {
+    const name = "r" + irange(rng, 1, 1e9);
+    return words(rng, 3).map((lab, i) => h("label", { class: "radio" }, [
+      h("input", { type: "radio", name, checked: i === 1 }), lab
+    ]));
+  }
+  if (kind === "toggles") {
+    return words(rng, 2).map((lab, i) => {
+      const sw = h("div", { class: "switch" + (i ? " on" : ""), onclick: () => sw.classList.toggle("on") }, [h("i")]);
+      return h("div", { class: "row" }, [sw, h("span", {}, [lab])]);
+    });
+  }
+  if (kind === "tabs") {
+    const names = words(rng, 3);
+    const tabs = h("div", { class: "tabs" });
+    names.forEach((n, i) => {
+      const b = h("button", { class: i === 0 ? "on" : "", onclick: () => {
+        [...tabs.children].forEach((c) => c.classList.remove("on"));
+        b.classList.add("on");
+      } }, [n]);
+      tabs.appendChild(b);
+    });
+    return tabs;
+  }
+  if (kind === "progress") {
+    const p = irange(rng, 12, 88);
+    return [h("h3", {}, [w() + "  " + p + "%"]), h("div", { class: "bar" }, [h("b", { css: { width: p + "%" } })])];
+  }
+  if (kind === "chips") {
+    return h("div", { class: "row" }, words(rng, 4).map((n, i) => {
+      const c = h("button", { class: "chip" + (i === 0 ? " on" : ""), onclick: () => c.classList.toggle("on") }, [n]);
+      return c;
+    }));
+  }
+  if (kind === "rating") {
+    const n = irange(rng, 1, 5);
+    const row = h("div", { class: "row stars" });
+    for (let i = 1; i <= 5; i++) {
+      const b = h("button", { class: i <= n ? "" : "ghost", onclick: () => {
+        [...row.children].forEach((c, j) => { c.className = j < i ? "" : "ghost"; });
+      } }, ["★"]);
+      row.appendChild(b);
+    }
+    return row;
+  }
+  if (kind === "accordion") {
+    const box = h("div");
+    words(rng, 3).forEach((t, i) => {
+      const item = h("dl", { class: "acc" + (i === 0 ? " open" : "") }, [
+        h("dt", { onclick: () => item.classList.toggle("open") }, [t]),
+        h("dd", {}, [w() + " / " + w()])
+      ]);
+      box.appendChild(item);
+    });
+    return box;
+  }
+  if (kind === "pager") {
+    const cur = irange(rng, 1, 6);
+    return h("div", { class: "pager" }, ["‹", "1", "2", "3", "4", "›"].map((t, i) =>
+      h("button", { class: t === String(cur) ? "" : "ghost" }, [t])));
+  }
+  if (kind === "calendar") {
+    const on = irange(rng, 3, 27);
+    const cells = [];
+    for (let d = 1; d <= 28; d++) cells.push(h("i", { class: d === on ? "on" : "" }, [String(d)]));
+    return h("div", { class: "cal" }, cells);
+  }
+  if (kind === "crumbs") {
+    const parts = words(rng, 3);
+    return h("div", { class: "crumbs" }, parts.flatMap((p, i) => i ? [h("b", {}, ["/"]), p] : [p]));
+  }
+  if (kind === "upload") return h("div", { class: "drop" }, ["DROP  " + w()]);
+  if (kind === "navbar") {
+    return h("div", { class: "nav" }, [
+      h("strong", {}, [w()]),
+      h("button", { class: "ghost" }, [w()]),
+      h("button", {}, [w()])
+    ]);
+  }
+  if (kind === "textarea") return h("textarea", {}, [w() + " " + w() + " " + w()]);
+  if (kind === "stepper") {
+    let n = irange(rng, 0, 12);
+    const lab = h("strong", {}, [String(n)]);
+    return h("div", { class: "row" }, [
+      h("button", { onclick: () => { n--; lab.textContent = String(n); } }, ["−"]),
+      lab,
+      h("button", { onclick: () => { n++; lab.textContent = String(n); } }, ["+"])
+    ]);
+  }
+  if (kind === "swatches") {
+    return h("div", { class: "row" }, [pal.ink, pal.accent, pal.flash, pal.paper].map((c) =>
+      h("div", { class: "swatch", css: { background: c }, onclick: (e) => { e.currentTarget.style.outline = "3px solid " + pal.flash; } })));
+  }
+  if (kind === "tooltip") {
+    return [h("button", {}, [w()]), h("div", { css: { background: pal.flash, color: pal.bg, padding: "8px 10px", transform: "rotate(-2deg)" } }, [w() + " · " + w()])];
+  }
+  if (kind === "meter") {
+    const p = irange(rng, 20, 90);
+    return [h("div", { class: "knob", css: { "--pct": p + "%" } }), h("h3", {}, [w() + "  " + p])];
+  }
+  if (kind === "links") {
+    return h("div", { class: "links" }, words(rng, 3).map((t) => h("a", { href: "#", onclick: (e) => e.preventDefault() }, [t])));
+  }
+  if (kind === "media") {
+    return h("div", { class: "media" }, [
+      h("button", {}, ["▶"]),
+      h("input", { type: "range", min: "0", max: "100", value: String(irange(rng, 10, 70)) }),
+      h("button", { class: "ghost" }, ["🔊"])
+    ]);
+  }
+  if (kind === "settings") {
+    const sw = h("div", { class: "switch on", onclick: () => sw.classList.toggle("on") }, [h("i")]);
+    return [h("div", { class: "row" }, [sw, h("span", {}, [w()])]), h("input", { type: "range", value: String(irange(rng, 20, 80)) })];
+  }
+  if (kind === "combo") {
+    return [
+      h("input", { type: "text", value: w() }),
+      h("div", { class: "row" }, [h("select", {}, words(rng, 3).map((o) => h("option", {}, [o]))), h("button", {}, [w()])])
+    ];
+  }
+  return h("button", {}, [w()]);
+}
+
+function makeTile(def) {
+  const rng = mulberry32(def.seed);
+  const pal = PALETTES[def.seed % PALETTES.length];
+  const tile = h("article", { class: "tile" + (def.kind === "seal" ? " seal" : "") });
+  Object.assign(tile.style, tileChrome(rng, pal));
+  tile.dataset.key = def.col + ":" + def.row;
+  if (def.kind === "seal") {
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "-520 -520 1040 1040");
+    if (reduce) svg.style.animation = "none";
+    tile.appendChild(svg);
+    paintSeal(svg, def.seed);
+  } else {
+    tile.appendChild(h("h3", {}, [def.kind]));
+    const body = h("div", { class: "body" });
+    const inner = bodyOf(def.kind, rng, pal);
+    const list = Array.isArray(inner) ? inner : [inner];
+    list.forEach((n) => body.appendChild(n));
+    tile.appendChild(body);
+  }
+  place(tile, def);
+  return tile;
+}
+
+function place(el, def) {
+  el.style.left = (def.col * cell) + "px";
+  el.style.top = ((def.row - minR) * cell) + "px";
+  el.style.width = (def.span * cell) + "px";
+  el.style.height = cell + "px";
+}
 
 let seed = parseSeed(new URLSearchParams(location.search).get("s")) || mintSeed();
-let angle = 0;
-let vel = reduce ? 0 : 14;
-let last = performance.now();
-let dragging = false;
-let dragMode = null;
-let lastPtr = 0;
-let lastY = 0;
-let moved = 0;
-let lastT = 0;
+let cols = 4, cell = 220, minR = 0, maxR = 8;
+const live = new Map();
 
-function applySpin() {
-  spinG.setAttribute("transform", `rotate(${angle.toFixed(3)})`);
-  const t = ((angle % 360) + 360) % 360;
-  knob.setAttribute("cy", (152 - t / 360 * 144).toFixed(1));
+function metrics() {
+  const w = scroller.clientWidth || innerWidth;
+  cols = Math.max(2, Math.min(6, Math.round(w / 240)));
+  cell = w / cols;
 }
 
-function tick(now) {
-  const dt = Math.min(0.05, (now - last) / 1000);
-  last = now;
-  if (!dragging) {
-    angle += vel * dt;
-    if (!reduce && Math.abs(vel) < 5) vel += (10 - vel) * 0.014;
+function rowPlan(row) {
+  const out = [];
+  let c = 0;
+  while (c < cols) {
+    const s = mix(seed, c + 17, row + 31);
+    const rng = mulberry32(s);
+    const canWide = c < cols - 1;
+    const span = canWide && rng() > 0.72 ? 2 : 1;
+    const kind = kindFor(rng, span === 2 || canWide);
+    out.push({ col: c, row, span, kind, seed: mix(seed, c, row) });
+    c += span;
   }
-  applySpin();
-  requestAnimationFrame(tick);
+  return out;
 }
 
-function setSeed(next, push) {
+function syncHeight() {
+  world.style.height = ((maxR - minR + 1) * cell) + "px";
+}
+
+function relayout() {
+  for (const [k, el] of live) {
+    const [c, r] = k.split(":").map(Number);
+    const plan = rowPlan(r).find((p) => p.col === c);
+    if (plan) place(el, plan);
+  }
+  syncHeight();
+}
+
+function paint() {
+  const top = scroller.scrollTop;
+  const vh = scroller.clientHeight;
+  let r0 = Math.floor(top / cell) + minR - 2;
+  let r1 = Math.ceil((top + vh) / cell) + minR + 2;
+  if (r1 > maxR) { maxR = r1 + 10; syncHeight(); }
+  if (r0 < minR) {
+    const add = minR - r0 + 8;
+    minR -= add;
+    syncHeight();
+    relayout();
+    scroller.scrollTop += add * cell;
+    r0 = Math.floor(scroller.scrollTop / cell) + minR - 2;
+    r1 = Math.ceil((scroller.scrollTop + vh) / cell) + minR + 2;
+  }
+  const need = new Set();
+  for (let r = r0; r <= r1; r++) {
+    for (const def of rowPlan(r)) {
+      const k = def.col + ":" + r;
+      need.add(k);
+      if (!live.has(k)) {
+        const tile = makeTile(def);
+        world.appendChild(tile);
+        live.set(k, tile);
+      }
+    }
+  }
+  for (const [k, el] of live) {
+    if (!need.has(k)) { el.remove(); live.delete(k); }
+  }
+}
+
+function applyWorld(next, push) {
   seed = next >>> 0;
-  render(seed);
+  const pal = PALETTES[seed % PALETTES.length];
+  document.body.style.background = pal.bg;
+  scroller.style.background = pal.bg;
+  hint.style.color = isLight(pal.bg) ? "rgba(18,16,14,0.5)" : "rgba(244,239,230,0.5)";
+  seedlab.textContent = hex(seed);
   const url = new URL(location.href);
   url.searchParams.set("s", hex(seed));
   history[push ? "pushState" : "replaceState"](null, "", url);
+  for (const el of live.values()) el.remove();
+  live.clear();
+  paint();
 }
 
-function angleAt(x, y) {
-  const b = stage.getBoundingClientRect();
-  return Math.atan2(y - (b.top + b.height / 2), x - (b.left + b.width / 2));
+function boot() {
+  metrics();
+  const rows = Math.ceil((scroller.clientHeight || innerHeight) / cell) + 4;
+  minR = -2;
+  maxR = rows + 6;
+  syncHeight();
+  applyWorld(seed, false);
+  scroller.scrollTop = 2 * cell;
 }
 
-function onDown(e, mode) {
-  dragging = true;
-  dragMode = mode;
-  moved = 0;
-  lastT = performance.now();
-  if (mode === "dial") lastY = e.clientY;
-  else lastPtr = angleAt(e.clientX, e.clientY);
-  vel = 0;
-  (mode === "dial" ? dial : stage).setPointerCapture?.(e.pointerId);
-}
-
-function onMove(e) {
-  if (!dragging) return;
-  const now = performance.now();
-  const dt = Math.max(0.008, (now - lastT) / 1000);
-  if (dragMode === "dial") {
-    const dy = e.clientY - lastY;
-    moved += Math.abs(dy);
-    const da = -dy * (360 / 144);
-    angle += da;
-    vel = da / dt;
-    lastY = e.clientY;
-  } else {
-    const a = angleAt(e.clientX, e.clientY);
-    let da = (a - lastPtr) * 180 / Math.PI;
-    if (da > 180) da -= 360;
-    if (da < -180) da += 360;
-    moved += Math.abs(da);
-    angle += da;
-    vel = da / dt;
-    lastPtr = a;
-  }
-  lastT = now;
-  applySpin();
-}
-
-function onUp() {
-  if (!dragging) return;
-  dragging = false;
-  if (moved < 6) setSeed(mintSeed(), true);
-  else if (Math.abs(vel) < 18) vel = reduce ? 0 : Math.sign(vel || 1) * 7;
-  dragMode = null;
-}
-
-stage.addEventListener("pointerdown", (e) => {
-  if (e.button && e.button !== 0) return;
-  onDown(e, "art");
+scroller.addEventListener("scroll", paint, { passive: true });
+window.addEventListener("resize", () => {
+  const keep = scroller.scrollTop / cell;
+  metrics();
+  relayout();
+  scroller.scrollTop = keep * cell;
+  paint();
 });
-dial.addEventListener("pointerdown", (e) => {
-  e.stopPropagation();
-  onDown(e, "dial");
-});
-window.addEventListener("pointermove", onMove);
-window.addEventListener("pointerup", onUp);
-window.addEventListener("pointercancel", onUp);
-
 window.addEventListener("keydown", (e) => {
-  if (e.code === "Space" && !e.repeat) {
-    e.preventDefault();
-    setSeed(mintSeed(), true);
-  }
+  if (e.code !== "Space" || e.repeat) return;
+  const t = e.target;
+  if (t && /^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(t.tagName)) return;
+  e.preventDefault();
+  applyWorld(mintSeed(), true);
 });
-
 window.addEventListener("popstate", () => {
   const s = parseSeed(new URLSearchParams(location.search).get("s"));
-  if (s != null) {
-    seed = s;
-    render(seed);
-  }
+  if (s != null) applyWorld(s, false);
 });
 
-setSeed(seed, false);
-requestAnimationFrame(tick);
-
-window.__svgGen = { render, compose, hex, get seed() { return seed; } };
+boot();
+window.__svgGen = { hex, paintSeal, get seed() { return seed; }, get tiles() { return live.size; } };
 })();
 </script>
