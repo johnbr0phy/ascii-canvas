@@ -13,15 +13,8 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  #stage {
-    position: fixed;
-    inset: 0;
-  }
-  #art {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
+  #stage { position: fixed; inset: 0; }
+  #art { display: block; width: 100%; height: 100%; }
   #hint {
     position: fixed;
     left: max(12px, env(safe-area-inset-left));
@@ -31,12 +24,8 @@
     justify-content: space-between;
     gap: 16px;
     font: 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-    letter-spacing: 0.12em;
-    text-transform: lowercase;
-    color: #f4efe6;
-    opacity: 0.42;
+    letter-spacing: 0.08em;
     pointer-events: none;
-    mix-blend-mode: difference;
   }
   #dial {
     position: fixed;
@@ -45,7 +34,6 @@
     width: 28px;
     height: 160px;
     transform: translateY(-50%);
-    pointer-events: auto;
     touch-action: none;
   }
   #dial svg { display: block; width: 100%; height: 100%; }
@@ -57,8 +45,8 @@
 </div>
 <div id="dial" aria-label="spin">
   <svg viewBox="0 0 28 160">
-    <rect x="12.5" y="8" width="3" height="144" rx="1.5" fill="currentColor" opacity="0.22"/>
-    <circle id="knob" cx="14" cy="80" r="7" fill="currentColor" opacity="0.55"/>
+    <rect x="12.5" y="8" width="3" height="144" rx="1.5" fill="currentColor" opacity="0.28"/>
+    <circle id="knob" cx="14" cy="80" r="7" fill="currentColor" opacity="0.7"/>
   </svg>
 </div>
 <div id="hint">
@@ -82,6 +70,7 @@ const TAU = Math.PI * 2;
 const piece = document.getElementById("piece");
 const spinG = document.getElementById("spin");
 const seedlab = document.getElementById("seedlab");
+const hint = document.getElementById("hint");
 const knob = document.getElementById("knob");
 const stage = document.getElementById("stage");
 const dial = document.getElementById("dial");
@@ -116,10 +105,16 @@ const frange = (rng, a, b) => a + rng() * (b - a);
 const wob = (rng, amt) => 1 + (rng() * 2 - 1) * amt;
 const polar = (a, r) => [Math.cos(a) * r, Math.sin(a) * r];
 const hex = (n) => (n >>> 0).toString(16).padStart(8, "0");
+const deg = (a) => (a * 180 / Math.PI).toFixed(2);
+
+function isLight(h) {
+  const n = parseInt(h.slice(1), 16);
+  return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150;
+}
 
 function el(name, attrs, parent) {
   const n = document.createElementNS(NS, name);
-  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  for (const k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);
   if (parent) parent.appendChild(n);
   return n;
 }
@@ -132,48 +127,50 @@ function poly(pts, close) {
 function starPts(n, ro, ri, rot, jit, rng) {
   const pts = [];
   for (let i = 0; i < n * 2; i++) {
-    const a = rot + (i * Math.PI) / n;
-    const r = (i % 2 === 0 ? ro : ri) * wob(rng, jit);
-    pts.push(polar(a, r));
+    pts.push(polar(rot + (i * Math.PI) / n, (i % 2 === 0 ? ro : ri) * wob(rng, jit)));
   }
   return pts;
 }
 
 function gonPts(n, r, rot, jit, rng) {
   const pts = [];
-  for (let i = 0; i < n; i++) {
-    pts.push(polar(rot + (i * TAU) / n, r * wob(rng, jit)));
-  }
+  for (let i = 0; i < n; i++) pts.push(polar(rot + (i * TAU) / n, r * wob(rng, jit)));
   return pts;
 }
 
 function petalD(r0, r1, spread) {
   const a = spread * 0.5;
   const p0 = polar(-a, r0), tip = polar(0, r1), p1 = polar(a, r0);
-  const c0 = polar(-a * 0.92, r1 * 0.78);
-  const c1 = polar(a * 0.92, r1 * 0.78);
-  const c2 = polar(0, r0 * 0.55);
-  return `M${p0[0].toFixed(2)},${p0[1].toFixed(2)} Q${c0[0].toFixed(2)},${c0[1].toFixed(2)} ${tip[0].toFixed(2)},${tip[1].toFixed(2)} Q${c1[0].toFixed(2)},${c1[1].toFixed(2)} ${p1[0].toFixed(2)},${p1[1].toFixed(2)} Q${c2[0].toFixed(2)},${c2[1].toFixed(2)} ${p0[0].toFixed(2)},${p0[1].toFixed(2)}Z`;
+  const c0 = polar(-a * 1.05, r1 * 0.62);
+  const c1 = polar(a * 1.05, r1 * 0.62);
+  return `M${p0[0].toFixed(2)},${p0[1].toFixed(2)} Q${c0[0].toFixed(2)},${c0[1].toFixed(2)} ${tip[0].toFixed(2)},${tip[1].toFixed(2)} Q${c1[0].toFixed(2)},${c1[1].toFixed(2)} ${p1[0].toFixed(2)},${p1[1].toFixed(2)} Z`;
 }
 
 function chevronD(r0, r1, w) {
   const a = w * 0.5;
-  const a0 = polar(-a, r0), a1 = polar(0, r1), a2 = polar(a, r0);
-  const b0 = polar(a * 0.45, r0 + (r1 - r0) * 0.18);
-  const b1 = polar(0, r1 - (r1 - r0) * 0.22);
-  const b2 = polar(-a * 0.45, r0 + (r1 - r0) * 0.18);
-  return poly([a0, a1, a2, b0, b1, b2]);
+  return poly([
+    polar(-a, r0), polar(0, r1), polar(a, r0),
+    polar(a * 0.42, r0 + (r1 - r0) * 0.2),
+    polar(0, r1 - (r1 - r0) * 0.26),
+    polar(-a * 0.42, r0 + (r1 - r0) * 0.2)
+  ]);
 }
 
 function bladeD(r0, r1, w) {
   const a = w * 0.5;
-  return poly([polar(-a * 0.35, r0), polar(-a, r1 * 0.72), polar(0, r1), polar(a * 0.2, r0)]);
+  return poly([polar(-a * 0.2, r0), polar(-a * 1.15, r1 * 0.7), polar(0.15, r1), polar(a * 0.35, r0)]);
 }
 
 function arcD(r, a0, a1) {
   const p0 = polar(a0, r), p1 = polar(a1, r);
   const large = ((a1 - a0 + TAU) % TAU) > Math.PI ? 1 : 0;
   return `M${p0[0].toFixed(2)},${p0[1].toFixed(2)} A${r.toFixed(2)},${r.toFixed(2)} 0 ${large} 1 ${p1[0].toFixed(2)},${p1[1].toFixed(2)}`;
+}
+
+function wedgeD(r, a0, a1) {
+  const p0 = polar(a0, r), p1 = polar(a1, r);
+  const large = ((a1 - a0 + TAU) % TAU) > Math.PI ? 1 : 0;
+  return `M0,0 L${p0[0].toFixed(2)},${p0[1].toFixed(2)} A${r.toFixed(2)},${r.toFixed(2)} 0 ${large} 1 ${p1[0].toFixed(2)},${p1[1].toFixed(2)} Z`;
 }
 
 function parseSeed(s) {
@@ -193,273 +190,339 @@ function mintSeed() {
 function compose(seed) {
   const rng = mulberry32(seed);
   const pal = PALETTES[Math.floor(rng() * PALETTES.length)];
-  const wonk = frange(rng, 0.018, 0.085);
-  const family = pick(rng, ["corona", "petal", "orbit", "chop", "gear", "lattice"]);
-  const rays = irange(rng, 6, 16);
+  const wonk = frange(rng, 0.04, 0.14);
+  const family = pick(rng, ["corona", "petal", "orbit", "chop", "gear", "lattice", "wedge", "stack"]);
+  const rays = irange(rng, 7, 15);
   const phase = frange(rng, 0, TAU);
-  const fieldN = pick(rng, [0, 5, 6, 7, 8, 9]);
-  const stamp = rng() > 0.62;
-  const stripe = rng() > 0.48;
-  const stampOff = stamp ? [frange(rng, 7, 15), frange(rng, -10, -3)] : null;
-  return { seed, rng, pal, wonk, family, rays, phase, fieldN, stamp, stampOff, stripe, clipId: "cf-" + hex(seed) };
+  const fieldN = pick(rng, [0, 0, 5, 6, 7, 8]);
+  const stampOff = rng() > 0.28 ? [frange(rng, 10, 22), frange(rng, -16, -6)] : null;
+  const stripe = rng() > 0.4;
+  const origin = [frange(rng, -26, 26), frange(rng, -22, 22)];
+  const skew = frange(rng, -7, 7);
+  return {
+    seed, rng, pal, wonk, family, rays, phase, fieldN, stampOff, stripe,
+    origin, skew, clipId: "cf-" + hex(seed)
+  };
+}
+
+function fieldShape(c, r, jit) {
+  if (c.fieldN === 0) return { circle: true, r };
+  return { d: poly(gonPts(c.fieldN, r, c.phase * 0.12, jit, c.rng)) };
 }
 
 function drawField(g, c) {
-  const { rng, pal, wonk, fieldN, phase } = c;
-  const r = frange(rng, 390, 455);
+  const r = frange(c.rng, 400, 468);
   c.fieldR = r;
-  if (fieldN === 0) {
-    el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: pal.paper }, g);
-  } else {
-    el("path", { d: poly(gonPts(fieldN, r, phase * 0.15, wonk * 0.6, rng)), fill: pal.paper }, g);
+  if (c.stampOff) {
+    const ug = el("g", { transform: `translate(${c.stampOff[0].toFixed(1)} ${c.stampOff[1].toFixed(1)})`, fill: c.pal.accent }, g);
+    const sh = fieldShape(c, r, c.wonk * 0.4);
+    if (sh.circle) el("circle", { cx: "0", cy: "0", r: r.toFixed(1) }, ug);
+    else el("path", { d: sh.d }, ug);
   }
+  const sh = fieldShape(c, r, c.wonk * 0.7);
+  if (sh.circle) el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: c.pal.paper }, g);
+  else el("path", { d: sh.d, fill: c.pal.paper }, g);
+
   if (c.stripe) {
     const clip = el("clipPath", { id: c.clipId }, c.defs);
-    if (fieldN === 0) el("circle", { cx: "0", cy: "0", r: r.toFixed(1) }, clip);
-    else el("path", { d: poly(gonPts(fieldN, r, phase * 0.15, 0, rng)) }, clip);
-    const sg = el("g", { "clip-path": `url(#${c.clipId})`, fill: pal.ink, opacity: "0.14" }, g);
-    const ang = phase + frange(rng, -0.4, 0.4);
-    const step = frange(rng, 14, 28);
-    const thick = frange(rng, 4, 11);
-    for (let x = -520; x < 520; x += step) {
+    if (c.fieldN === 0) el("circle", { cx: "0", cy: "0", r: r.toFixed(1) }, clip);
+    else el("path", { d: poly(gonPts(c.fieldN, r, c.phase * 0.12, 0, c.rng)) }, clip);
+    const sg = el("g", { "clip-path": `url(#${c.clipId})`, fill: c.pal.ink, opacity: "0.16" }, g);
+    const ang = c.phase + frange(c.rng, -0.5, 0.5);
+    const step = frange(c.rng, 12, 24);
+    const thick = frange(c.rng, 5, 13);
+    for (let x = -540; x < 540; x += step) {
       el("rect", {
-        x: x.toFixed(1), y: "-520", width: thick.toFixed(1), height: "1040",
-        transform: `rotate(${(ang * 180 / Math.PI).toFixed(2)})`
+        x: x.toFixed(1), y: "-540", width: thick.toFixed(1), height: "1080",
+        transform: `rotate(${deg(ang)})`
       }, sg);
     }
   }
 }
 
-function drawRays(g, c) {
-  const { rng, pal, wonk, family, rays, phase } = c;
-  const r1 = c.fieldR * frange(rng, 0.88, 1.02);
-  const r0 = r1 * frange(rng, 0.42, 0.68);
-  const spread = (TAU / rays) * frange(rng, 0.38, 0.92);
-  const gR = el("g", { fill: pal.ink }, g);
-  const alt = rng() > 0.45;
-  const kind = family === "petal" ? "petal"
-    : family === "gear" ? "gear"
-    : family === "corona" ? pick(rng, ["blade", "tri", "chevron"])
-    : pick(rng, ["blade", "chevron", "tri", "bar"]);
-
-  for (let i = 0; i < rays; i++) {
-    const a = phase + (i * TAU) / rays + (rng() * 2 - 1) * wonk * 0.35;
-    const rr1 = r1 * (alt && i % 2 ? frange(rng, 0.72, 0.9) : wob(rng, wonk));
-    const rr0 = r0 * wob(rng, wonk * 0.5);
-    const fill = (i % 3 === 0 && rng() > 0.55) ? pal.accent : null;
-    let d, node;
+function drawRayRing(g, c, opts) {
+  const { n, r1, r0, kind, phase, fill } = opts;
+  const spread = (TAU / n) * frange(c.rng, 0.55, 1.08);
+  const alt = c.rng() > 0.35;
+  for (let i = 0; i < n; i++) {
+    const a = phase + (i * TAU) / n + (c.rng() * 2 - 1) * c.wonk * 0.55;
+    const rr1 = r1 * (alt && i % 2 ? frange(c.rng, 0.58, 0.86) : wob(c.rng, c.wonk * 1.1));
+    const rr0 = r0 * wob(c.rng, c.wonk * 0.6);
+    const col = (i % 4 === 0 && c.rng() > 0.4) ? c.pal.accent : fill;
+    const t = `rotate(${deg(a)})`;
     if (kind === "petal") {
-      node = el("path", { d: petalD(rr0, rr1, spread * wob(rng, 0.15)), transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`, fill: fill || pal.ink }, gR);
+      el("path", { d: petalD(rr0, rr1, spread * wob(c.rng, 0.22)), transform: t, fill: col }, g);
     } else if (kind === "gear") {
-      const tooth = (TAU / rays) * frange(rng, 0.28, 0.48);
-      const pts = [polar(-tooth, rr0), polar(-tooth, rr1 * 0.86), polar(-tooth * 0.45, rr1), polar(tooth * 0.45, rr1), polar(tooth, rr1 * 0.86), polar(tooth, rr0)];
-      node = el("path", { d: poly(pts), transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`, fill: fill || pal.ink }, gR);
+      const tooth = (TAU / n) * frange(c.rng, 0.3, 0.52);
+      el("path", {
+        d: poly([
+          polar(-tooth, rr0), polar(-tooth, rr1 * 0.84),
+          polar(-tooth * 0.4, rr1), polar(tooth * 0.4, rr1),
+          polar(tooth, rr1 * 0.84), polar(tooth, rr0)
+        ]),
+        transform: t, fill: col
+      }, g);
     } else if (kind === "chevron") {
-      node = el("path", { d: chevronD(rr0, rr1, spread), transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`, fill: fill || pal.ink }, gR);
+      el("path", { d: chevronD(rr0, rr1, spread), transform: t, fill: col }, g);
     } else if (kind === "bar") {
-      const w = (spread * rr1) * 0.55;
-      node = el("rect", {
+      const w = Math.max(14, spread * rr1 * 0.42);
+      el("rect", {
         x: (-w * 0.5).toFixed(1), y: (-rr1).toFixed(1),
         width: w.toFixed(1), height: (rr1 - rr0).toFixed(1),
-        transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`,
-        fill: fill || pal.ink
-      }, gR);
+        transform: t, fill: col
+      }, g);
     } else if (kind === "tri") {
-      const t = spread * 0.55;
-      node = el("path", { d: poly([polar(-t, rr0), polar(0, rr1), polar(t, rr0)]), transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`, fill: fill || pal.ink }, gR);
+      el("path", { d: poly([polar(-spread * 0.62, rr0), polar(0, rr1), polar(spread * 0.5, rr0)]), transform: t, fill: col }, g);
     } else {
-      node = el("path", { d: bladeD(rr0, rr1, spread), transform: `rotate(${(a * 180 / Math.PI).toFixed(2)})`, fill: fill || pal.ink }, gR);
+      el("path", { d: bladeD(rr0, rr1, spread), transform: t, fill: col }, g);
     }
-    void node;
   }
-  c.innerR = r0 * frange(rng, 0.78, 0.98);
+}
+
+function drawRays(g, c) {
+  const r1 = c.fieldR * frange(c.rng, 0.9, 1.06);
+  const r0 = r1 * frange(c.rng, 0.28, 0.52);
+  const kind = c.family === "petal" ? "petal"
+    : c.family === "gear" ? "gear"
+    : c.family === "corona" ? pick(c.rng, ["blade", "tri", "chevron"])
+    : pick(c.rng, ["blade", "chevron", "tri", "bar"]);
+  drawRayRing(g, c, { n: c.rays, r1, r0, kind, phase: c.phase, fill: c.pal.ink });
+  c.innerR = r0 * frange(c.rng, 0.7, 0.95);
 }
 
 function drawOrbit(g, c) {
-  const { rng, pal, wonk, phase, rays } = c;
-  const rings = irange(rng, 2, 4);
-  let r = c.fieldR * frange(rng, 0.78, 0.94);
+  let r = c.fieldR * frange(c.rng, 0.82, 0.98);
+  const rings = irange(c.rng, 3, 5);
   for (let i = 0; i < rings; i++) {
-    const sw = frange(rng, 4, 16);
-    if (rng() > 0.35) {
-      const a0 = phase + frange(rng, 0, TAU);
-      const span = frange(rng, 1.2, TAU - 0.4);
-      el("path", {
-        d: arcD(r, a0, a0 + span),
-        fill: "none",
-        stroke: i === rings - 1 && rng() > 0.5 ? pal.flash : pal.ink,
-        "stroke-width": sw.toFixed(1),
-        "stroke-linecap": "butt"
-      }, g);
-    } else {
-      el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: "none", stroke: pal.ink, "stroke-width": sw.toFixed(1) }, g);
-    }
-    r *= frange(rng, 0.62, 0.82);
+    const sw = frange(c.rng, 10, 28);
+    const a0 = c.phase + frange(c.rng, 0, TAU);
+    const span = frange(c.rng, 2.0, TAU - 0.25);
+    el("path", {
+      d: arcD(r, a0, a0 + span),
+      fill: "none",
+      stroke: i % 2 ? c.pal.flash : c.pal.ink,
+      "stroke-width": sw.toFixed(1),
+      "stroke-linecap": "butt"
+    }, g);
+    r *= frange(c.rng, 0.68, 0.8);
   }
-  const sats = irange(rng, 4, 11);
-  const sr = c.fieldR * frange(rng, 0.55, 0.86);
-  const sg = el("g", { fill: pal.accent }, g);
+  const sats = irange(c.rng, 6, 13);
+  const sr = c.fieldR * frange(c.rng, 0.5, 0.84);
   for (let i = 0; i < sats; i++) {
-    const a = phase + (i * TAU) / sats + (rng() * 2 - 1) * wonk;
-    const [x, y] = polar(a, sr * wob(rng, wonk));
-    const rad = frange(rng, 8, 22);
-    if (rng() > 0.4) el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: rad.toFixed(1) }, sg);
-    else el("path", { d: poly(gonPts(4, rad, a, wonk, rng)), transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, sg);
+    const a = c.phase + (i * TAU) / sats + (c.rng() * 2 - 1) * c.wonk;
+    const [x, y] = polar(a, sr * wob(c.rng, c.wonk));
+    const rad = frange(c.rng, 10, 28);
+    const fill = i % 3 === 0 ? c.pal.flash : c.pal.accent;
+    if (c.rng() > 0.35) el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: rad.toFixed(1), fill }, g);
+    else el("path", { d: poly(gonPts(irange(c.rng, 3, 5), rad, a, c.wonk, c.rng)), fill, transform: `translate(${x.toFixed(1)} ${y.toFixed(1)})` }, g);
   }
   c.innerR = r;
-  void rays;
 }
 
 function drawChop(g, c) {
-  const { rng, pal, wonk, phase } = c;
-  const r = c.fieldR * 0.92;
-  const cuts = irange(rng, 2, 4);
-  let d = `M ${(-r).toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${r.toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${(-r).toFixed(1)},0 Z`;
+  const r = c.fieldR * 0.94;
+  const cuts = irange(c.rng, 2, 5);
+  let d = fieldShape(c, r, c.wonk * 0.3).circle
+    ? `M ${(-r).toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${r.toFixed(1)},0 A ${r.toFixed(1)} ${r.toFixed(1)} 0 1 1 ${(-r).toFixed(1)},0 Z`
+    : poly(gonPts(c.fieldN || 7, r, c.phase, c.wonk * 0.3, c.rng));
   for (let i = 0; i < cuts; i++) {
-    const a = phase + (i * TAU) / cuts + frange(rng, -0.2, 0.2);
-    const off = frange(rng, r * 0.15, r * 0.55);
+    const a = c.phase + (i * TAU) / cuts + frange(c.rng, -0.25, 0.25);
+    const off = frange(c.rng, r * 0.1, r * 0.62);
     const [cx, cy] = polar(a, off);
-    const cr = frange(rng, r * 0.28, r * 0.55) * wob(rng, wonk);
-    d += ` M ${cx.toFixed(1)},${(cy - cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy + cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy - cr).toFixed(1)} Z`;
+    if (c.rng() > 0.4) {
+      const cr = frange(c.rng, r * 0.22, r * 0.5) * wob(c.rng, c.wonk);
+      d += ` M ${cx.toFixed(1)},${(cy - cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy + cr).toFixed(1)} A ${cr.toFixed(1)} ${cr.toFixed(1)} 0 1 1 ${cx.toFixed(1)},${(cy - cr).toFixed(1)} Z`;
+    } else {
+      const hole = gonPts(irange(c.rng, 3, 6), frange(c.rng, r * 0.18, r * 0.42), a, c.wonk, c.rng)
+        .map((p) => [p[0] + cx, p[1] + cy]);
+      d += " " + poly(hole);
+    }
   }
-  el("path", { d, fill: pal.ink, "fill-rule": "evenodd" }, g);
-  el("circle", { cx: "0", cy: "0", r: (r * frange(rng, 0.22, 0.38)).toFixed(1), fill: pal.accent }, g);
-  c.innerR = r * 0.28;
+  el("path", { d, fill: c.pal.ink, "fill-rule": "evenodd" }, g);
+  el("circle", { cx: "0", cy: "0", r: (r * frange(c.rng, 0.18, 0.34)).toFixed(1), fill: c.pal.flash }, g);
+  c.innerR = r * 0.24;
 }
 
 function drawLattice(g, c) {
-  const { rng, pal, wonk, phase, fieldN } = c;
-  const n = fieldN || irange(rng, 5, 8);
-  const r = c.fieldR * frange(rng, 0.72, 0.9);
-  el("path", { d: poly(gonPts(n, r, phase, wonk, rng)), fill: pal.ink }, g);
-  el("path", { d: poly(gonPts(n, r * 0.78, phase + Math.PI / n, wonk, rng)), fill: pal.paper }, g);
-  const chords = irange(rng, 3, 6);
-  const lg = el("g", { fill: "none", stroke: pal.flash, "stroke-width": frange(rng, 3, 8).toFixed(1) }, g);
+  const n = c.fieldN || irange(c.rng, 5, 8);
+  const r = c.fieldR * frange(c.rng, 0.78, 0.96);
+  el("path", { d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)), fill: c.pal.ink }, g);
+  el("path", { d: poly(gonPts(n, r * 0.72, c.phase + Math.PI / n, c.wonk, c.rng)), fill: c.pal.paper }, g);
+  el("path", { d: poly(gonPts(n, r * 0.5, c.phase, c.wonk * 1.2, c.rng)), fill: c.pal.accent }, g);
+  const chords = irange(c.rng, 4, 8);
+  const sw = frange(c.rng, 6, 16);
   for (let i = 0; i < chords; i++) {
-    const a = phase + (i * TAU) / chords;
-    const p0 = polar(a, r * 0.92);
-    const p1 = polar(a + Math.PI * frange(rng, 0.55, 0.92), r * 0.92);
-    el("path", { d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}` }, lg);
+    const a = c.phase + (i * TAU) / chords + frange(c.rng, -0.12, 0.12);
+    const p0 = polar(a, r * 0.96);
+    const p1 = polar(a + Math.PI * frange(c.rng, 0.48, 0.9), r * 0.96);
+    el("path", {
+      d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`,
+      fill: "none", stroke: i % 2 ? c.pal.flash : c.pal.ink, "stroke-width": sw.toFixed(1)
+    }, g);
   }
-  c.innerR = r * 0.42;
+  c.innerR = r * 0.36;
+}
+
+function drawWedge(g, c) {
+  const n = irange(c.rng, 6, 12);
+  const r = c.fieldR * frange(c.rng, 0.86, 1.02);
+  const cols = [c.pal.ink, c.pal.accent, c.pal.flash, c.pal.paper];
+  let a = c.phase;
+  for (let i = 0; i < n; i++) {
+    const span = (TAU / n) * wob(c.rng, c.wonk * 1.4);
+    el("path", { d: wedgeD(r * wob(c.rng, c.wonk * 0.35), a, a + span), fill: cols[i % cols.length] }, g);
+    a += span;
+  }
+  c.innerR = r * frange(c.rng, 0.28, 0.42);
+}
+
+function drawStack(g, c) {
+  const n = irange(c.rng, 4, 7);
+  const sides = pick(c.rng, [4, 4, 5, 6, 8]);
+  let r = c.fieldR * frange(c.rng, 0.84, 1.0);
+  const cols = [c.pal.ink, c.pal.paper, c.pal.accent, c.pal.flash];
+  for (let i = 0; i < n; i++) {
+    el("path", {
+      d: poly(gonPts(sides, r, c.phase + i * 0.22, c.wonk * (0.4 + i * 0.15), c.rng)),
+      fill: cols[i % cols.length]
+    }, g);
+    r *= frange(c.rng, 0.62, 0.78);
+  }
+  c.innerR = r;
+}
+
+function drawSecondary(g, c) {
+  const n = pick(c.rng, [5, 7, 11, 13]);
+  const r1 = c.fieldR * frange(c.rng, 0.42, 0.68);
+  const r0 = r1 * frange(c.rng, 0.2, 0.45);
+  drawRayRing(g, c, {
+    n, r1, r0,
+    kind: pick(c.rng, ["tri", "blade", "bar", "chevron"]),
+    phase: c.phase + 0.37,
+    fill: c.pal.flash
+  });
+}
+
+function drawBeams(g, c) {
+  const n = irange(c.rng, 1, 3);
+  for (let i = 0; i < n; i++) {
+    const a = c.phase + frange(c.rng, 0, TAU);
+    const w = frange(c.rng, 14, 36);
+    const len = c.fieldR * frange(c.rng, 1.6, 2.05);
+    el("rect", {
+      x: (-w / 2).toFixed(1), y: (-len / 2).toFixed(1),
+      width: w.toFixed(1), height: len.toFixed(1),
+      fill: i === 0 ? c.pal.accent : c.pal.ink,
+      opacity: i === 0 ? "0.9" : "0.55",
+      transform: `rotate(${deg(a)})`
+    }, g);
+  }
 }
 
 function drawCore(g, c) {
-  const { rng, pal, wonk, phase } = c;
-  const r = (c.innerR || c.fieldR * 0.35) * frange(rng, 0.7, 1.15);
-  const kind = pick(rng, ["star", "nest", "split", "target", "void", "cross"]);
+  const [ox, oy] = [frange(c.rng, -18, 18), frange(c.rng, -16, 16)];
+  const gC = el("g", { transform: `translate(${ox.toFixed(1)} ${oy.toFixed(1)})` }, g);
+  const r = Math.max(70, (c.innerR || c.fieldR * 0.32) * frange(c.rng, 0.85, 1.25));
+  const kind = pick(c.rng, ["star", "nest", "split", "target", "void", "cross"]);
   if (kind === "star") {
-    const n = pick(rng, [5, 6, 7, 8]);
-    el("path", { d: poly(starPts(n, r, r * frange(rng, 0.32, 0.52), phase, wonk, rng)), fill: pal.flash }, g);
-    if (rng() > 0.4) {
-      el("path", { d: poly(starPts(n, r * 0.55, r * 0.22, phase + 0.2, wonk * 0.5, rng)), fill: pal.paper }, g);
-    }
+    const n = pick(c.rng, [5, 6, 7, 8]);
+    el("path", { d: poly(starPts(n, r, r * frange(c.rng, 0.28, 0.5), c.phase, c.wonk, c.rng)), fill: c.pal.flash }, gC);
+    el("path", { d: poly(starPts(n, r * 0.58, r * 0.2, c.phase + 0.28, c.wonk * 0.6, c.rng)), fill: c.pal.paper }, gC);
   } else if (kind === "nest") {
-    const n = irange(rng, 3, 6);
-    el("path", { d: poly(gonPts(n, r, phase, wonk, rng)), fill: pal.accent }, g);
-    el("path", { d: poly(gonPts(n, r * 0.62, phase + 0.25, wonk, rng)), fill: pal.flash }, g);
-    el("path", { d: poly(gonPts(n, r * 0.32, phase + 0.5, wonk, rng)), fill: pal.ink }, g);
+    const n = irange(c.rng, 3, 6);
+    el("path", { d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)), fill: c.pal.accent }, gC);
+    el("path", { d: poly(gonPts(n, r * 0.64, c.phase + 0.28, c.wonk, c.rng)), fill: c.pal.flash }, gC);
+    el("path", { d: poly(gonPts(n, r * 0.3, c.phase + 0.55, c.wonk, c.rng)), fill: c.pal.ink }, gC);
   } else if (kind === "split") {
-    el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: pal.ink }, g);
-    el("path", { d: `M0,${(-r).toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0 1 0,${r.toFixed(1)}Z`, fill: pal.flash, transform: `rotate(${(phase * 180 / Math.PI).toFixed(1)})` }, g);
-    const off = r * frange(rng, 0.08, 0.22);
-    const [x, y] = polar(phase, off);
-    el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: (r * 0.22).toFixed(1), fill: pal.paper }, g);
+    el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: c.pal.ink }, gC);
+    el("path", { d: `M0,${(-r).toFixed(1)} A${r.toFixed(1)},${r.toFixed(1)} 0 0 1 0,${r.toFixed(1)}Z`, fill: c.pal.flash, transform: `rotate(${deg(c.phase)})` }, gC);
+    const [x, y] = polar(c.phase, r * frange(c.rng, 0.1, 0.28));
+    el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: (r * 0.24).toFixed(1), fill: c.pal.paper }, gC);
   } else if (kind === "target") {
-    el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: pal.ink }, g);
-    el("circle", { cx: "0", cy: "0", r: (r * 0.68).toFixed(1), fill: pal.paper }, g);
-    el("circle", { cx: "0", cy: "0", r: (r * 0.38).toFixed(1), fill: pal.accent }, g);
-    el("circle", { cx: "0", cy: "0", r: (r * 0.16).toFixed(1), fill: pal.flash }, g);
+    el("circle", { cx: "0", cy: "0", r: r.toFixed(1), fill: c.pal.ink }, gC);
+    el("circle", { cx: "0", cy: "0", r: (r * 0.66).toFixed(1), fill: c.pal.paper }, gC);
+    el("circle", { cx: "0", cy: "0", r: (r * 0.36).toFixed(1), fill: c.pal.accent }, gC);
+    el("circle", { cx: "0", cy: "0", r: (r * 0.14).toFixed(1), fill: c.pal.flash }, gC);
   } else if (kind === "void") {
-    const n = irange(rng, 5, 8);
-    const d = poly(gonPts(n, r, phase, wonk, rng)) + " " + poly(gonPts(n, r * 0.42, phase + 0.3, wonk, rng));
-    el("path", { d, fill: pal.ink, "fill-rule": "evenodd" }, g);
+    const n = irange(c.rng, 5, 8);
+    el("path", {
+      d: poly(gonPts(n, r, c.phase, c.wonk, c.rng)) + " " + poly(gonPts(n, r * 0.4, c.phase + 0.35, c.wonk, c.rng)),
+      fill: c.pal.ink, "fill-rule": "evenodd"
+    }, gC);
   } else {
-    const w = r * frange(rng, 0.22, 0.4);
-    const arm = r * frange(rng, 0.75, 1.05);
-    const rot = (phase * 180 / Math.PI).toFixed(1);
-    el("rect", { x: (-w / 2).toFixed(1), y: (-arm).toFixed(1), width: w.toFixed(1), height: (arm * 2).toFixed(1), fill: pal.flash, transform: `rotate(${rot})` }, g);
-    el("rect", { x: (-arm).toFixed(1), y: (-w / 2).toFixed(1), width: (arm * 2).toFixed(1), height: w.toFixed(1), fill: pal.flash, transform: `rotate(${rot})` }, g);
-    el("circle", { cx: "0", cy: "0", r: (w * 0.7).toFixed(1), fill: pal.paper }, g);
+    const w = r * frange(c.rng, 0.24, 0.42);
+    const arm = r * frange(c.rng, 0.8, 1.15);
+    const rot = deg(c.phase);
+    el("rect", { x: (-w / 2).toFixed(1), y: (-arm).toFixed(1), width: w.toFixed(1), height: (arm * 2).toFixed(1), fill: c.pal.flash, transform: `rotate(${rot})` }, gC);
+    el("rect", { x: (-arm).toFixed(1), y: (-w / 2).toFixed(1), width: (arm * 2).toFixed(1), height: w.toFixed(1), fill: c.pal.flash, transform: `rotate(${rot})` }, gC);
+    el("circle", { cx: "0", cy: "0", r: (w * 0.72).toFixed(1), fill: c.pal.paper }, gC);
   }
 }
 
 function drawRim(g, c) {
-  const { rng, pal, wonk, phase, fieldR } = c;
-  const ticks = irange(rng, 16, 36);
-  const r = fieldR * frange(rng, 0.96, 1.08);
-  const tg = el("g", { stroke: pal.ink, fill: "none", "stroke-width": frange(rng, 2.2, 5).toFixed(1) }, g);
+  const ticks = irange(c.rng, 18, 40);
+  const r = c.fieldR * frange(c.rng, 0.97, 1.1);
+  const sw = frange(c.rng, 3, 7);
   for (let i = 0; i < ticks; i++) {
-    const a = phase * 0.4 + (i * TAU) / ticks;
-    const len = (i % 4 === 0 ? 22 : 11) * wob(rng, wonk);
-    const p0 = polar(a, r);
-    const p1 = polar(a, r + len);
-    el("path", { d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}` }, tg);
+    const a = c.phase * 0.35 + (i * TAU) / ticks + (c.rng() * 2 - 1) * c.wonk * 0.08;
+    const len = (i % 5 === 0 ? 28 : 12) * wob(c.rng, c.wonk);
+    const p0 = polar(a, r), p1 = polar(a, r + len);
+    el("path", {
+      d: `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} L${p1[0].toFixed(1)},${p1[1].toFixed(1)}`,
+      fill: "none", stroke: c.pal.ink, "stroke-width": sw.toFixed(1)
+    }, g);
   }
   el("circle", {
-    cx: (rng() * 8 - 4).toFixed(1),
-    cy: (rng() * 8 - 4).toFixed(1),
-    r: (fieldR * 1.02).toFixed(1),
+    cx: (c.rng() * 12 - 6).toFixed(1),
+    cy: (c.rng() * 12 - 6).toFixed(1),
+    r: (c.fieldR * 1.03).toFixed(1),
     fill: "none",
-    stroke: pal.accent,
-    "stroke-width": frange(rng, 3, 9).toFixed(1)
+    stroke: c.pal.accent,
+    "stroke-width": frange(c.rng, 5, 14).toFixed(1)
   }, g);
 }
 
-function drawScars(g, c) {
-  const { rng, pal, wonk, phase, fieldR } = c;
-  const n = irange(rng, 1, 3);
-  for (let i = 0; i < n; i++) {
-    const a0 = phase + frange(rng, 0, TAU);
-    const r = fieldR * frange(rng, 0.2, 0.85);
-    el("path", {
-      d: arcD(r, a0, a0 + frange(rng, 0.4, 2.1)),
-      fill: "none",
-      stroke: pal.flash,
-      "stroke-width": frange(rng, 2, 7).toFixed(1),
-      "stroke-linecap": "square"
-    }, g);
-  }
-  if (rng() > 0.5) {
-    const [x, y] = polar(phase + 1.2, fieldR * frange(rng, 0.15, 0.55));
-    el("rect", {
-      x: (x - 9).toFixed(1), y: (y - 9).toFixed(1), width: "18", height: "18",
-      fill: pal.flash, transform: `rotate(${frange(rng, -25, 25).toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})`
-    }, g);
-  }
-  void wonk;
+function drawBite(g, c) {
+  if (c.rng() > 0.55) return;
+  const a = c.phase + frange(c.rng, 0, TAU);
+  const [x, y] = polar(a, c.fieldR * frange(c.rng, 0.72, 1.02));
+  const r = c.fieldR * frange(c.rng, 0.18, 0.38);
+  el("circle", { cx: x.toFixed(1), cy: y.toFixed(1), r: r.toFixed(1), fill: c.pal.bg }, g);
 }
 
 function render(seed) {
   const c = compose(seed);
   document.body.style.background = c.pal.bg;
-  document.getElementById("dial").style.color = c.pal.ink;
+  const quiet = isLight(c.pal.bg) ? "rgba(18,16,14,0.48)" : "rgba(244,239,230,0.5)";
+  hint.style.color = quiet;
+  dial.style.color = isLight(c.pal.bg) ? "#12100E" : "#F4EFE6";
   piece.replaceChildren();
   c.defs = el("defs", {}, piece);
 
-  const mark = el("g", { id: "mark" }, piece);
+  const mark = el("g", {
+    id: "mark",
+    transform: `translate(${c.origin[0].toFixed(1)} ${c.origin[1].toFixed(1)}) skewX(${c.skew.toFixed(2)})`
+  }, piece);
+
   drawField(mark, c);
   if (c.family === "orbit") drawOrbit(mark, c);
   else if (c.family === "chop") drawChop(mark, c);
   else if (c.family === "lattice") drawLattice(mark, c);
+  else if (c.family === "wedge") drawWedge(mark, c);
+  else if (c.family === "stack") drawStack(mark, c);
   else drawRays(mark, c);
 
-  if (c.family !== "chop" && c.family !== "lattice" && c.rng() > 0.35) {
-    el("circle", { cx: "0", cy: "0", r: (c.innerR || 140).toFixed(1), fill: c.pal.paper }, mark);
+  if (c.rng() > 0.4) drawBeams(mark, c);
+  if (c.family !== "wedge" && c.family !== "stack" && c.rng() > 0.25) drawSecondary(mark, c);
+
+  if (c.family !== "chop" && c.rng() > 0.55) {
+    el("circle", { cx: "0", cy: "0", r: (c.innerR || 120).toFixed(1), fill: c.pal.paper }, mark);
   }
   drawCore(mark, c);
-  if (c.rng() > 0.25) drawRim(mark, c);
-  drawScars(mark, c);
+  if (c.rng() > 0.18) drawRim(mark, c);
+  drawBite(mark, c);
 
-  if (c.stampOff) {
-    const ghost = mark.cloneNode(true);
-    ghost.removeAttribute("id");
-    ghost.setAttribute("transform", `translate(${c.stampOff[0].toFixed(1)} ${c.stampOff[1].toFixed(1)})`);
-    ghost.setAttribute("opacity", "0.28");
-    piece.insertBefore(ghost, mark);
-  }
-
-  seedlab.textContent = "seed " + hex(seed);
+  seedlab.textContent = hex(seed);
   return c;
 }
 
@@ -467,7 +530,7 @@ function render(seed) {
 
 let seed = parseSeed(new URLSearchParams(location.search).get("s")) || mintSeed();
 let angle = 0;
-let vel = reduce ? 0 : 12;
+let vel = reduce ? 0 : 14;
 let last = performance.now();
 let dragging = false;
 let dragMode = null;
@@ -487,7 +550,7 @@ function tick(now) {
   last = now;
   if (!dragging) {
     angle += vel * dt;
-    if (!reduce && Math.abs(vel) < 4) vel += (8 - vel) * 0.012;
+    if (!reduce && Math.abs(vel) < 5) vel += (10 - vel) * 0.014;
   }
   applySpin();
   requestAnimationFrame(tick);
@@ -511,13 +574,10 @@ function onDown(e, mode) {
   dragMode = mode;
   moved = 0;
   lastT = performance.now();
-  if (mode === "dial") {
-    lastY = e.clientY;
-  } else {
-    lastPtr = angleAt(e.clientX, e.clientY);
-  }
+  if (mode === "dial") lastY = e.clientY;
+  else lastPtr = angleAt(e.clientX, e.clientY);
   vel = 0;
-  e.target.setPointerCapture?.(e.pointerId);
+  (mode === "dial" ? dial : stage).setPointerCapture?.(e.pointerId);
 }
 
 function onMove(e) {
@@ -549,7 +609,7 @@ function onUp() {
   if (!dragging) return;
   dragging = false;
   if (moved < 6) setSeed(mintSeed(), true);
-  else if (Math.abs(vel) < 18) vel = reduce ? 0 : Math.sign(vel || 1) * 6;
+  else if (Math.abs(vel) < 18) vel = reduce ? 0 : Math.sign(vel || 1) * 7;
   dragMode = null;
 }
 
