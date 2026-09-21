@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <title>Shorebreak</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%230e2438' width='16' height='16'/%3E%3Cpath d='M1 11c2-3 4-3 6 0s4 3 7 0' fill='none' stroke='%23f2d2b0' stroke-width='1.4'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      --bg: #0c0d0b;
+      --panel: #161712;
+      --ink: #e8e2d2;
+      --mute: #9a937f;
+      --line: #3a382e;
+      --accent: #d8a15a;
+      --flash: #f0d59a;
+      --pad: max(16px, env(safe-area-inset-left));
+      --pad-r: max(16px, env(safe-area-inset-right));
+      --pad-b: max(20px, env(safe-area-inset-bottom));
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+    body {
+      padding: 16px var(--pad-r) var(--pad-b) var(--pad);
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0 0 4px;
+      font-weight: 600;
+    }
+    .lede {
+      color: var(--mute);
+      font-size: 14px;
+      margin: 0 0 16px;
+    }
+    .stage {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      padding: 10px;
+    }
+    .frame {
+      position: relative;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 3 / 2;
+      background: #123044;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+    #gpu {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: auto;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #gpu.on {
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 12px 0;
+    }
+    button {
+      font: inherit;
+      font-size: 15px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      min-height: 52px;
+      min-width: 52px;
+      padding: 12px 16px;
+      border: 2px solid var(--accent);
+      background: var(--accent);
+      color: #1a140c;
+      cursor: pointer;
+      border-radius: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:active { background: var(--flash); border-color: var(--flash); }
+    button.ghost {
+      background: transparent;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+    button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--flash);
+      outline-offset: 2px;
+    }
+    .mode {
+      color: var(--mute);
+      letter-spacing: 0.08em;
+      font-size: 14px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin: 0 0 6px;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 44px;
+      background: transparent;
+      margin: 0 0 8px;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 8px;
+      background: var(--line);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 28px;
+      height: 44px;
+      margin-top: -18px;
+      background: var(--accent);
+      border: 2px solid #1a140c;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-track {
+      height: 8px;
+      background: var(--line);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 28px;
+      height: 44px;
+      background: var(--accent);
+      border: 2px solid #1a140c;
+      border-radius: 0;
+      cursor: pointer;
+    }
+    .status {
+      color: var(--mute);
+      font-size: 13px;
+      min-height: 1.3em;
+      margin: 0 0 8px;
+    }
+    a { color: var(--accent); }
+    footer {
+      margin-top: 20px;
+      color: var(--mute);
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Shorebreak</h1>
+  <p class="lede">A wave curls, crashes, and washes up the sand. Drag the picture to move the camera.</p>
+
+  <div class="stage">
+    <div class="frame" id="frame">
+      <canvas id="c2d" width="900" height="600" aria-label="Shorebreak. Drag to move the camera."></canvas>
+      <canvas id="gpu" width="900" height="600" aria-hidden="true"></canvas>
+    </div>
+  </div>
+
+  <div class="row">
+    <button type="button" id="play">Pause</button>
+    <button type="button" class="ghost" id="set">New set</button>
+    <span class="mode" id="mode">Starting</span>
+  </div>
+
+  <label for="scrub">Timing</label>
+  <input id="scrub" type="range" min="0" max="1000" value="0" step="1">
+
+  <label for="storm">Calm — storm</label>
+  <input id="storm" type="range" min="0" max="100" value="22" step="1">
+
+  <p class="status" id="status" aria-live="polite"></p>
+
+  <footer>
+    Inspired by <a href="https://x.com/cryptomanavan/status/2101368830341587061">@cryptomanavan</a>.
+    Open this file — no build. <a href="NOTES.md">Notes</a>.
+    Arrows move the camera. Space plays and pauses.
+  </footer>
+
+<script src="wave.js"></script>
+<script>
+"use strict";
+
+var WGSL = [
+  "struct Uni { time: f32, storm: f32, width: f32, height: f32, };",
+  "@group(0) @binding(0) var<uniform> uni: Uni;",
+  "struct VsIn {",
+  "  @location(0) pos: vec2f,",
+  "  @location(1) color: vec4f,",
+  "  @location(2) uv: vec2f,",
+  "  @location(3) kind: f32,",
+  "}",
+  "struct VsOut {",
+  "  @builtin(position) pos: vec4f,",
+  "  @location(0) color: vec4f,",
+  "  @location(1) uv: vec2f,",
+  "  @location(2) kind: f32,",
+  "}",
+  "@vertex fn vs(in: VsIn) -> VsOut {",
+  "  var o: VsOut;",
+  "  o.pos = vec4f(in.pos, 0.0, 1.0);",
+  "  o.color = in.color;",
+  "  o.uv = in.uv;",
+  "  o.kind = in.kind;",
+  "  return o;",
+  "}",
+  "fn grain(p: vec2f) -> f32 {",
+  "  let s = sin(dot(p, vec2f(127.1, 311.7)));",
+  "  return fract(s * 43758.5453);",
+  "}",
+  "@fragment fn fs(in: VsOut) -> @location(0) vec4f {",
+  "  var rgb = in.color.rgb;",
+  "  var a = in.color.a;",
+  "  let k = in.kind;",
+  "  if (k > 1.5 && k < 2.5) {",
+  "    let d = length(in.uv - vec2f(0.5));",
+  "    let edge = 1.0 - smoothstep(0.2, 0.5, d);",
+  "    if (edge <= 0.001) { discard; }",
+  "    a = a * edge;",
+  "  } else if (k > 0.5 && k < 1.5) {",
+  "    let shimmer = sin(in.uv.x * 46.0 + uni.time * 1.7) * sin(in.uv.y * 22.0 - uni.time * 1.1);",
+  "    rgb = rgb + vec3f(0.055, 0.065, 0.05) * shimmer * (1.0 - uni.storm * 0.45);",
+  "  } else if (k > 4.5 && k < 5.5) {",
+  "    let g = grain(in.uv * vec2f(240.0, 160.0));",
+  "    rgb = rgb * (0.90 + 0.14 * g);",
+  "  }",
+  "  return vec4f(rgb * a, a);",
+  "}"
+].join("\n");
+
+var GL_VS = [
+  "attribute vec2 a_pos;",
+  "attribute vec4 a_color;",
+  "attribute vec2 a_uv;",
+  "attribute float a_kind;",
+  "varying vec4 v_color;",
+  "varying vec2 v_uv;",
+  "varying float v_kind;",
+  "void main() {",
+  "  gl_Position = vec4(a_pos, 0.0, 1.0);",
+  "  v_color = a_color;",
+  "  v_uv = a_uv;",
+  "  v_kind = a_kind;",
+  "}"
+].join("\n");
+
+var GL_FS = [
+  "precision mediump float;",
+  "varying vec4 v_color;",
+  "varying vec2 v_uv;",
+  "varying float v_kind;",
+  "uniform float u_time;",
+  "uniform float u_storm;",
+  "float grain(vec2 p) {",
+  "  float s = sin(dot(p, vec2(127.1, 311.7)));",
+  "  return fract(s * 43758.5453);",
+  "}",
+  "void main() {",
+  "  vec3 rgb = v_color.rgb;",
+  "  float a = v_color.a;",
+  "  if (v_kind > 1.5 && v_kind < 2.5) {",
+  "    float d = length(v_uv - vec2(0.5));",
+  "    float edge = 1.0 - smoothstep(0.2, 0.5, d);",
+  "    if (edge <= 0.001) discard;",
+  "    a *= edge;",
+  "  } else if (v_kind > 0.5 && v_kind < 1.5) {",
+  "    float shimmer = sin(v_uv.x * 46.0 + u_time * 1.7) * sin(v_uv.y * 22.0 - u_time * 1.1);",
+  "    rgb += vec3(0.055, 0.065, 0.05) * shimmer * (1.0 - u_storm * 0.45);",
+  "  } else if (v_kind > 4.5 && v_kind < 5.5) {",
+  "    float g = grain(v_uv * vec2(240.0, 160.0));",
+  "    rgb *= 0.90 + 0.14 * g;",
+  "  }",
+  "  gl_FragColor = vec4(rgb * a, a);",
+  "}"
+].join("\n");
+
+var MAX_VERTS = 16000;
+
+var frameEl = document.getElementById("frame");
+var back = document.getElementById("c2d");
+var front = document.getElementById("gpu");
+var playBtn = document.getElementById("play");
+var setBtn = document.getElementById("set");
+var scrubEl = document.getElementById("scrub");
+var stormEl = document.getElementById("storm");
+var modeEl = document.getElementById("mode");
+var statusEl = document.getElementById("status");
+
+var params = new URLSearchParams(location.search);
+var reduce = false;
+try {
+  reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+} catch (err) {
+  reduce = false;
+}
+
+function parseSeed(value) {
+  if (value == null || value === "") return 4;
+  if (!/^\d+$/.test(value)) return 4;
+  return parseInt(value, 10) >>> 0;
+}
+
+var seed = parseSeed(params.get("set"));
+var set = Shore.createSet(seed);
+var storm = 0.22;
+if (params.get("storm") != null && /^\d+$/.test(params.get("storm"))) {
+  storm = Math.max(0, Math.min(100, parseInt(params.get("storm"), 10))) / 100;
+  stormEl.value = String(Math.round(storm * 100));
+}
+var time = 0;
+if (params.get("t") != null && !isNaN(parseFloat(params.get("t")))) {
+  time = Math.max(0, parseFloat(params.get("t")));
+  time = time - Math.floor(time / set.cycle) * set.cycle;
+}
+var playing = !reduce && params.get("pause") !== "1";
+var scrubbing = false;
+var wasPlaying = false;
+var cam = { x: 0, y: 0 };
+var mode = "2d";
+var viewW = 900;
+var viewH = 600;
+var ctx2d = back.getContext("2d", { alpha: false });
+var gl = null;
+var glBuf = null;
+var glProg = null;
+var glTime = null;
+var glStorm = null;
+var gpu = null;
+var gpuLost = false;
+var lastStamp = 0;
+var statusKey = "";
+var started = false;
+
+playBtn.textContent = playing ? "Pause" : "Play";
+scrubEl.value = String(Math.round((time / set.cycle) * 1000));
+
+function clamp(v, a, b) {
+  return v < a ? a : v > b ? b : v;
+}
+
+function rgba(r, g, b, a) {
+  return "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a + ")";
+}
+
+function worldToPx(x, y) {
+  return [(x + cam.x) * viewW, (y + cam.y) * viewH];
+}
+
+function shadeKind(shade) {
+  if (shade === "water") return 1;
+  if (shade === "sand") return 5;
+  return 0;
+}
+
+function tessellate(scene) {
+  var data = [];
+  function push(px, py, r, g, b, a, u, v, kind) {
+    data.push((px / viewW) * 2 - 1, 1 - (py / viewH) * 2, r / 255, g / 255, b / 255, a, u, v, kind);
+  }
+  function tri(p, q, s, kind) {
+    var A = worldToPx(p.x, p.y);
+    var B = worldToPx(q.x, q.y);
+    var C = worldToPx(s.x, s.y);
+    push(A[0], A[1], p.r, p.g, p.b, p.a, p.x, p.y, kind);
+    push(B[0], B[1], q.r, q.g, q.b, q.a, q.x, q.y, kind);
+    push(C[0], C[1], s.r, s.g, s.b, s.a, s.x, s.y, kind);
+  }
+  var ops = scene.ops;
+  var i, op, a, b, s, kind, center, rad, u, v, ox, oy;
+  var corners = [0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1];
+  for (i = 0; i < ops.length; i++) {
+    op = ops[i];
+    if (op.k === "strip") {
+      a = op.a;
+      b = op.b;
+      kind = shadeKind(op.shade);
+      for (s = 0; s < a.length - 1; s++) {
+        tri(a[s], b[s], a[s + 1], kind);
+        tri(a[s + 1], b[s], b[s + 1], kind);
+      }
+    } else if (op.k === "dot") {
+      center = worldToPx(op.x, op.y);
+      rad = op.rad * viewW;
+      for (s = 0; s < 6; s++) {
+        u = corners[s * 2];
+        v = corners[s * 2 + 1];
+        ox = (u - 0.5) * 2 * rad;
+        oy = (v - 0.5) * 2 * rad;
+        push(center[0] + ox, center[1] + oy, op.r, op.g, op.b, op.a, u, v, 2);
+      }
+    }
+    if (data.length / 9 > MAX_VERTS - 64) break;
+  }
+  return new Float32Array(data);
+}
+
+function draw2d(scene) {
+  var w = viewW;
+  var h = viewH;
+  var ops = scene.ops;
+  var i, op, a, b, s, p0, p1, p2, p3, r, g, bch, al, rad, grd;
+  ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+  ctx2d.clearRect(0, 0, w, h);
+  for (i = 0; i < ops.length; i++) {
+    op = ops[i];
+    if (op.k === "strip") {
+      a = op.a;
+      b = op.b;
+      for (s = 0; s < a.length - 1; s++) {
+        al = (a[s].a + a[s + 1].a + b[s].a + b[s + 1].a) * 0.25;
+        if (al < 0.015) continue;
+        r = (a[s].r + a[s + 1].r + b[s].r + b[s + 1].r) * 0.25;
+        g = (a[s].g + a[s + 1].g + b[s].g + b[s + 1].g) * 0.25;
+        bch = (a[s].b + a[s + 1].b + b[s].b + b[s + 1].b) * 0.25;
+        p0 = worldToPx(a[s].x, a[s].y);
+        p1 = worldToPx(a[s + 1].x, a[s + 1].y);
+        p2 = worldToPx(b[s + 1].x, b[s + 1].y);
+        p3 = worldToPx(b[s].x, b[s].y);
+        ctx2d.beginPath();
+        ctx2d.moveTo(p0[0], p0[1]);
+        ctx2d.lineTo(p1[0], p1[1]);
+        ctx2d.lineTo(p2[0], p2[1]);
+        ctx2d.lineTo(p3[0], p3[1]);
+        ctx2d.closePath();
+        ctx2d.fillStyle = rgba(r, g, bch, al);
+        ctx2d.fill();
+      }
+    } else if (op.k === "dot") {
+      p0 = worldToPx(op.x, op.y);
+      rad = op.rad * w;
+      ctx2d.beginPath();
+      if (op.rad > 0.03) {
+        var grd = ctx2d.createRadialGradient(p0[0], p0[1], rad * 0.15, p0[0], p0[1], rad);
+        grd.addColorStop(0, rgba(op.r, op.g, op.b, op.a));
+        grd.addColorStop(1, rgba(op.r, op.g, op.b, 0));
+        ctx2d.fillStyle = grd;
+        ctx2d.arc(p0[0], p0[1], rad, 0, Math.PI * 2);
+        ctx2d.fill();
+      } else {
+        ctx2d.fillStyle = rgba(op.r, op.g, op.b, op.a);
+        ctx2d.arc(p0[0], p0[1], rad, 0, Math.PI * 2);
+        ctx2d.fill();
+      }
+    }
+  }
+}
+
+function compileGL(gl, type, src) {
+  var sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+    gl.deleteShader(sh);
+    return null;
+  }
+  return sh;
+}
+
+function initGL(canvas) {
+  var context = canvas.getContext("webgl", {
+    alpha: false,
+    antialias: true,
+    premultipliedAlpha: true,
+    powerPreference: "high-performance"
+  });
+  if (!context) return false;
+  var vs = compileGL(context, context.VERTEX_SHADER, GL_VS);
+  var fs = compileGL(context, context.FRAGMENT_SHADER, GL_FS);
+  if (!vs || !fs) return false;
+  var prog = context.createProgram();
+  context.attachShader(prog, vs);
+  context.attachShader(prog, fs);
+  context.bindAttribLocation(prog, 0, "a_pos");
+  context.bindAttribLocation(prog, 1, "a_color");
+  context.bindAttribLocation(prog, 2, "a_uv");
+  context.bindAttribLocation(prog, 3, "a_kind");
+  context.linkProgram(prog);
+  if (!context.getProgramParameter(prog, context.LINK_STATUS)) return false;
+  gl = context;
+  glProg = prog;
+  glBuf = context.createBuffer();
+  glTime = context.getUniformLocation(prog, "u_time");
+  glStorm = context.getUniformLocation(prog, "u_storm");
+  context.useProgram(prog);
+  context.bindBuffer(context.ARRAY_BUFFER, glBuf);
+  var stride = 36;
+  context.enableVertexAttribArray(0);
+  context.vertexAttribPointer(0, 2, context.FLOAT, false, stride, 0);
+  context.enableVertexAttribArray(1);
+  context.vertexAttribPointer(1, 4, context.FLOAT, false, stride, 8);
+  context.enableVertexAttribArray(2);
+  context.vertexAttribPointer(2, 2, context.FLOAT, false, stride, 24);
+  context.enableVertexAttribArray(3);
+  context.vertexAttribPointer(3, 1, context.FLOAT, false, stride, 32);
+  context.disable(context.DEPTH_TEST);
+  context.enable(context.BLEND);
+  context.blendFunc(context.ONE, context.ONE_MINUS_SRC_ALPHA);
+  canvas.addEventListener("webglcontextlost", function (ev) {
+    ev.preventDefault();
+    if (mode === "webgl") use2d();
+  }, false);
+  return true;
+}
+
+function drawGL(scene, simTime) {
+  if (!gl) return;
+  var arr = tessellate(scene);
+  var n = (arr.length / 9) | 0;
+  gl.viewport(0, 0, viewW, viewH);
+  gl.useProgram(glProg);
+  gl.uniform1f(glTime, simTime);
+  gl.uniform1f(glStorm, storm);
+  gl.bindBuffer(gl.ARRAY_BUFFER, glBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, arr, gl.DYNAMIC_DRAW);
+  gl.drawArrays(gl.TRIANGLES, 0, n);
+}
+
+function initGPU(canvas) {
+  if (!navigator.gpu) return Promise.resolve(null);
+  return navigator.gpu.requestAdapter().then(function (adapter) {
+    if (!adapter) return null;
+    return adapter.requestDevice().then(function (device) {
+    if (!device) return null;
+    var context = canvas.getContext("webgpu");
+    if (!context) return null;
+    var format = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({ device: device, format: format, alphaMode: "opaque" });
+    var module = device.createShaderModule({ code: WGSL });
+    return module.getCompilationInfo().then(function (info) {
+      var messages = info.messages || [];
+      var i;
+      for (i = 0; i < messages.length; i++) {
+        if (messages[i].type === "error") return null;
+      }
+      return makeGpuRenderer(device, context, format, module, canvas);
+    });
+    });
+  }).catch(function () {
+    return null;
+  });
+}
+
+function makeGpuRenderer(device, context, format, module, canvas) {
+  try {
+    var pipeline = device.createRenderPipeline({
+      layout: "auto",
+      vertex: {
+        module: module,
+        entryPoint: "vs",
+        buffers: [{
+          arrayStride: 36,
+          attributes: [
+            { shaderLocation: 0, offset: 0, format: "float32x2" },
+            { shaderLocation: 1, offset: 8, format: "float32x4" },
+            { shaderLocation: 2, offset: 24, format: "float32x2" },
+            { shaderLocation: 3, offset: 32, format: "float32" }
+          ]
+        }]
+      },
+      fragment: {
+        module: module,
+        entryPoint: "fs",
+        targets: [{
+          format: format,
+          blend: {
+            color: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" },
+            alpha: { srcFactor: "one", dstFactor: "one-minus-src-alpha", operation: "add" }
+          }
+        }]
+      },
+      primitive: { topology: "triangle-list" }
+    });
+    var vbuf = device.createBuffer({
+      size: MAX_VERTS * 36,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    var ubuf = device.createBuffer({
+      size: 16,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    var bind = device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [{ binding: 0, resource: { buffer: ubuf } }]
+    });
+    device.lost.then(function () {
+      gpuLost = true;
+      gpu = null;
+      if (mode === "webgpu") {
+        if (!gl && !initGL(canvas)) use2d();
+        else {
+          mode = "webgl";
+          showTop();
+          paintMode();
+        }
+      }
+    });
+    return {
+      draw: function (scene, simTime) {
+        try {
+        var arr = tessellate(scene);
+        var n = (arr.length / 9) | 0;
+        if (n < 3) return;
+        if (n > MAX_VERTS) n = MAX_VERTS;
+        var used = arr.subarray(0, n * 9);
+        device.queue.writeBuffer(vbuf, 0, used);
+        device.queue.writeBuffer(ubuf, 0, new Float32Array([simTime, storm, viewW, viewH]));
+        var encoder = device.createCommandEncoder();
+        var pass = encoder.beginRenderPass({
+          colorAttachments: [{
+            view: context.getCurrentTexture().createView(),
+            clearValue: { r: 0.04, g: 0.1, b: 0.16, a: 1 },
+            loadOp: "clear",
+            storeOp: "store"
+          }]
+        });
+        pass.setPipeline(pipeline);
+        pass.setBindGroup(0, bind);
+        pass.setVertexBuffer(0, vbuf);
+        pass.draw(n);
+        pass.end();
+        device.queue.submit([encoder.finish()]);
+        } catch (err) {
+          gpu = null;
+          gpuLost = true;
+          if (mode === "webgpu") use2d();
+        }
+      }
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
+function paintMode() {
+  var name = mode === "webgpu" ? "WebGPU" : mode === "webgl" ? "WebGL" : "Canvas 2D";
+  modeEl.textContent = name;
+}
+
+function showTop() {
+  front.className = "on";
+  front.setAttribute("aria-hidden", "false");
+  back.setAttribute("aria-hidden", "true");
+  paintMode();
+}
+
+function use2d() {
+  mode = "2d";
+  front.className = "";
+  front.setAttribute("aria-hidden", "true");
+  back.setAttribute("aria-hidden", "false");
+  paintMode();
+}
+
+function resize() {
+  var rect = frameEl.getBoundingClientRect();
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = Math.max(2, Math.round(rect.width * dpr));
+  var h = Math.max(2, Math.round(rect.height * dpr));
+  if (w === viewW && h === viewH && back.width === w) return;
+  viewW = w;
+  viewH = h;
+  back.width = w;
+  back.height = h;
+  front.width = w;
+  front.height = h;
+}
+
+function paintStatus(scene) {
+  var text = scene.label + " · " + scene.paletteName;
+  if (!playing) text += " · paused";
+  if (text === statusKey) return;
+  statusKey = text;
+  statusEl.textContent = text;
+}
+
+function renderScene(scene, simTime) {
+  if (mode === "webgpu" && gpu && !gpuLost) gpu.draw(scene, simTime);
+  else if (mode === "webgl" && gl) drawGL(scene, simTime);
+  else draw2d(scene);
+}
+
+function tick(now) {
+  var dt = lastStamp ? Math.min(0.05, (now - lastStamp) / 1000) : 0.016;
+  lastStamp = now;
+  if (playing && !scrubbing) {
+    time += dt * (0.85 + storm * 0.55);
+    if (time >= set.cycle) time -= set.cycle;
+    scrubEl.value = String(Math.round((time / set.cycle) * 1000));
+  }
+  resize();
+  var scene = Shore.frame(set, time, storm);
+  renderScene(scene, time);
+  paintStatus(scene);
+  requestAnimationFrame(tick);
+}
+
+function start() {
+  if (started) return;
+  started = true;
+  resize();
+  requestAnimationFrame(tick);
+}
+
+function togglePlay() {
+  playing = !playing;
+  playBtn.textContent = playing ? "Pause" : "Play";
+  statusKey = "";
+}
+
+function remember(nextSeed) {
+  try {
+    var url = new URL(location.href);
+    url.searchParams.set("set", String(nextSeed));
+    history.replaceState(null, "", url.pathname + url.search);
+  } catch (err) {
+    /* file:// may refuse replaceState; the set still changes on screen */
+  }
+}
+
+playBtn.addEventListener("click", togglePlay);
+setBtn.addEventListener("click", function () {
+  var buf = new Uint32Array(1);
+  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(buf);
+  else buf[0] = (Math.random() * 0xffffffff) >>> 0;
+  seed = buf[0] >>> 0;
+  set = Shore.createSet(seed);
+  time = 0;
+  scrubEl.value = "0";
+  statusKey = "";
+  remember(seed);
+});
+
+stormEl.addEventListener("input", function () {
+  storm = Number(stormEl.value) / 100;
+});
+
+scrubEl.addEventListener("pointerdown", function () {
+  scrubbing = true;
+  wasPlaying = playing;
+  playing = false;
+  playBtn.textContent = "Play";
+});
+scrubEl.addEventListener("input", function () {
+  time = (Number(scrubEl.value) / 1000) * set.cycle;
+  statusKey = "";
+});
+function endScrub() {
+  if (!scrubbing) return;
+  scrubbing = false;
+  playing = wasPlaying;
+  playBtn.textContent = playing ? "Pause" : "Play";
+  statusKey = "";
+}
+scrubEl.addEventListener("pointerup", endScrub);
+scrubEl.addEventListener("pointercancel", endScrub);
+
+var drag = null;
+frameEl.addEventListener("pointerdown", function (e) {
+  if (e.button !== 0) return;
+  drag = { id: e.pointerId, x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y };
+  frameEl.setPointerCapture(e.pointerId);
+});
+frameEl.addEventListener("pointermove", function (e) {
+  if (!drag || e.pointerId !== drag.id) return;
+  var rect = frameEl.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  cam.x = clamp(drag.cx + (e.clientX - drag.x) / rect.width * 0.24, -0.1, 0.1);
+  cam.y = clamp(drag.cy + (e.clientY - drag.y) / rect.height * 0.18, -0.07, 0.07);
+});
+function endDrag(e) {
+  if (drag && e.pointerId === drag.id) drag = null;
+}
+frameEl.addEventListener("pointerup", endDrag);
+frameEl.addEventListener("pointercancel", endDrag);
+
+document.addEventListener("keydown", function (e) {
+  var tag = e.target && e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+  if (e.key === "ArrowLeft") {
+    cam.x = clamp(cam.x - 0.02, -0.1, 0.1);
+    e.preventDefault();
+  } else if (e.key === "ArrowRight") {
+    cam.x = clamp(cam.x + 0.02, -0.1, 0.1);
+    e.preventDefault();
+  } else if (e.key === "ArrowUp") {
+    cam.y = clamp(cam.y - 0.02, -0.07, 0.07);
+    e.preventDefault();
+  } else if (e.key === "ArrowDown") {
+    cam.y = clamp(cam.y + 0.02, -0.07, 0.07);
+    e.preventDefault();
+  } else if (e.key === " " || e.key === "Spacebar") {
+    togglePlay();
+    e.preventDefault();
+  }
+});
+
+window.addEventListener("resize", resize);
+
+resize();
+var hero = Shore.frame(set, time, storm);
+draw2d(hero);
+paintStatus(hero);
+
+if (navigator.gpu) {
+  mode = "2d";
+  paintMode();
+  start();
+  /* Canvas is already moving. If WebGPU does not answer quickly, take WebGL
+     so a hung adapter does not leave a phone on the software path. */
+  var gpuSettled = false;
+  var gpuTimer = setTimeout(function () {
+    if (gpuSettled) return;
+    gpuSettled = true;
+    if (initGL(front)) {
+      mode = "webgl";
+      showTop();
+    }
+  }, 1200);
+  initGPU(front).then(function (renderer) {
+    if (gpuSettled) return;
+    gpuSettled = true;
+    clearTimeout(gpuTimer);
+    if (renderer) {
+      gpu = renderer;
+      mode = "webgpu";
+      showTop();
+      return;
+    }
+    if (initGL(front)) {
+      mode = "webgl";
+      showTop();
+      return;
+    }
+    use2d();
+  });
+} else if (initGL(front)) {
+  mode = "webgl";
+  showTop();
+  start();
+} else {
+  use2d();
+  start();
+}
+</script>
+</body>
+</html>
