@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>Beat Desk</title>
+  <style>
+    :root {
+      --paper: #f3ead8;
+      --ink: #1c1915;
+      --red: #c2412d;
+      --mute: #5c564c;
+      --line: #d9cdb6;
+      --dock: 118px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    html { background: var(--paper); }
+    body {
+      max-width: 440px;
+      margin: 0 auto;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.35 Georgia, Palatino, "Palatino Linotype", Times, serif;
+      padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) calc(var(--dock) + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      overscroll-behavior: none;
+    }
+    h1 {
+      font-size: 22px;
+      line-height: 1.2;
+      font-weight: 700;
+      margin: 0;
+    }
+    .lede {
+      margin: 4px 0 12px;
+      color: var(--mute);
+      font-size: 16px;
+    }
+    .packs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    button, input { font: inherit; color: inherit; }
+    button {
+      min-height: 48px;
+      padding: 8px 10px;
+      border: 1.5px solid var(--ink);
+      border-radius: 0;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button[aria-pressed="true"] {
+      background: var(--ink);
+      color: var(--paper);
+    }
+    button:active { background: var(--red); color: var(--paper); border-color: var(--red); }
+    :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+    .stage {
+      margin-top: 12px;
+      border: 1.5px solid var(--ink);
+      background: var(--paper);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 8 / 5;
+      touch-action: manipulation;
+    }
+    #caption {
+      min-height: 2.7em;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    #beats {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      touch-action: none;
+    }
+    .chip {
+      position: relative;
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      border: 1.5px solid var(--ink);
+      background: transparent;
+      overflow: hidden;
+      user-select: none;
+    }
+    .chip.on { border-color: var(--red); background: rgba(194, 65, 45, 0.08); }
+    .chip.floating {
+      position: fixed;
+      z-index: 6;
+      margin: 0;
+      box-shadow: 4px 5px 0 rgba(28, 25, 21, 0.18);
+      overflow: hidden;
+    }
+    .grip {
+      flex: 0 0 44px;
+      width: 44px;
+      min-height: 44px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0;
+      cursor: grab;
+      touch-action: none;
+    }
+    .chip.floating .grip { cursor: grabbing; }
+    .grip span {
+      display: block;
+      width: 16px;
+      height: 2px;
+      background: currentColor;
+    }
+    .label {
+      flex: 1;
+      font-size: 16px;
+      padding: 8px 12px 8px 0;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .chip input {
+      flex: 1;
+      width: 100%;
+      min-height: 44px;
+      font-size: 16px;
+      border: 0;
+      background: transparent;
+      padding: 8px 12px 8px 0;
+      border-radius: 0;
+      user-select: text;
+    }
+    .fill {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      height: 3px;
+      width: 100%;
+      background: var(--red);
+      transform-origin: left center;
+      transform: scaleX(0);
+      pointer-events: none;
+    }
+    .spacer {
+      border: 1.5px dashed rgba(28, 25, 21, 0.45);
+      box-sizing: border-box;
+    }
+    .dock-wrap {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      background: rgba(243, 234, 216, 0.97);
+      border-top: 1.5px solid var(--ink);
+      padding: 8px 16px max(10px, env(safe-area-inset-bottom));
+    }
+    .dock { max-width: 408px; margin: 0 auto; }
+    .transport {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #play { min-width: 96px; min-height: 44px; }
+    #clock {
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      color: var(--mute);
+    }
+    #scrub {
+      position: relative;
+      height: 48px;
+      touch-action: none;
+      cursor: grab;
+    }
+    .segs {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      top: 20px;
+      height: 8px;
+      display: flex;
+      gap: 4px;
+    }
+    .segs i { flex: 1; background: var(--line); }
+    .segs i.done { background: var(--ink); }
+    .segs i.on { background: var(--red); }
+    .thumb {
+      position: absolute;
+      top: 2px;
+      width: 28px;
+      height: 44px;
+      background: var(--ink);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    footer {
+      margin-top: 16px;
+      font-size: 16px;
+      color: var(--mute);
+    }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+  <h1>Beat Desk</h1>
+  <p class="lede">Already playing. Drag the beats. Tap one to replay it.</p>
+
+  <div class="packs" role="group" aria-label="Lesson packs">
+    <button type="button" data-pack="follow" aria-pressed="true">Following distance</button>
+    <button type="button" data-pack="row">Right-of-way</button>
+    <button type="button" data-pack="commute">Commute feel</button>
+    <button type="button" data-pack="custom">Custom</button>
+  </div>
+
+  <div class="stage">
+    <canvas id="film" width="800" height="500" aria-label="Beat desk film"></canvas>
+  </div>
+  <p id="caption" aria-live="polite"></p>
+  <div id="beats" role="list" aria-label="Beats in scrub order"></div>
+
+  <footer><a href="NOTES.md">Notes</a>. Open this file. No build, no network.</footer>
+
+  <div class="dock-wrap">
+    <div class="dock">
+      <div class="transport">
+        <button type="button" id="play" aria-label="Pause">Pause</button>
+        <span id="clock">0:00 / 0:16</span>
+      </div>
+      <div id="scrub" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="16000" aria-valuenow="0" aria-label="Scrub across the four beats">
+        <div class="segs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="thumb" id="thumb"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+/* Beat Desk — 4 beats × 4s. Picture is a function of scrub position. */
+var BEAT = 4;
+var C = {
+  paper: "#f3ead8",
+  ink: "#1c1915",
+  mute: "#5c564c",
+  red: "#c2412d",
+  green: "#1d6b45",
+  blue: "#1d4e89",
+  gold: "#b8762a",
+  ochre: "#c9842a",
+  sea: "#2a6f8f",
+  car: "#243028",
+  car2: "#3d3428",
+  road: "#d7cdb8"
+};
+var F = "Georgia, Palatino, 'Palatino Linotype', Times, serif";
+var N = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function smooth(t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }
+function backOut(t) {
+  t = clamp(t, 0, 1);
+  var c1 = 1.70158;
+  var c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+}
+function win(k, a, b) { return smooth((k - a) / (b - a)); }
+function hold(k, a, b) {
+  if (k < a) return smooth((k - (a - 0.08)) / 0.08);
+  if (k > b) return 1 - smooth((k - b) / 0.08);
+  return 1;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function font(ctx, size, weight, face) {
+  ctx.font = (weight || "600") + " " + size + "px " + (face || F);
+}
+
+function text(ctx, str, x, y, opt) {
+  opt = opt || {};
+  font(ctx, opt.size || 16, opt.weight || "600", opt.face || F);
+  ctx.fillStyle = opt.color || C.ink;
+  ctx.textAlign = opt.align || "left";
+  ctx.textBaseline = opt.base || "alphabetic";
+  ctx.fillText(str, x, y);
+}
+
+function wrap(ctx, str, x, y, maxW, lineH, opt) {
+  opt = opt || {};
+  font(ctx, opt.size || 16, opt.weight || "600", opt.face || F);
+  ctx.fillStyle = opt.color || C.ink;
+  ctx.textAlign = opt.align || "left";
+  ctx.textBaseline = "alphabetic";
+  var words = String(str || "…").split(/\s+/);
+  var line = "";
+  var yy = y;
+  var lines = 0;
+  var i;
+  for (i = 0; i < words.length; i++) {
+    var test = line ? line + " " + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, yy);
+      line = words[i];
+      yy += lineH;
+      lines++;
+      if (lines >= 3) break;
+    } else line = test;
+  }
+  ctx.fillText(line, x, yy);
+}
+
+function paper(ctx, w, h) {
+  ctx.fillStyle = C.paper;
+  ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = "rgba(28,25,21,0.06)";
+  ctx.lineWidth = 1;
+  var y;
+  for (y = 18; y < h; y += 16) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = C.red;
+  ctx.fillRect(0, 0, 6, h);
+}
+
+function titleBand(ctx, w, label, i) {
+  ctx.fillStyle = C.paper;
+  ctx.fillRect(0, 0, w, 36);
+  ctx.fillStyle = C.red;
+  ctx.fillRect(0, 0, 6, 36);
+  ctx.strokeStyle = "rgba(28,25,21,0.2)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(12, 35);
+  ctx.lineTo(w - 10, 35);
+  ctx.stroke();
+  var shown = label && label.length > 26 ? label.slice(0, 25) + "…" : (label || "Beat");
+  text(ctx, shown, 16, 24, { size: 16, weight: "700" });
+  text(ctx, (i + 1) + " / 4", w - 12, 24, { size: 16, color: C.mute, align: "right" });
+}
+
+function idleSheen(ctx, w, h, now) {
+  if (reduced) return;
+  var u = ((now || 0) / 1700) % 1;
+  var x = -50 + u * (w + 100);
+  var g = ctx.createLinearGradient(x, 40, x + 28, h);
+  g.addColorStop(0, "rgba(255,255,255,0)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.34)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(8, 40, w - 16, h - 48);
+  ctx.clip();
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
+function stamp(ctx, str, x, y, k, color) {
+  if (k <= 0.01) return;
+  var s = backOut(k);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.07);
+  ctx.scale(s, s);
+  font(ctx, 16, "700", F);
+  var tw = ctx.measureText(str).width;
+  var bw = tw + 16;
+  var bh = 28;
+  ctx.strokeStyle = color || C.red;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-bw / 2, -bh / 2, bw, bh);
+  ctx.fillStyle = color || C.red;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(str, 0, 1);
+  ctx.restore();
+}
+
+function fly(ctx, str, x, y, k, size, color) {
+  if (k <= 0.01) return;
+  var e = smooth(k);
+  ctx.save();
+  ctx.globalAlpha = clamp(k * 1.4, 0, 1);
+  ctx.translate(x, y + (1 - e) * -26);
+  ctx.scale(lerp(1.25, 1, e), lerp(1.25, 1, e));
+  font(ctx, size || 28, "700", N);
+  ctx.fillStyle = color || C.ink;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(str, 0, 0);
+  ctx.restore();
+}
+
+function car(ctx, x, y, dir, color, scale) {
+  var s = scale || 1;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(dir);
+  ctx.scale(s, s);
+  ctx.fillStyle = color || C.car;
+  roundRect(ctx, -12, -20, 24, 40, 4);
+  ctx.fill();
+  ctx.fillStyle = "rgba(243,234,216,0.8)";
+  roundRect(ctx, -8, -12, 16, 10, 2);
+  ctx.fill();
+  ctx.fillStyle = "#14120f";
+  ctx.fillRect(-14, -12, 3, 5);
+  ctx.fillRect(11, -12, 3, 5);
+  ctx.fillRect(-14, 6, 3, 5);
+  ctx.fillRect(11, 6, 3, 5);
+  ctx.restore();
+}
+
+function roadH(ctx, x, y, w, h, drift) {
+  ctx.fillStyle = C.road;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y, w - 2, h);
+  ctx.setLineDash([8, 10]);
+  ctx.lineDashOffset = reduced ? 0 : -((drift || 0) * 28) % 18;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h / 2);
+  ctx.lineTo(x + w, y + h / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function rain(ctx, w, h, drift) {
+  ctx.strokeStyle = "rgba(29,78,137,0.4)";
+  ctx.lineWidth = 1.5;
+  var p = reduced ? 1.2 : (drift || 0);
+  var i, x, y;
+  for (i = 0; i < 26; i++) {
+    x = (i * 53 + p * 40) % (w + 24) - 12;
+    y = (i * 37 + p * 70) % (h + 30) - 16;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - 5, y + 14);
+    ctx.stroke();
+  }
+}
+
+function quad(a, c, b, t) {
+  var u = 1 - t;
+  return {
+    x: u * u * a.x + 2 * u * t * c.x + t * t * b.x,
+    y: u * u * a.y + 2 * u * t * c.y + t * t * b.y
+  };
+}
+
+function strokeQuad(ctx, a, c, b, k) {
+  var steps = 40;
+  var n = Math.max(1, Math.floor(steps * clamp(k, 0, 1)));
+  ctx.beginPath();
+  var i;
+  for (i = 0; i <= n; i++) {
+    var p = quad(a, c, b, i / steps);
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  }
+  ctx.stroke();
+}
+
+function house(ctx, x, y, s, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + s, y - s * 0.72);
+  ctx.lineTo(x + s * 2, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillRect(x + s * 0.28, y, s * 1.44, s);
+  ctx.fillStyle = C.paper;
+  ctx.fillRect(x + s * 0.82, y + s * 0.38, s * 0.36, s * 0.62);
+}
+
+function clockFace(ctx, x, y, r, k) {
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.stroke();
+  var e = Math.max(0.08, smooth(k));
+  var minute = -Math.PI / 2 + (10 / 60) * Math.PI * 2 * e;
+  var hour = -Math.PI / 2 + ((7 + 10 / 60) / 12) * Math.PI * 2 * e;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + Math.cos(hour) * r * 0.5, y + Math.sin(hour) * r * 0.5);
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + Math.cos(minute) * r * 0.72, y + Math.sin(minute) * r * 0.72);
+  ctx.stroke();
+}
+
+function crossroads(ctx, w, h, cx, cy, road, drift) {
+  ctx.fillStyle = C.road;
+  ctx.fillRect(10, cy - road / 2, w - 20, road);
+  ctx.fillRect(cx - road / 2, 42, road, h - 50);
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(10, cy - road / 2, w - 20, road);
+  ctx.strokeRect(cx - road / 2, 42, road, h - 50);
+  ctx.setLineDash([7, 9]);
+  ctx.lineDashOffset = reduced ? 0 : -((drift || 0) * 22) % 16;
+  ctx.beginPath();
+  ctx.moveTo(10, cy);
+  ctx.lineTo(cx - road / 2, cy);
+  ctx.moveTo(cx + road / 2, cy);
+  ctx.lineTo(w - 10, cy);
+  ctx.moveTo(cx, 42);
+  ctx.lineTo(cx, cy - road / 2);
+  ctx.moveTo(cx, cy + road / 2);
+  ctx.lineTo(cx, h - 8);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  text(ctx, "N", cx + road / 2 + 8, 56, { size: 16, color: C.mute });
+}
+
+/* ---------- Following distance ---------- */
+function drawGap(ctx, w, h, k, time, now) {
+  var drift = reduced ? 0 : now / 1000;
+  var y = h * 0.58;
+  var rh = Math.max(48, h * 0.22);
+  roadH(ctx, 12, y, w - 24, rh, drift);
+  var leadX = w * 0.78;
+  var followX = lerp(w * 0.22, leadX - 108, smooth(k));
+  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 1);
+  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 1);
+  text(ctx, "YOU", followX, y - 8, { size: 16, align: "center", color: C.mute });
+  text(ctx, "LEAD", leadX, y - 8, { size: 16, align: "center", color: C.mute });
+  var x0 = followX + 28;
+  var x1 = leadX - 28;
+  ctx.strokeStyle = C.red;
+  ctx.lineWidth = 2;
+  var xk = lerp(x0, x1, smooth(k));
+  ctx.beginPath();
+  ctx.moveTo(x0, y - 18);
+  ctx.lineTo(x0, y - 28);
+  ctx.lineTo(xk, y - 28);
+  ctx.lineTo(xk, y - 18);
+  ctx.stroke();
+  var mx = (x0 + x1) / 2;
+  var my = y - 36;
+  var c = { x: mx, y: y - 78 };
+  ctx.strokeStyle = C.ink;
+  strokeQuad(ctx, { x: x0, y: y - 20 }, c, { x: x1, y: y - 20 }, smooth(k));
+  if (!reduced && k > 0.05) {
+    var p = quad({ x: x0, y: y - 20 }, c, { x: x1, y: y - 20 }, ((now / 900) % 1) * smooth(k));
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  fly(ctx, "THE GAP", mx, my - 8, win(k, 0.25, 0.7), 22, C.red);
+}
+
+function drawCount(ctx, w, h, k, time, now) {
+  var drift = reduced ? 0 : now / 1000;
+  var y = h * 0.62;
+  var rh = Math.max(46, h * 0.2);
+  roadH(ctx, 12, y, w - 24, rh, drift);
+  var pole = w * 0.64;
+  ctx.fillStyle = C.ink;
+  ctx.fillRect(pole - 2, y - 36, 4, rh + 36);
+  ctx.beginPath();
+  ctx.arc(pole, y - 36, 5, 0, Math.PI * 2);
+  ctx.fill();
+  var leadX = lerp(pole - 70, w - 36, win(k, 0, 0.42));
+  var followX = lerp(w * 0.16, pole, smooth(Math.min(1, k / 0.92)));
+  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.92);
+  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.92);
+  text(ctx, "MARK", pole, y - 48, { size: 16, align: "center", color: C.mute });
+  fly(ctx, "1", w * 0.22, h * 0.36, win(k, 0.22, 0.4), 36, C.ink);
+  fly(ctx, "2", w * 0.40, h * 0.30, win(k, 0.42, 0.6), 36, C.ink);
+  fly(ctx, "3", w * 0.58, h * 0.24, win(k, 0.62, 0.82), 36, C.red);
+  if (k > 0.18) stamp(ctx, "PASSED", pole, y + rh + 22, win(k, 0.18, 0.36), C.ink);
+}
+
+function drawSpeed(ctx, w, h, k) {
+  var mph = Math.round(lerp(25, 65, k));
+  var feet = Math.round(mph * 1.4667 * 3);
+  var cx = w * 0.26;
+  var cy = h * 0.42;
+  var r = Math.min(54, w * 0.16);
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI, 0, true);
+  ctx.stroke();
+  var ang = lerp(Math.PI, Math.PI * 2, k);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(ang) * (r - 8), cy + Math.sin(ang) * (r - 8));
+  ctx.stroke();
+  text(ctx, mph + " mph", cx, cy + 22, { size: 16, align: "center" });
+  text(ctx, "3 seconds", w * 0.62, 58, { size: 16, align: "center", color: C.mute });
+  var maxW = w * 0.62;
+  var left = w * 0.28;
+  var by = h * 0.72;
+  var px = maxW / 286;
+  var secW = Math.max(8, mph * 1.4667 * px);
+  var i;
+  for (i = 0; i < 3; i++) {
+    var x = left + i * (secW + 4);
+    ctx.fillStyle = i === 2 ? C.red : C.ink;
+    ctx.globalAlpha = 0.9;
+    ctx.fillRect(x, by, secW * smooth(Math.min(1, k * 1.05)), 22);
+    ctx.globalAlpha = 1;
+    text(ctx, String(i + 1), x + secW / 2, by - 8, { size: 16, align: "center", color: C.mute });
+  }
+  fly(ctx, feet + " ft", left + 3 * (secW + 4) - 8, by - 28, win(k, 0.05, 0.35) > 0 ? 1 : k, 22, C.red);
+  text(ctx, "same count, more road", 16, h - 14, { size: 16, color: C.mute });
+}
+
+function drawWet(ctx, w, h, k, time, now) {
+  var drift = reduced ? 0 : now / 1000;
+  rain(ctx, w, h, drift);
+  var y = h * 0.58;
+  var rh = Math.max(46, h * 0.2);
+  roadH(ctx, 12, y, w - 24, rh, drift + 2);
+  var unit = Math.min(26, (w - 150) / 6);
+  var extra = 3 * smooth(k);
+  var blocks = 3 + extra;
+  var leadX = w - 48;
+  var span = blocks * unit;
+  var followX = leadX - 36 - span - 24;
+  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.9);
+  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.9);
+  var x = followX + 26;
+  var i;
+  for (i = 0; i < 6; i++) {
+    var appear = i < 3 ? 1 : win(k, 0.15 + (i - 3) * 0.18, 0.4 + (i - 3) * 0.18);
+    if (appear <= 0.02) continue;
+    ctx.globalAlpha = appear;
+    ctx.fillStyle = i < 3 ? C.ink : C.blue;
+    ctx.fillRect(x + i * unit, y - 26, unit - 3, 14);
+    ctx.globalAlpha = 1;
+  }
+  fly(ctx, "3", w * 0.22, h * 0.32, 1, 28, C.ink);
+  fly(ctx, "6", w * 0.40, h * 0.32, win(k, 0.45, 0.75), 32, C.blue);
+  stamp(ctx, "DOUBLE", w * 0.72, h * 0.30, win(k, 0.62, 0.9), C.blue);
+  text(ctx, "YOU", followX, y + rh + 18, { size: 16, align: "center", color: C.mute });
+}
+
+/* ---------- Right-of-way ---------- */
+function rowGeom(w, h) {
+  return {
+    cx: w * 0.5,
+    cy: h * 0.58,
+    road: Math.max(36, Math.min(w, h) * 0.16)
+  };
+}
+
+function drawFirst(ctx, w, h, k, time, now) {
+  var g = rowGeom(w, h);
+  var drift = reduced ? 0 : now / 1000;
+  crossroads(ctx, w, h, g.cx, g.cy, g.road, drift);
+  var stopS = g.cy + g.road / 2 + 28;
+  var stopE = g.cx + g.road / 2 + 28;
+  var southY = lerp(h + 20, stopS, win(k, 0, 0.32));
+  if (k > 0.58) southY = lerp(stopS, -30, win(k, 0.58, 1));
+  var eastX = lerp(w + 20, stopE, win(k, 0.28, 0.55));
+  car(ctx, g.cx, southY, 0, C.car, 0.95);
+  car(ctx, eastX, g.cy, -Math.PI / 2, C.car2, 0.95);
+  fly(ctx, "1", g.cx - 36, stopS, win(k, 0.22, 0.4), 28, C.red);
+  fly(ctx, "2", stopE, g.cy + 36, win(k, 0.45, 0.62), 28, C.ink);
+  if (k > 0.6) stamp(ctx, "GO", g.cx + 46, lerp(stopS, 70, win(k, 0.58, 1)), win(k, 0.62, 0.8), C.green);
+}
+
+function drawTie(ctx, w, h, k, time, now) {
+  var g = rowGeom(w, h);
+  var drift = reduced ? 0 : now / 1000;
+  crossroads(ctx, w, h, g.cx, g.cy, g.road, drift);
+  var stopS = g.cy + g.road / 2 + 28;
+  var stopE = g.cx + g.road / 2 + 28;
+  var southY = lerp(h * 0.92, stopS, win(k, 0, 0.28));
+  var eastX = lerp(w * 0.92, stopE, win(k, 0, 0.28));
+  if (k > 0.42) eastX = lerp(stopE, -30, win(k, 0.42, 0.92));
+  car(ctx, g.cx, southY, 0, C.car, 0.95);
+  car(ctx, eastX, g.cy, -Math.PI / 2, C.green, 0.95);
+  text(ctx, "YOU", g.cx, southY + 28, { size: 16, align: "center" });
+  stamp(ctx, "YIELD", g.cx, stopS + 8, win(k, 0.32, 0.5), C.red);
+  stamp(ctx, "GOES", Math.min(w - 54, Math.max(54, eastX)), g.cy - 32, win(k, 0.4, 0.58), C.green);
+  text(ctx, "on your right", w - 12, h - 12, { size: 16, align: "right", color: C.mute });
+}
+
+function drawLeft(ctx, w, h, k, time, now) {
+  var g = rowGeom(w, h);
+  var drift = reduced ? 0 : now / 1000;
+  crossroads(ctx, w, h, g.cx, g.cy, g.road, drift);
+  var stopS = g.cy + g.road / 2 + 28;
+  var northY = lerp(-20, h + 24, win(k, 0, 0.55));
+  car(ctx, g.cx, northY, Math.PI, C.car2, 0.9);
+  text(ctx, "STRAIGHT", g.cx + g.road, Math.min(h - 20, Math.max(52, northY)), { size: 16, color: C.mute });
+  var u = k < 0.58 ? 0 : win(k, 0.58, 1);
+  var a = { x: g.cx, y: stopS };
+  var b = { x: 24, y: g.cy };
+  var c = { x: g.cx, y: g.cy };
+  ctx.strokeStyle = C.red;
+  ctx.lineWidth = 2;
+  ctx.setLineDash(u > 0 ? [] : [5, 6]);
+  strokeQuad(ctx, a, c, b, u > 0 ? u : 0.35);
+  ctx.setLineDash([]);
+  if (u <= 0) {
+    car(ctx, g.cx, stopS, 0, C.car, 0.95);
+    stamp(ctx, "WAIT", g.cx, stopS + 36, win(k, 0.1, 0.3), C.red);
+  } else {
+    var p = quad(a, c, b, u);
+    var p2 = quad(a, c, b, Math.min(1, u + 0.04));
+    var ang = Math.atan2(p2.y - p.y, p2.x - p.x);
+    car(ctx, p.x, p.y, ang + Math.PI / 2, C.car, 0.95);
+  }
+  text(ctx, "LEFT", 16, h - 12, { size: 16, color: C.mute });
+}
+
+function drawTake(ctx, w, h, k, time, now) {
+  var g = rowGeom(w, h);
+  var drift = reduced ? 0 : now / 1000;
+  crossroads(ctx, w, h, g.cx, g.cy, g.road, drift);
+  var stopS = g.cy + g.road / 2 + 28;
+  var crossX = lerp(-40, w + 40, win(k, 0, 0.36));
+  if (k < 0.42) car(ctx, crossX, g.cy, Math.PI / 2, C.car2, 0.9);
+  var creep = 0;
+  if (k >= 0.12 && k < 0.4) creep = smooth((k - 0.12) / 0.28);
+  else if (k >= 0.4 && k < 0.58) creep = 1 - smooth((k - 0.4) / 0.18);
+  var y = stopS - creep * 34;
+  if (k > 0.7) y = lerp(stopS, -36, win(k, 0.7, 1));
+  car(ctx, g.cx, y, 0, C.car, 0.95);
+  var bad = hold(k, 0.36, 0.6);
+  var good = hold(k, 0.68, 1.2);
+  if (bad > 0.02) stamp(ctx, "NOT YOURS", g.cx, g.cy - g.road, bad, C.red);
+  if (good > 0.02) stamp(ctx, "GIVEN", g.cx + 8, stopS + 34, good, C.green);
+}
+
+/* ---------- Commute feel ---------- */
+function panels(ctx, w, h) {
+  var mid = w / 2;
+  ctx.fillStyle = "rgba(201,132,42,0.16)";
+  ctx.fillRect(8, 42, mid - 14, h - 52);
+  ctx.fillStyle = "rgba(42,111,143,0.16)";
+  ctx.fillRect(mid + 6, 42, mid - 14, h - 52);
+}
+
+function sketchMark(ctx, w, h) {
+  stamp(ctx, "SKETCH", w - 62, h - 22, 1, C.gold);
+}
+
+function drawDoors(ctx, w, h, k) {
+  panels(ctx, w, h);
+  var mid = w / 2;
+  var s = Math.min(36, w * 0.09);
+  house(ctx, mid * 0.5 - s, h * 0.72, s, C.ochre);
+  house(ctx, mid + mid * 0.5 - s, h * 0.72, s, C.sea);
+  text(ctx, "VISTA", mid * 0.5, 62, { size: 16, align: "center" });
+  text(ctx, "OCEANSIDE", mid + mid * 0.5, 62, { size: 16, align: "center" });
+  text(ctx, "78", mid * 0.5, h * 0.72 + s + 20, { size: 16, align: "center", color: C.mute });
+  text(ctx, "5", mid + mid * 0.5, h * 0.72 + s + 20, { size: 16, align: "center", color: C.mute });
+  clockFace(ctx, mid * 0.5, h * 0.42, 22, k);
+  clockFace(ctx, mid + mid * 0.5, h * 0.42, 22, k);
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 2;
+  var y = h * 0.28;
+  ctx.beginPath();
+  ctx.moveTo(mid * 0.5, y);
+  ctx.lineTo(lerp(mid * 0.5, mid + mid * 0.5, smooth(k)), y);
+  ctx.stroke();
+  fly(ctx, "7:10", mid, y - 16, win(k, 0.4, 0.75), 22, C.ink);
+  sketchMark(ctx, w, h);
+}
+
+function drawMiles(ctx, w, h, k, time, now) {
+  panels(ctx, w, h);
+  var mid = w / 2;
+  var pin = { x: mid, y: 58 };
+  ctx.fillStyle = C.red;
+  ctx.beginPath();
+  ctx.arc(pin.x, pin.y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  text(ctx, "WORK", pin.x, pin.y + 22, { size: 16, align: "center" });
+  var aL = { x: mid * 0.5, y: h * 0.78 };
+  var aR = { x: mid + mid * 0.5, y: h * 0.78 };
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = C.ochre;
+  strokeQuad(ctx, aL, { x: mid * 0.35, y: h * 0.4 }, pin, win(k, 0, 0.62));
+  ctx.strokeStyle = C.sea;
+  strokeQuad(ctx, aR, { x: w * 0.86, y: h * 0.48 }, pin, win(k, 0.08, 1));
+  fly(ctx, "14 mi", mid * 0.38, h * 0.48, win(k, 0.35, 0.6), 22, C.ochre);
+  fly(ctx, "22 mi", w * 0.78, h * 0.42, win(k, 0.55, 0.85), 22, C.sea);
+  text(ctx, "miles finish inland first", 16, h - 14, { size: 16, color: C.mute });
+  sketchMark(ctx, w, h);
+}
+
+function drawMinutes(ctx, w, h, k) {
+  panels(ctx, w, h);
+  var mid = w / 2;
+  var eased = smooth(k);
+  var coast = Math.round(lerp(0, 41, eased));
+  var inland = Math.min(28, coast);
+  text(ctx, "VISTA", mid * 0.5, 60, { size: 16, align: "center" });
+  text(ctx, "OCEANSIDE", mid + mid * 0.5, 60, { size: 16, align: "center" });
+  font(ctx, 42, "700", N);
+  ctx.fillStyle = C.ochre;
+  ctx.textAlign = "center";
+  ctx.fillText(String(inland), mid * 0.5, h * 0.48);
+  ctx.fillStyle = C.sea;
+  ctx.fillText(String(coast), mid + mid * 0.5, h * 0.48);
+  text(ctx, "min", mid * 0.5, h * 0.48 + 22, { size: 16, align: "center", color: C.mute });
+  text(ctx, "min", mid + mid * 0.5, h * 0.48 + 22, { size: 16, align: "center", color: C.mute });
+  var maxBar = mid * 0.7;
+  var by = h * 0.74;
+  ctx.fillStyle = C.ochre;
+  ctx.fillRect(mid * 0.5 - maxBar / 2, by, maxBar * (inland / 41), 16);
+  ctx.fillStyle = C.sea;
+  ctx.fillRect(mid + mid * 0.5 - maxBar / 2, by, maxBar * (coast / 41), 16);
+  if (coast >= 28) stamp(ctx, "STILL GOING", mid + mid * 0.5, by + 40, win(k, 0.62, 0.85), C.sea);
+  sketchMark(ctx, w, h);
+}
+
+function heat(ctx, x, y, w, h, drift) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.strokeStyle = "rgba(201,132,42,0.7)";
+  ctx.lineWidth = 1.5;
+  var i, px, yy;
+  for (i = 0; i < 7; i++) {
+    yy = y + 12 + i * (h / 8);
+    ctx.beginPath();
+    ctx.moveTo(x, yy);
+    for (px = 0; px <= w; px += 8) {
+      ctx.lineTo(x + px, yy + Math.sin(px * 0.09 + drift * 3 + i) * 3.2);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawFeel(ctx, w, h, k, time, now) {
+  panels(ctx, w, h);
+  var mid = w / 2;
+  var drift = reduced ? 0 : now / 1000;
+  heat(ctx, 10, 44, mid - 16, h - 56, drift);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(mid + 6, 44, mid - 16, h - 56);
+  ctx.clip();
+  ctx.strokeStyle = "rgba(42,111,143,0.55)";
+  ctx.lineWidth = 2;
+  var i;
+  for (i = 0; i < 6; i++) {
+    var yy = 70 + i * ((h - 90) / 6) + Math.sin(drift * 1.4 + i) * (reduced ? 0 : 2);
+    ctx.beginPath();
+    ctx.moveTo(mid + 10, yy);
+    ctx.lineTo(w - 16, yy);
+    ctx.stroke();
+  }
+  ctx.restore();
+  text(ctx, "VISTA", mid * 0.5, 64, { size: 16, align: "center" });
+  text(ctx, "OCEANSIDE", mid + mid * 0.5, 64, { size: 16, align: "center" });
+  stamp(ctx, "78 · HEAT", mid * 0.5, h * 0.48, win(k, 0.15, 0.45), C.ochre);
+  stamp(ctx, "5 · AIR", mid + mid * 0.5, h * 0.48, win(k, 0.35, 0.65), C.sea);
+  fly(ctx, "WEEKDAY", mid, h * 0.72, win(k, 0.55, 0.85), 20, C.ink);
+  sketchMark(ctx, w, h);
+}
+
+/* ---------- Custom ---------- */
+function drawCustom(ctx, w, h, k, time, now, beat) {
+  var label = (beat.label || "").trim() || "Untitled beat";
+  var drift = reduced ? 0 : now / 1000;
+  if (beat.kind === "arc") {
+    var cx = w / 2;
+    var cy = h * 0.58;
+    var r = Math.min(w, h) * 0.28;
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * smooth(k));
+    ctx.stroke();
+    if (!reduced) {
+      var a = -Math.PI / 2 + ((drift * 0.8) % 1) * Math.PI * 2 * Math.max(0.05, smooth(k));
+      ctx.fillStyle = C.red;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    wrap(ctx, label, cx, cy, r * 1.4, 22, { size: 18, align: "center", weight: "700" });
+  } else if (beat.kind === "stamp") {
+    wrap(ctx, label, w / 2, h * 0.78, w - 48, 22, { size: 16, align: "center", color: C.mute });
+    stamp(ctx, label.length > 18 ? label.slice(0, 17) + "…" : label, w / 2, h * 0.48, smooth(Math.min(1, k / 0.7)), C.red);
+  } else if (beat.kind === "count") {
+    text(ctx, label, 16, 58, { size: 16, weight: "700" });
+    var n = clamp(Math.floor(k * 4) + (k >= 1 ? 0 : 1), 1, 4);
+    if (k <= 0) n = 1;
+    var shown = Math.max(1, Math.min(4, Math.ceil(k * 4 - 0.0001) || (k > 0 ? 1 : 0)));
+    var i;
+    var bw = (w - 64) / 4;
+    for (i = 0; i < 4; i++) {
+      var hk = win(k, i * 0.18, i * 0.18 + 0.28);
+      ctx.fillStyle = i === 3 ? C.red : C.ink;
+      ctx.globalAlpha = 0.9;
+      ctx.fillRect(24 + i * (bw + 6), h * 0.72 - hk * (h * 0.28), bw, hk * (h * 0.28));
+      ctx.globalAlpha = 1;
+      text(ctx, String(i + 1), 24 + i * (bw + 6) + bw / 2, h * 0.72 + 20, { size: 16, align: "center" });
+    }
+    fly(ctx, String(Math.max(shown, 1)), w * 0.78, h * 0.32, k > 0.04 ? 1 : 0, 36, C.red);
+  } else {
+    wrap(ctx, label, w / 2, h * 0.46, w - 40, 26, { size: 22, align: "center", weight: "700" });
+    var y = h * 0.62;
+    ctx.strokeStyle = C.gold;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(24, y);
+    ctx.lineTo(24 + (w - 48) * smooth(k), y);
+    ctx.stroke();
+    if (!reduced) {
+      var u = (drift * 0.35) % 1;
+      var gx = 24 + u * (w - 48);
+      var grd = ctx.createLinearGradient(gx - 20, y, gx + 20, y);
+      grd.addColorStop(0, "rgba(255,255,255,0)");
+      grd.addColorStop(0.5, "rgba(255,255,255,0.85)");
+      grd.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = grd;
+      ctx.fillRect(20, y - 18, w - 40, 36);
+    }
+    text(ctx, "hold the point", 16, h - 16, { size: 16, color: C.mute });
+  }
+}
+
+function beat(id, label, line, draw, kind) {
+  return { id: id, label: label, line: line, draw: draw, kind: kind || "" };
+}
+
+function makeFollow() {
+  return [
+    beat("f1", "The gap", "The lesson is the space between the cars.", drawGap),
+    beat("f2", "Count three", "Count one, two, three before you reach their mark.", drawCount),
+    beat("f3", "Same count, more road", "Three seconds covers more road as speed climbs.", drawSpeed),
+    beat("f4", "Count six", "Rain, fog, or dark: count to six.", drawWet)
+  ];
+}
+function makeRow() {
+  return [
+    beat("r1", "First to stop", "First car to stop is the first to go.", drawFirst),
+    beat("r2", "Left yields", "Same moment: the driver on the left yields to the right.", drawTie),
+    beat("r3", "Left turn waits", "A left turn waits for straight-on traffic.", drawLeft),
+    beat("r4", "Given, not taken", "If you have to take the gap, it was not yours.", drawTake)
+  ];
+}
+function makeCommute() {
+  return [
+    beat("m1", "Two doors", "Same alarm. Inland Vista, coastal Oceanside.", drawDoors),
+    beat("m2", "Miles flatter", "Sketch miles: the inland arc finishes first.", drawMiles),
+    beat("m3", "Minutes in the seat", "Sketch minutes: the coast clock keeps running.", drawMinutes),
+    beat("m4", "The weekday", "A shorter oven on the 78, or longer cool air on the 5.", drawFeel)
+  ];
+}
+function makeCustom() {
+  var spec = [
+    ["c1", "Name the claim", "arc"],
+    ["c2", "Show the turn", "stamp"],
+    ["c3", "Count the cost", "count"],
+    ["c4", "Hold the point", "sheen"]
+  ];
+  return spec.map(function (s) {
+    var b = beat(s[0], s[1], s[1], null, s[2]);
+    b.draw = function (ctx, w, h, k, time, now) { drawCustom(ctx, w, h, k, time, now, b); };
+    return b;
+  });
+}
+
+var PACKS = {
+  follow: makeFollow(),
+  row: makeRow(),
+  commute: makeCommute(),
+  custom: makeCustom()
+};
+
+var packId = "follow";
+var film = PACKS.follow;
+var t = 0;
+var playing = true;
+var drag = null;
+var suppressClick = false;
+var scrubbing = false;
+var view = { w: 800, h: 500 };
+var canvas = document.getElementById("film");
+var ctx = canvas.getContext("2d");
+var beatsEl = document.getElementById("beats");
+var captionEl = document.getElementById("caption");
+var playBtn = document.getElementById("play");
+var clockEl = document.getElementById("clock");
+var scrub = document.getElementById("scrub");
+var thumb = document.getElementById("thumb");
+var segs = scrub.querySelectorAll(".segs i");
+var lastCaption = "";
+
+function DUR() { return film.length * BEAT; }
+function activeIndex() {
+  var i = Math.floor(t / BEAT);
+  if (i < 0) return 0;
+  if (i > film.length - 1) return film.length - 1;
+  return i;
+}
+function localK() {
+  return clamp((t - activeIndex() * BEAT) / BEAT, 0, 1);
+}
+function fmt(s) {
+  s = Math.max(0, s);
+  var m = Math.floor(s / 60);
+  var r = Math.floor(s % 60);
+  return m + ":" + (r < 10 ? "0" : "") + r;
+}
+
+function resize() {
+  var rect = canvas.getBoundingClientRect();
+  var dpr = Math.min(2, window.devicePixelRatio || 1);
+  var w = Math.max(1, Math.round(rect.width));
+  var h = Math.max(1, Math.round(rect.height));
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  view.w = w;
+  view.h = h;
+}
+
+function render(now) {
+  resize();
+  var w = view.w;
+  var h = view.h;
+  ctx.clearRect(0, 0, w, h);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  paper(ctx, w, h);
+  var i = activeIndex();
+  var b = film[i];
+  b.draw(ctx, w, h, localK(), t, now || 0);
+  idleSheen(ctx, w, h, now || 0);
+  titleBand(ctx, w, b.label, i);
+}
+
+function renderChips() {
+  beatsEl.innerHTML = "";
+  film.forEach(function (b) {
+    var chip = document.createElement("div");
+    chip.className = "chip";
+    chip.dataset.id = b.id;
+    chip.setAttribute("role", "listitem");
+    var grip = document.createElement("button");
+    grip.type = "button";
+    grip.className = "grip";
+    grip.innerHTML = "<span></span><span></span><span></span>";
+    grip.setAttribute("aria-label", "Replay " + (b.label || "beat") + ". Drag to reorder.");
+    chip.appendChild(grip);
+    if (packId === "custom") {
+      var input = document.createElement("input");
+      input.type = "text";
+      input.value = b.label;
+      input.maxLength = 42;
+      input.setAttribute("aria-label", "Beat " + b.id + " label");
+      input.addEventListener("input", function () {
+        b.label = input.value;
+        b.line = input.value.trim() || "Untitled beat";
+        grip.setAttribute("aria-label", "Replay " + (b.label || "beat") + ". Drag to reorder.");
+      });
+      chip.appendChild(input);
+    } else {
+      var lab = document.createElement("span");
+      lab.className = "label";
+      lab.textContent = b.label;
+      chip.appendChild(lab);
+    }
+    var fill = document.createElement("i");
+    fill.className = "fill";
+    fill.setAttribute("aria-hidden", "true");
+    chip.appendChild(fill);
+    beatsEl.appendChild(chip);
+  });
+}
+
+function moveInArray(from, to) {
+  if (from === to || from < 0 || to < 0 || from >= film.length || to >= film.length) return;
+  var id = film[activeIndex()].id;
+  var k = localK();
+  var item = film.splice(from, 1)[0];
+  film.splice(to, 0, item);
+  var ni = 0;
+  var i;
+  for (i = 0; i < film.length; i++) if (film[i].id === id) ni = i;
+  t = (ni + k) * BEAT;
+}
+
+function slots() {
+  return Array.prototype.filter.call(beatsEl.children, function (el) {
+    return !el.classList.contains("floating");
+  });
+}
+
+function placeSpacer(target) {
+  var kids = slots();
+  var from = kids.indexOf(drag.spacer);
+  if (from < 0 || from === target) return;
+  var next = [];
+  var i;
+  for (i = 0; i < kids.length; i++) if (kids[i] !== drag.spacer) next.push(kids[i]);
+  var ordered = next.slice();
+  ordered.splice(target, 0, drag.spacer);
+  for (i = 0; i < ordered.length; i++) beatsEl.appendChild(ordered[i]);
+  moveInArray(from, target);
+}
+
+function lift(e) {
+  var rect = drag.chip.getBoundingClientRect();
+  drag.dy = e.clientY - rect.top;
+  drag.left = rect.left;
+  drag.width = rect.width;
+  var spacer = document.createElement("div");
+  spacer.className = "spacer";
+  spacer.style.height = rect.height + "px";
+  drag.chip.parentNode.insertBefore(spacer, drag.chip);
+  drag.spacer = spacer;
+  drag.chip.classList.add("floating");
+  drag.chip.style.width = rect.width + "px";
+  drag.chip.style.left = rect.left + "px";
+  drag.chip.style.top = rect.top + "px";
+  drag.lifted = true;
+}
+
+function endDrag(cancel) {
+  if (!drag) return;
+  var id = drag.id;
+  var moved = drag.moved;
+  if (drag.lifted) {
+    beatsEl.insertBefore(drag.chip, drag.spacer);
+    drag.spacer.remove();
+    drag.chip.classList.remove("floating");
+    drag.chip.style.width = "";
+    drag.chip.style.left = "";
+    drag.chip.style.top = "";
+  }
+  drag = null;
+  if (moved) suppressClick = true;
+  if (!cancel && !moved) {
+    var i;
+    for (i = 0; i < film.length; i++) if (film[i].id === id) replay(i);
+  }
+}
+
+function replay(i) {
+  t = i * BEAT;
+  playing = true;
+}
+
+function toggle() {
+  playing = !playing;
+  if (playing && t >= DUR() - 0.05) t = 0;
+}
+
+function setPack(id) {
+  if (!PACKS[id]) return;
+  if (drag) endDrag(true);
+  packId = id;
+  film = PACKS[id];
+  t = 0;
+  playing = true;
+  renderChips();
+  var buttons = document.querySelectorAll(".packs button");
+  Array.prototype.forEach.call(buttons, function (btn) {
+    btn.setAttribute("aria-pressed", btn.getAttribute("data-pack") === id ? "true" : "false");
+  });
+}
+
+function syncUI() {
+  var ai = activeIndex();
+  var k = localK();
+  var chips = beatsEl.querySelectorAll(".chip");
+  Array.prototype.forEach.call(chips, function (el) {
+    var i = -1;
+    var n;
+    for (n = 0; n < film.length; n++) if (film[n].id === el.dataset.id) i = n;
+    el.classList.toggle("on", i === ai);
+    var fill = el.querySelector(".fill");
+    var pk = i < ai ? 1 : i > ai ? 0 : k;
+    if (fill) fill.style.transform = "scaleX(" + pk + ")";
+  });
+  var b = film[ai];
+  if (b.line !== lastCaption) {
+    lastCaption = b.line;
+    captionEl.textContent = b.line;
+  }
+  canvas.setAttribute("aria-label", "Beat " + (ai + 1) + " of 4, " + b.label + ". " + b.line);
+  clockEl.textContent = fmt(t) + " / " + fmt(DUR());
+  playBtn.textContent = playing ? "Pause" : "Play";
+  playBtn.setAttribute("aria-label", playing ? "Pause" : "Play");
+  var p = t / DUR();
+  thumb.style.left = (p * 100) + "%";
+  Array.prototype.forEach.call(segs, function (el, i) {
+    el.classList.toggle("done", i < ai);
+    el.classList.toggle("on", i === ai);
+  });
+  scrub.setAttribute("aria-valuenow", String(Math.round(t * 1000)));
+  scrub.setAttribute("aria-valuemax", String(Math.round(DUR() * 1000)));
+  scrub.setAttribute("aria-valuetext", "Beat " + (ai + 1) + " of 4, " + b.label + ", " + fmt(t));
+}
+
+beatsEl.addEventListener("pointerdown", function (e) {
+  if (e.target.closest("input")) return;
+  var chip = e.target.closest(".chip");
+  if (!chip || (e.button != null && e.button !== 0)) return;
+  if (drag) endDrag(true);
+  drag = {
+    id: chip.dataset.id,
+    chip: chip,
+    pointer: e.pointerId,
+    startX: e.clientX,
+    startY: e.clientY,
+    moved: false,
+    lifted: false
+  };
+  chip.setPointerCapture(e.pointerId);
+});
+
+beatsEl.addEventListener("pointermove", function (e) {
+  if (!drag || e.pointerId !== drag.pointer) return;
+  var dx = e.clientX - drag.startX;
+  var dy = e.clientY - drag.startY;
+  if (!drag.moved && Math.hypot(dx, dy) > 8) {
+    drag.moved = true;
+    lift(e);
+  }
+  if (!drag.lifted) return;
+  e.preventDefault();
+  drag.chip.style.top = (e.clientY - drag.dy) + "px";
+  drag.chip.style.left = drag.left + "px";
+  var kids = slots();
+  var target = kids.length - 1;
+  var i;
+  for (i = 0; i < kids.length; i++) {
+    var r = kids[i].getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) { target = i; break; }
+  }
+  placeSpacer(target);
+});
+
+function onPointerEnd(e) {
+  if (!drag || (e && e.pointerId != null && e.pointerId !== drag.pointer)) return;
+  endDrag(false);
+}
+beatsEl.addEventListener("pointerup", onPointerEnd);
+beatsEl.addEventListener("pointercancel", onPointerEnd);
+
+beatsEl.addEventListener("click", function (e) {
+  var grip = e.target.closest(".grip");
+  if (!grip) return;
+  if (suppressClick) { suppressClick = false; return; }
+  var chip = grip.closest(".chip");
+  var i;
+  for (i = 0; i < film.length; i++) if (film[i].id === chip.dataset.id) replay(i);
+});
+
+beatsEl.addEventListener("keydown", function (e) {
+  var chip = e.target.closest ? e.target.closest(".chip") : null;
+  if (!chip) return;
+  var i = -1;
+  var n;
+  for (n = 0; n < film.length; n++) if (film[n].id === chip.dataset.id) i = n;
+  if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+    var j = e.key === "ArrowUp" ? i - 1 : i + 1;
+    if (j < 0 || j >= film.length) return;
+    var id = film[i].id;
+    moveInArray(i, j);
+    renderChips();
+    var again = beatsEl.querySelector('.chip[data-id="' + id + '"] .grip');
+    if (again) again.focus();
+    e.preventDefault();
+  }
+});
+
+document.querySelector(".packs").addEventListener("click", function (e) {
+  var btn = e.target.closest("button");
+  if (!btn) return;
+  setPack(btn.getAttribute("data-pack"));
+});
+
+playBtn.addEventListener("click", toggle);
+
+function scrubTo(clientX) {
+  var r = scrub.getBoundingClientRect();
+  var p = clamp((clientX - r.left) / r.width, 0, 1);
+  t = p * (DUR() - 0.001);
+  playing = false;
+}
+scrub.addEventListener("pointerdown", function (e) {
+  scrubbing = true;
+  scrub.setPointerCapture(e.pointerId);
+  scrubTo(e.clientX);
+  e.preventDefault();
+});
+scrub.addEventListener("pointermove", function (e) {
+  if (!scrubbing) return;
+  scrubTo(e.clientX);
+});
+scrub.addEventListener("pointerup", function () { scrubbing = false; });
+scrub.addEventListener("pointercancel", function () { scrubbing = false; });
+scrub.addEventListener("keydown", function (e) {
+  var step = BEAT / 20;
+  if (e.key === "ArrowRight") { t = Math.min(DUR() - 0.001, t + step); playing = false; e.preventDefault(); }
+  else if (e.key === "ArrowLeft") { t = Math.max(0, t - step); playing = false; e.preventDefault(); }
+  else if (e.key === "Home") { t = 0; playing = false; e.preventDefault(); }
+  else if (e.key === "End") { t = DUR() - 0.001; playing = false; e.preventDefault(); }
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key !== " " && e.code !== "Space") return;
+  var el = document.activeElement;
+  if (el) {
+    var tag = el.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+  }
+  e.preventDefault();
+  toggle();
+});
+
+(function readQuery() {
+  var q = new URLSearchParams(location.search);
+  var p = q.get("pack");
+  if (p && PACKS[p]) {
+    packId = p;
+    film = PACKS[p];
+    var buttons = document.querySelectorAll(".packs button");
+    Array.prototype.forEach.call(buttons, function (btn) {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-pack") === p ? "true" : "false");
+    });
+  }
+  if (q.get("t")) {
+    var seek = parseFloat(q.get("t"));
+    if (!isNaN(seek)) t = clamp(seek, 0, DUR() - 0.001);
+  }
+  if (q.get("pause") === "1") playing = false;
+})();
+
+renderChips();
+
+var last = 0;
+function frame(now) {
+  if (!last) last = now;
+  var dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (playing && !scrubbing) {
+    t += dt;
+    if (t >= DUR()) t -= DUR();
+  }
+  render(now);
+  syncUI();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+window.__desk = {
+  beatLen: BEAT,
+  get t() { return t; },
+  get playing() { return playing; },
+  get pack() { return packId; },
+  ids: function () { return film.map(function (b) { return b.id; }); },
+  labels: function () { return film.map(function (b) { return b.label; }); },
+  active: function () { return activeIndex(); },
+  line: function () { return film[activeIndex()].line; }
+};
+</script>
+</body>
+</html>
