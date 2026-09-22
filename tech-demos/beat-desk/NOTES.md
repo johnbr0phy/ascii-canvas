@@ -45,7 +45,7 @@ The space is the lesson. Pick a mark the lead car passes and count one, two, thr
 
 ### Right-of-way
 
-At a four-way stop, the first car to arrive is the first to go. If two arrive together, the driver on the left yields to the driver on the right. On the sheet that is the car at the bottom (you) yielding to the car on your right. A left turn waits while straight-on traffic clears. Right-of-way is given: the sheet shows a lunge into a gap that was not offered, then the car going once the gap is given.
+At a four-way stop, the first car to arrive is the first to go. If two arrive together, the driver on the left yields to the driver on the right. On the sheet that is the car at the bottom (you) yielding to the car on your right. A left turn waits while straight-on traffic clears. Right-of-way is given: the car lunges into a gap that was not offered, then goes once that gap is given.
 
 ### Vista and Oceanside
 

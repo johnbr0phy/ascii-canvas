@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light">
   <title>Beat Desk</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect fill='%23f3ead8' width='16' height='16'/%3E%3Crect fill='%23c2412d' width='3' height='16'/%3E%3C/svg%3E">
   <style>
     :root {
       --paper: #f3ead8;
@@ -67,7 +68,7 @@
       display: block;
       width: 100%;
       height: auto;
-      aspect-ratio: 8 / 5;
+      aspect-ratio: 1 / 1;
       touch-action: manipulation;
     }
     #caption {
@@ -79,8 +80,8 @@
       list-style: none;
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
       touch-action: none;
     }
@@ -125,10 +126,17 @@
       height: 2px;
       background: currentColor;
     }
+    .n {
+      flex: 0 0 auto;
+      font-size: 16px;
+      color: var(--mute);
+      font-variant-numeric: tabular-nums;
+    }
     .label {
       flex: 1;
       font-size: 16px;
-      padding: 8px 12px 8px 0;
+      line-height: 1.2;
+      padding: 8px 10px 8px 0;
       min-height: 44px;
       display: flex;
       align-items: center;
@@ -372,7 +380,7 @@ function idleSheen(ctx, w, h, now) {
   var x = -50 + u * (w + 100);
   var g = ctx.createLinearGradient(x, 40, x + 28, h);
   g.addColorStop(0, "rgba(255,255,255,0)");
-  g.addColorStop(0.5, "rgba(255,255,255,0.34)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.16)");
   g.addColorStop(1, "rgba(255,255,255,0)");
   ctx.save();
   ctx.beginPath();
@@ -547,69 +555,70 @@ function crossroads(ctx, w, h, cx, cy, road, drift) {
 /* ---------- Following distance ---------- */
 function drawGap(ctx, w, h, k, time, now) {
   var drift = reduced ? 0 : now / 1000;
-  var y = h * 0.58;
-  var rh = Math.max(48, h * 0.22);
-  roadH(ctx, 12, y, w - 24, rh, drift);
-  var leadX = w * 0.78;
-  var followX = lerp(w * 0.22, leadX - 108, smooth(k));
-  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 1);
-  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 1);
-  text(ctx, "YOU", followX, y - 8, { size: 16, align: "center", color: C.mute });
-  text(ctx, "LEAD", leadX, y - 8, { size: 16, align: "center", color: C.mute });
-  var x0 = followX + 28;
-  var x1 = leadX - 28;
+  var y = h * 0.62;
+  var rh = Math.min(56, Math.max(44, h * 0.24));
+  roadH(ctx, 14, y, w - 28, rh, drift);
+  var leadX = w * 0.8;
+  var followX = lerp(w * 0.2, leadX - 118, smooth(k));
+  var midY = y + rh / 2;
+  car(ctx, followX, midY, Math.PI / 2, C.car, 0.92);
+  car(ctx, leadX, midY, Math.PI / 2, C.car2, 0.92);
+  text(ctx, "YOU", followX, y - 6, { size: 16, align: "center", color: C.mute });
+  text(ctx, "LEAD", leadX, y - 6, { size: 16, align: "center", color: C.mute });
+  var x0 = followX + 26;
+  var x1 = leadX - 26;
+  var xk = lerp(x0, x1, smooth(k));
   ctx.strokeStyle = C.red;
   ctx.lineWidth = 2;
-  var xk = lerp(x0, x1, smooth(k));
   ctx.beginPath();
-  ctx.moveTo(x0, y - 18);
-  ctx.lineTo(x0, y - 28);
-  ctx.lineTo(xk, y - 28);
-  ctx.lineTo(xk, y - 18);
+  ctx.moveTo(x0, y - 14);
+  ctx.lineTo(x0, y - 24);
+  ctx.lineTo(xk, y - 24);
+  ctx.lineTo(xk, y - 14);
   ctx.stroke();
-  var mx = (x0 + x1) / 2;
-  var my = y - 36;
-  var c = { x: mx, y: y - 78 };
-  ctx.strokeStyle = C.ink;
-  strokeQuad(ctx, { x: x0, y: y - 20 }, c, { x: x1, y: y - 20 }, smooth(k));
-  if (!reduced && k > 0.05) {
-    var p = quad({ x: x0, y: y - 20 }, c, { x: x1, y: y - 20 }, ((now / 900) % 1) * smooth(k));
-    ctx.fillStyle = "#fff";
+  if (!reduced && k > 0.08) {
+    var glide = x0 + ((now / 900) % 1) * Math.max(0, xk - x0);
+    ctx.fillStyle = "#fffef8";
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.arc(glide, y - 24, 3.5, 0, Math.PI * 2);
     ctx.fill();
   }
-  fly(ctx, "THE GAP", mx, my - 8, win(k, 0.25, 0.7), 22, C.red);
+  fly(ctx, "THE GAP", w * 0.5, 64, win(k, 0.15, 0.5), 26, C.red);
 }
 
 function drawCount(ctx, w, h, k, time, now) {
   var drift = reduced ? 0 : now / 1000;
-  var y = h * 0.62;
-  var rh = Math.max(46, h * 0.2);
-  roadH(ctx, 12, y, w - 24, rh, drift);
-  var pole = w * 0.64;
-  ctx.fillStyle = C.ink;
-  ctx.fillRect(pole - 2, y - 36, 4, rh + 36);
+  var y = h * 0.64;
+  var rh = Math.min(52, Math.max(42, h * 0.22));
+  roadH(ctx, 14, y, w - 28, rh, drift);
+  var pole = w * 0.68;
+  ctx.strokeStyle = C.ink;
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(pole, y - 36, 5, 0, Math.PI * 2);
+  ctx.moveTo(pole, y - 28);
+  ctx.lineTo(pole, y + rh);
+  ctx.stroke();
+  ctx.fillStyle = C.red;
+  ctx.beginPath();
+  ctx.arc(pole, y - 28, 5, 0, Math.PI * 2);
   ctx.fill();
-  var leadX = lerp(pole - 70, w - 36, win(k, 0, 0.42));
-  var followX = lerp(w * 0.16, pole, smooth(Math.min(1, k / 0.92)));
-  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.92);
-  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.92);
-  text(ctx, "MARK", pole, y - 48, { size: 16, align: "center", color: C.mute });
-  fly(ctx, "1", w * 0.22, h * 0.36, win(k, 0.22, 0.4), 36, C.ink);
-  fly(ctx, "2", w * 0.40, h * 0.30, win(k, 0.42, 0.6), 36, C.ink);
-  fly(ctx, "3", w * 0.58, h * 0.24, win(k, 0.62, 0.82), 36, C.red);
-  if (k > 0.18) stamp(ctx, "PASSED", pole, y + rh + 22, win(k, 0.18, 0.36), C.ink);
+  text(ctx, "MARK", pole, y - 40, { size: 16, align: "center", color: C.mute });
+  var leadX = lerp(pole - 64, w - 34, win(k, 0, 0.4));
+  var followX = lerp(36, pole, smooth(clamp(k / 0.95, 0, 1)));
+  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.86);
+  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.86);
+  var ny = 78;
+  fly(ctx, "1", w * 0.22, ny, win(k, 0.2, 0.38), 32, C.ink);
+  fly(ctx, "2", w * 0.40, ny, win(k, 0.4, 0.58), 32, C.ink);
+  fly(ctx, "3", w * 0.58, ny, win(k, 0.6, 0.8), 32, C.red);
 }
 
 function drawSpeed(ctx, w, h, k) {
   var mph = Math.round(lerp(25, 65, k));
   var feet = Math.round(mph * 1.4667 * 3);
-  var cx = w * 0.26;
-  var cy = h * 0.42;
-  var r = Math.min(54, w * 0.16);
+  var cx = 78;
+  var cy = h * 0.46;
+  var r = Math.min(46, h * 0.22);
   ctx.strokeStyle = C.ink;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -620,62 +629,57 @@ function drawSpeed(ctx, w, h, k) {
   ctx.moveTo(cx, cy);
   ctx.lineTo(cx + Math.cos(ang) * (r - 8), cy + Math.sin(ang) * (r - 8));
   ctx.stroke();
-  text(ctx, mph + " mph", cx, cy + 22, { size: 16, align: "center" });
-  text(ctx, "3 seconds", w * 0.62, 58, { size: 16, align: "center", color: C.mute });
-  var maxW = w * 0.62;
-  var left = w * 0.28;
-  var by = h * 0.72;
-  var px = maxW / 286;
-  var secW = Math.max(8, mph * 1.4667 * px);
+  text(ctx, mph + " mph", cx, cy + 18, { size: 16, align: "center" });
+  text(ctx, feet + " ft", w - 16, 58, { size: 22, align: "right", weight: "700", face: N, color: C.red });
+  text(ctx, "3 seconds", w - 16, 80, { size: 16, align: "right", color: C.mute });
+  var left = 150;
+  var maxW = w - left - 18;
+  var by = h * 0.7;
+  var frac = mph / 65;
+  var secW = Math.max(10, (maxW - 8) / 3 * frac);
   var i;
   for (i = 0; i < 3; i++) {
     var x = left + i * (secW + 4);
     ctx.fillStyle = i === 2 ? C.red : C.ink;
-    ctx.globalAlpha = 0.9;
-    ctx.fillRect(x, by, secW * smooth(Math.min(1, k * 1.05)), 22);
-    ctx.globalAlpha = 1;
-    text(ctx, String(i + 1), x + secW / 2, by - 8, { size: 16, align: "center", color: C.mute });
+    ctx.fillRect(x, by, secW, 18);
+    text(ctx, String(i + 1) + "s", x + secW / 2, by - 18, { size: 16, align: "center", color: C.mute });
   }
-  fly(ctx, feet + " ft", left + 3 * (secW + 4) - 8, by - 28, win(k, 0.05, 0.35) > 0 ? 1 : k, 22, C.red);
-  text(ctx, "same count, more road", 16, h - 14, { size: 16, color: C.mute });
 }
 
 function drawWet(ctx, w, h, k, time, now) {
   var drift = reduced ? 0 : now / 1000;
   rain(ctx, w, h, drift);
-  var y = h * 0.58;
-  var rh = Math.max(46, h * 0.2);
-  roadH(ctx, 12, y, w - 24, rh, drift + 2);
-  var unit = Math.min(26, (w - 150) / 6);
-  var extra = 3 * smooth(k);
-  var blocks = 3 + extra;
-  var leadX = w - 48;
-  var span = blocks * unit;
-  var followX = leadX - 36 - span - 24;
-  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.9);
-  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.9);
-  var x = followX + 26;
+  var y = h * 0.66;
+  var rh = Math.min(48, Math.max(40, h * 0.2));
+  roadH(ctx, 14, y, w - 28, rh, drift + 2);
+  var leadX = w - 42;
+  var unit = Math.min(22, (w - 150) / 6);
+  var blocks = 3 + 3 * smooth(k);
+  var followX = leadX - 34 - blocks * unit - 16;
+  followX = Math.max(36, followX);
+  car(ctx, followX, y + rh / 2, Math.PI / 2, C.car, 0.84);
+  car(ctx, leadX, y + rh / 2, Math.PI / 2, C.car2, 0.84);
+  var x = followX + 22;
   var i;
   for (i = 0; i < 6; i++) {
-    var appear = i < 3 ? 1 : win(k, 0.15 + (i - 3) * 0.18, 0.4 + (i - 3) * 0.18);
+    var appear = i < 3 ? 1 : win(k, 0.12 + (i - 3) * 0.16, 0.34 + (i - 3) * 0.16);
     if (appear <= 0.02) continue;
     ctx.globalAlpha = appear;
     ctx.fillStyle = i < 3 ? C.ink : C.blue;
-    ctx.fillRect(x + i * unit, y - 26, unit - 3, 14);
+    ctx.fillRect(x + i * unit, y - 22, Math.max(4, unit - 3), 12);
     ctx.globalAlpha = 1;
   }
-  fly(ctx, "3", w * 0.22, h * 0.32, 1, 28, C.ink);
-  fly(ctx, "6", w * 0.40, h * 0.32, win(k, 0.45, 0.75), 32, C.blue);
-  stamp(ctx, "DOUBLE", w * 0.72, h * 0.30, win(k, 0.62, 0.9), C.blue);
-  text(ctx, "YOU", followX, y + rh + 18, { size: 16, align: "center", color: C.mute });
+  fly(ctx, "3", w * 0.16, 70, 1, 28, C.ink);
+  fly(ctx, "6", w * 0.34, 70, win(k, 0.45, 0.72), 32, C.blue);
+  stamp(ctx, "DOUBLE", w * 0.78, 108, win(k, 0.6, 0.88), C.blue);
 }
 
 /* ---------- Right-of-way ---------- */
 function rowGeom(w, h) {
   return {
     cx: w * 0.5,
-    cy: h * 0.58,
-    road: Math.max(36, Math.min(w, h) * 0.16)
+    cy: h * 0.52,
+    road: Math.max(34, Math.min(46, h * 0.18))
   };
 }
 
@@ -690,9 +694,9 @@ function drawFirst(ctx, w, h, k, time, now) {
   var eastX = lerp(w + 20, stopE, win(k, 0.28, 0.55));
   car(ctx, g.cx, southY, 0, C.car, 0.95);
   car(ctx, eastX, g.cy, -Math.PI / 2, C.car2, 0.95);
-  fly(ctx, "1", g.cx - 36, stopS, win(k, 0.22, 0.4), 28, C.red);
-  fly(ctx, "2", stopE, g.cy + 36, win(k, 0.45, 0.62), 28, C.ink);
-  if (k > 0.6) stamp(ctx, "GO", g.cx + 46, lerp(stopS, 70, win(k, 0.58, 1)), win(k, 0.62, 0.8), C.green);
+  fly(ctx, "1", g.cx - 34, Math.min(h - 28, stopS + 8), win(k, 0.22, 0.4), 26, C.red);
+  fly(ctx, "2", Math.min(w - 28, stopE + 6), g.cy + 32, win(k, 0.45, 0.62), 26, C.ink);
+  stamp(ctx, "GO", g.cx + 42, 64, win(k, 0.62, 0.82), C.green);
 }
 
 function drawTie(ctx, w, h, k, time, now) {
@@ -706,9 +710,9 @@ function drawTie(ctx, w, h, k, time, now) {
   if (k > 0.42) eastX = lerp(stopE, -30, win(k, 0.42, 0.92));
   car(ctx, g.cx, southY, 0, C.car, 0.95);
   car(ctx, eastX, g.cy, -Math.PI / 2, C.green, 0.95);
-  text(ctx, "YOU", g.cx, southY + 28, { size: 16, align: "center" });
-  stamp(ctx, "YIELD", g.cx, stopS + 8, win(k, 0.32, 0.5), C.red);
-  stamp(ctx, "GOES", Math.min(w - 54, Math.max(54, eastX)), g.cy - 32, win(k, 0.4, 0.58), C.green);
+  if (k < 0.72) text(ctx, "YOU", g.cx, Math.min(h - 16, southY + 26), { size: 16, align: "center" });
+  stamp(ctx, "YIELD", g.cx, Math.min(h - 24, stopS + 22), win(k, 0.32, 0.5), C.red);
+  stamp(ctx, "GOES", w * 0.72, 64, win(k, 0.4, 0.58), C.green);
   text(ctx, "on your right", w - 12, h - 12, { size: 16, align: "right", color: C.mute });
 }
 
@@ -719,7 +723,7 @@ function drawLeft(ctx, w, h, k, time, now) {
   var stopS = g.cy + g.road / 2 + 28;
   var northY = lerp(-20, h + 24, win(k, 0, 0.55));
   car(ctx, g.cx, northY, Math.PI, C.car2, 0.9);
-  text(ctx, "STRAIGHT", g.cx + g.road, Math.min(h - 20, Math.max(52, northY)), { size: 16, color: C.mute });
+  text(ctx, "STRAIGHT", 16, 58, { size: 16, color: C.mute });
   var u = k < 0.58 ? 0 : win(k, 0.58, 1);
   var a = { x: g.cx, y: stopS };
   var b = { x: 24, y: g.cy };
@@ -770,7 +774,7 @@ function panels(ctx, w, h) {
 }
 
 function sketchMark(ctx, w, h) {
-  stamp(ctx, "SKETCH", w - 62, h - 22, 1, C.gold);
+  text(ctx, "SKETCH", w - 12, h - 8, { size: 16, color: C.gold, weight: "700", align: "right" });
 }
 
 function drawDoors(ctx, w, h, k) {
@@ -799,12 +803,12 @@ function drawDoors(ctx, w, h, k) {
 function drawMiles(ctx, w, h, k, time, now) {
   panels(ctx, w, h);
   var mid = w / 2;
-  var pin = { x: mid, y: 58 };
+  var pin = { x: mid, y: 72 };
   ctx.fillStyle = C.red;
   ctx.beginPath();
   ctx.arc(pin.x, pin.y, 6, 0, Math.PI * 2);
   ctx.fill();
-  text(ctx, "WORK", pin.x, pin.y + 22, { size: 16, align: "center" });
+  text(ctx, "WORK", pin.x + 28, pin.y + 6, { size: 16, color: C.ink });
   var aL = { x: mid * 0.5, y: h * 0.78 };
   var aR = { x: mid + mid * 0.5, y: h * 0.78 };
   ctx.lineWidth = 2.5;
@@ -812,9 +816,8 @@ function drawMiles(ctx, w, h, k, time, now) {
   strokeQuad(ctx, aL, { x: mid * 0.35, y: h * 0.4 }, pin, win(k, 0, 0.62));
   ctx.strokeStyle = C.sea;
   strokeQuad(ctx, aR, { x: w * 0.86, y: h * 0.48 }, pin, win(k, 0.08, 1));
-  fly(ctx, "14 mi", mid * 0.38, h * 0.48, win(k, 0.35, 0.6), 22, C.ochre);
-  fly(ctx, "22 mi", w * 0.78, h * 0.42, win(k, 0.55, 0.85), 22, C.sea);
-  text(ctx, "miles finish inland first", 16, h - 14, { size: 16, color: C.mute });
+  fly(ctx, "14 mi", mid * 0.38, h * 0.5, win(k, 0.35, 0.6), 22, C.ochre);
+  fly(ctx, "22 mi", w * 0.78, h * 0.46, win(k, 0.55, 0.85), 22, C.sea);
   sketchMark(ctx, w, h);
 }
 
@@ -917,21 +920,18 @@ function drawCustom(ctx, w, h, k, time, now, beat) {
     wrap(ctx, label, w / 2, h * 0.78, w - 48, 22, { size: 16, align: "center", color: C.mute });
     stamp(ctx, label.length > 18 ? label.slice(0, 17) + "…" : label, w / 2, h * 0.48, smooth(Math.min(1, k / 0.7)), C.red);
   } else if (beat.kind === "count") {
-    text(ctx, label, 16, 58, { size: 16, weight: "700" });
-    var n = clamp(Math.floor(k * 4) + (k >= 1 ? 0 : 1), 1, 4);
-    if (k <= 0) n = 1;
-    var shown = Math.max(1, Math.min(4, Math.ceil(k * 4 - 0.0001) || (k > 0 ? 1 : 0)));
+    text(ctx, label, 16, 56, { size: 16, weight: "700" });
+    var shown = clamp(Math.ceil(k * 4 - 1e-6), 0, 4);
     var i;
-    var bw = (w - 64) / 4;
+    var bw = (w - 80) / 4;
+    var base = h * 0.74;
     for (i = 0; i < 4; i++) {
       var hk = win(k, i * 0.18, i * 0.18 + 0.28);
       ctx.fillStyle = i === 3 ? C.red : C.ink;
-      ctx.globalAlpha = 0.9;
-      ctx.fillRect(24 + i * (bw + 6), h * 0.72 - hk * (h * 0.28), bw, hk * (h * 0.28));
-      ctx.globalAlpha = 1;
-      text(ctx, String(i + 1), 24 + i * (bw + 6) + bw / 2, h * 0.72 + 20, { size: 16, align: "center" });
+      ctx.fillRect(20 + i * (bw + 8), base - hk * (h * 0.26), bw, Math.max(0, hk * (h * 0.26)));
+      text(ctx, String(i + 1), 20 + i * (bw + 8) + bw / 2, base + 18, { size: 16, align: "center" });
     }
-    fly(ctx, String(Math.max(shown, 1)), w * 0.78, h * 0.32, k > 0.04 ? 1 : 0, 36, C.red);
+    if (shown > 0) fly(ctx, String(shown), w - 36, h * 0.36, 1, 32, C.red);
   } else {
     wrap(ctx, label, w / 2, h * 0.46, w - 40, 26, { size: 22, align: "center", weight: "700" });
     var y = h * 0.62;
@@ -972,7 +972,7 @@ function makeRow() {
     beat("r1", "First to stop", "First car to stop is the first to go.", drawFirst),
     beat("r2", "Left yields", "Same moment: the driver on the left yields to the right.", drawTie),
     beat("r3", "Left turn waits", "A left turn waits for straight-on traffic.", drawLeft),
-    beat("r4", "Given, not taken", "If you have to take the gap, it was not yours.", drawTake)
+    beat("r4", "It is given", "Right-of-way is given. The car goes when the gap is offered.", drawTake)
   ];
 }
 function makeCommute() {
@@ -1082,6 +1082,10 @@ function renderChips() {
     grip.innerHTML = "<span></span><span></span><span></span>";
     grip.setAttribute("aria-label", "Replay " + (b.label || "beat") + ". Drag to reorder.");
     chip.appendChild(grip);
+    var num = document.createElement("span");
+    num.className = "n";
+    num.textContent = "1";
+    chip.appendChild(num);
     if (packId === "custom") {
       var input = document.createElement("input");
       input.type = "text";
@@ -1126,12 +1130,22 @@ function slots() {
   });
 }
 
-function placeSpacer(target) {
+function placeSpacer(clientX, clientY) {
   var kids = slots();
   var from = kids.indexOf(drag.spacer);
-  if (from < 0 || from === target) return;
-  var next = [];
+  if (from < 0) return;
+  var target = from;
+  var best = Infinity;
   var i;
+  for (i = 0; i < kids.length; i++) {
+    var r = kids[i].getBoundingClientRect();
+    var dx = clientX - (r.left + r.width / 2);
+    var dy = clientY - (r.top + r.height / 2);
+    var d = dx * dx + dy * dy;
+    if (d < best) { best = d; target = i; }
+  }
+  if (target === from) return;
+  var next = [];
   for (i = 0; i < kids.length; i++) if (kids[i] !== drag.spacer) next.push(kids[i]);
   var ordered = next.slice();
   ordered.splice(target, 0, drag.spacer);
@@ -1209,6 +1223,8 @@ function syncUI() {
     var n;
     for (n = 0; n < film.length; n++) if (film[n].id === el.dataset.id) i = n;
     el.classList.toggle("on", i === ai);
+    var num = el.querySelector(".n");
+    if (num) num.textContent = String(i + 1);
     var fill = el.querySelector(".fill");
     var pk = i < ai ? 1 : i > ai ? 0 : k;
     if (fill) fill.style.transform = "scaleX(" + pk + ")";
@@ -1262,14 +1278,7 @@ beatsEl.addEventListener("pointermove", function (e) {
   e.preventDefault();
   drag.chip.style.top = (e.clientY - drag.dy) + "px";
   drag.chip.style.left = drag.left + "px";
-  var kids = slots();
-  var target = kids.length - 1;
-  var i;
-  for (i = 0; i < kids.length; i++) {
-    var r = kids[i].getBoundingClientRect();
-    if (e.clientY < r.top + r.height / 2) { target = i; break; }
-  }
-  placeSpacer(target);
+  placeSpacer(e.clientX, e.clientY);
 });
 
 function onPointerEnd(e) {
