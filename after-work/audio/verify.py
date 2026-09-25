@@ -50,14 +50,17 @@ def main():
         print(f"ffmpeg ebur128: I = {m[-1] if m else '?'} LUFS, true peak = {t[-1] if t else '?'} dBFS")
     except Exception as e: print('ffmpeg check skipped', e)
     # per-shot table
-    print("\nshot  start   dur   mix RMS  mix pk  music RMS  sfx RMS  lim dB  min 50ms-RMS")
+    print("\nshot  start   dur   mix LUFS  mix RMS  mix pk  music RMS  sfx RMS  lim dB  min 50ms-RMS")
     summ = mus + sfx
+    b1, a1 = [1.53512485958697, -2.69169618940638, 1.19839281085285], [1, -1.69065929318241, 0.73248077421585]
+    kw = sg.lfilter([1.0, -2.0, 1.0], [1, -1.99004745483398, 0.99007225036621], sg.lfilter(b1, a1, mix, axis=0), axis=0)
     for s in SH:
         a, b = int(s['start'] * sr), int(s['end'] * sr)
         seg = mix[a:b]; r = db(np.sqrt(np.mean(seg ** 2)))
         red = db(np.sqrt(np.mean(summ[a:b] ** 2))) - r
         w = int(0.05 * sr); mins = min(db(np.sqrt(np.mean(seg[i:i + w] ** 2))) for i in range(0, len(seg) - w, w))
-        print(f"{s['id']}  {s['start']:6.1f} {s['dur']:5.1f}  {r:7.1f}  {db(np.abs(seg).max()):6.1f}  {db(np.sqrt(np.mean(mus[a:b]**2))):9.1f}  {db(np.sqrt(np.mean(sfx[a:b]**2))):7.1f}  {red:6.2f}  {mins:8.1f}")
+        lu = -0.691 + 10 * np.log10(np.sum(np.mean(kw[a:b] ** 2, axis=0)) + 1e-20)
+        print(f"{s['id']}  {s['start']:6.1f} {s['dur']:5.1f}  {lu:8.1f}  {r:7.1f}  {db(np.abs(seg).max()):6.1f}  {db(np.sqrt(np.mean(mus[a:b]**2))):9.1f}  {db(np.sqrt(np.mean(sfx[a:b]**2))):7.1f}  {red:6.2f}  {mins:8.1f}")
     w = int(0.05 * sr); frames = [db(np.sqrt(np.mean(mix[i:i + w] ** 2))) for i in range(0, len(mix) - w, w)]
     silent = [i * 0.05 for i, v in enumerate(frames) if v < -90]
     print(f"\n50 ms frames below -90 dBFS (digital silence): {len(silent)} {('at ' + ', '.join(f'{t:.2f}' for t in silent[:8])) if silent else ''}")

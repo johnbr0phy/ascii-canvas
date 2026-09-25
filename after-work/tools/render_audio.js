@@ -33,6 +33,7 @@ const fs = require('fs'), path = require('path');
     }
   } else {
     const info = await page.evaluate(() => window.renderAll());
+    console.log('timing:', JSON.stringify(info.meta));
     console.log(`integrated loudness pre ${info.preLufs.toFixed(2)} LUFS, post ${info.postLufs.toFixed(2)} LUFS, master gain ${info.masterGainDb.toFixed(2)} dB, limiter active ${info.limitedSeconds.toFixed(2)} s`);
     await fetchOut('afterwork', path.join(audioDir, 'afterwork.wav'));
     await fetchOut('music', path.join(audioDir, 'music.wav'));

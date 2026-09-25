@@ -33,3 +33,13 @@ This is a working log of the build and of the verification loops. After every ba
 ## Consistency checks
 - **The telescope's dent:** there is one model with the dent at u = 0.60 on the upper-left of the tube, so it's on the same side in every shot by construction. The turnaround sheet (`sheets/telescope_turnaround.png`) and the callout sheet show it.
 - **Nell's face:** one model, with age as a parameter. `sheets/nell_ten_times.png` shows ten separate drawings of the same woman. `sheets/nell_aging.png` shows 2027 to 2047 in four-year steps.
+
+## Sound
+- **Retime for the tune.** The first audio render put the tune's final D 3.3 s into the dedication shot, at the tempo ceiling. I lengthened S33 and S35 by 2.5 s in total. The tempo solver now lands the D at S36 +1.0 s.
+- **Checks by analysis (not listening):**
+  - duration exact
+  - -16 LUFS, no clipping
+  - scanner beeps within 1 ms of the picture's scan moments in S04 and S10
+  - the full tune occurs once, confirmed by pitch-pattern correlation
+  - finale melody onsets within 40 ms of the bar grid
+  - Sam's laugh as five falling-pitch bursts

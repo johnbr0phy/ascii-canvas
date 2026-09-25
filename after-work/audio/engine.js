@@ -315,7 +315,7 @@ function pluck(midi, { len = 3, bright = 0.6, T60 = 3, pickPos = 0.18, body = 'g
   const Nd = Math.floor(P - 0.5), d = P - Nd - 0.5, C = (1 - d) / (1 + d);
   const line = new Float32Array(Nd);
   // excitation: filtered noise with pick-position comb
-  let y = 0; const a = 1 - bright * 0.9;
+  let y = 0; const a = Math.exp(-2 * Math.PI * (500 + bright * 3200) / SR);
   const ex = new Float32Array(Nd);
   for (let i = 0; i < Nd; i++) { y = (1 - a) * (rnd() * 2 - 1) + a * y; ex[i] = y; }
   const pk = Math.max(1, Math.round(pickPos * Nd));
@@ -333,10 +333,10 @@ function pluck(midi, { len = 3, bright = 0.6, T60 = 3, pickPos = 0.18, body = 'g
     line[idx] = ap; idx = idx + 1 === Nd ? 0 : idx + 1;
   }
   hp1(out, 50);
-  if (body === 'guitar') { filt(out, 'peaking', 105, 2, 5); filt(out, 'peaking', 220, 1.5, 3); filt(out, 'peaking', 2600, 1, 2); filt(out, 'lowpass', 6500, 0.7); }
-  else if (body === 'harp') { filt(out, 'peaking', 300, 1, 2); filt(out, 'highshelf', 3000, 0.7, 2); }
+  if (body === 'guitar') { filt(out, 'peaking', 105, 2, 5); filt(out, 'peaking', 220, 1.5, 3); filt(out, 'peaking', 2600, 1, 2); filt(out, 'lowpass', 5000, 0.7); }
+  else if (body === 'harp') { filt(out, 'peaking', 300, 1, 2); filt(out, 'highshelf', 3000, 0.7, 1); filt(out, 'lowpass', 7000, 0.7); }
   else if (body === 'pizz') { filt(out, 'peaking', 250, 1.2, 4); filt(out, 'lowpass', 2500, 0.7); }
-  fadeEdges(out, 0.001, 0.2);
+  fadeEdges(out, 0.002, 0.2);
   return norm(out, vel);
 }
 

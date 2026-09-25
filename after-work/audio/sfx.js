@@ -331,9 +331,12 @@ function warehouseBed(st, t0, t1, prof, { thin = false } = {}) {
   // automation
   const first = prof[0];
   env.gain.setValueAtTime(0, Math.max(0, first[0])); lp.frequency.setValueAtTime(first[2], Math.max(0, first[0]));
+  let lastT = 0;
   for (let i = 0; i < prof.length; i++) {
     const [t, lv, f, det, ramp = 0.08] = prof[i];
-    const ta = Math.max(0, t - (i === 0 ? 0 : ramp / 2)), tb = t + (i === 0 ? ramp : ramp / 2);
+    // events must not overlap the previous ramp (Web Audio orders events by time)
+    const ta = Math.max(0, lastT + 0.001, t - (i === 0 ? 0 : ramp / 2)), tb = Math.max(ta + 0.01, t + (i === 0 ? ramp : ramp / 2));
+    lastT = tb;
     env.gain.setValueAtTime(i === 0 ? 0 : prof[i - 1][1], ta); env.gain.linearRampToValueAtTime(lv, tb);
     lp.frequency.setValueAtTime(i === 0 ? f : prof[i - 1][2], ta); lp.frequency.exponentialRampToValueAtTime(f, tb);
     for (const o of oscs) { o.detune.setValueAtTime(i === 0 ? det : prof[i - 1][3], ta); o.detune.linearRampToValueAtTime(det, tb); }
@@ -381,7 +384,7 @@ function buildSfx(st) {
     const tIn = cue('sfx', 'S02', shotDur('S02') - 1.0, 'Conveyor hum pre-laps under the last second of the title');
     const tCut = cue('sfx', 'S07', 2.3, 'Warehouse hum cut as the door opens');
     const prof = [
-      [tIn, 0.45, 9000, 0, 1.0],
+      [tIn, 0.45, 9000, 0, 0.9],
       [at('S03'), db(-17) / db(-17), 12000, 0],
       [at('S04'), 0.72, 10000, 0],
       [at('S05'), 1.0, 380, -300],
@@ -437,17 +440,17 @@ function buildSfx(st) {
   {
     const t0 = cue('sfx', 'S09', 0, 'Warehouse hum returns thinner (new machines)');
     const prof = [[t0, 0.5, 7000, 0, 0.08], [at('S10'), 0.45, 7000, 0], [E('S10'), 0, 7000, 0]];
-    const g = warehouseBed(st, t0, E('S10'), prof, { thin: true }); g.gain.value = db(-21);
+    const g = warehouseBed(st, t0, E('S10'), prof, { thin: true }); g.gain.value = db(-19);
     cue('sfx', 'S09', 0.4, 'Pneumatic hisses + servo whirs in a gentle rhythm, clean high beeps, footsteps');
     for (let k = 0; at('S09', 0.4 + k * 1.3) < E('S09') - 0.3; k++) {
       const t = at('S09', 0.4 + k * 1.3), pan = [-0.6, -0.2, 0.2, 0.6][k % 4];
       const paused = k === 2;   // the nearest arm pauses to let her pass
-      st.play(whir(paused ? 0.35 : 0.6, 170, paused ? 260 : 420), t, { gain: db(-33), pan, verb: 'warehouse', send: 0.25 });
-      if (!paused) st.play(hiss(0.4), t + 0.62, { gain: db(-34), pan, verb: 'warehouse', send: 0.25 });
-      if (paused) st.play(whir(0.5, 200, 400), t + 1.0, { gain: db(-33), pan, verb: 'warehouse', send: 0.25 });
+      st.play(whir(paused ? 0.35 : 0.6, 170, paused ? 260 : 420), t, { gain: db(-30), pan, verb: 'warehouse', send: 0.25 });
+      if (!paused) st.play(hiss(0.4), t + 0.62, { gain: db(-31), pan, verb: 'warehouse', send: 0.25 });
+      if (paused) st.play(whir(0.5, 200, 400), t + 1.0, { gain: db(-30), pan, verb: 'warehouse', send: 0.25 });
       if (k % 2 === 1) { st.play(beep(3600, 0.05), t + 0.9, { gain: db(-36), pan, verb: 'warehouse', send: 0.3 }); st.play(beep(3600, 0.05), t + 1.0, { gain: db(-38), pan, verb: 'warehouse', send: 0.3 }); }
     }
-    for (let k = 0; at('S09', 0.3 + k * 0.62) < E('S09') - 0.2; k++) st.play(concreteStep(k), at('S09', 0.3 + k * 0.62), { gain: db(-38), pan: -0.3 + k * 0.06, verb: 'warehouse', send: 0.3 });
+    for (let k = 0; at('S09', 0.3 + k * 0.62) < E('S09') - 0.2; k++) st.play(concreteStep(k), at('S09', 0.3 + k * 0.62), { gain: db(-35), pan: -0.3 + k * 0.06, verb: 'warehouse', send: 0.3 });
     // S10: gripper at double tempo: beep every 0.8 s from 0.6 s
     for (let k = 0; at('S10', 0.6 + k * 0.8) < E('S10') - 0.1; k++) {
       const t = cue('sfx', 'S10', 0.6 + k * 0.8, `Gripper scan beep ${k + 1}`);
@@ -464,19 +467,19 @@ function buildSfx(st) {
     const t0 = cue('sfx', 'S11', 0.35, 'Kitchen clock tick 1 Hz (S11-S13), fridge hum');
     for (let k = 0; t0 + k < E('S13') - 0.05; k++) {
       const t = t0 + k, far = t >= at('S13');
-      st.play(clockTick(k % 2 === 1), t, { gain: db(far ? -35 : -28), pan: far ? 0.2 : -0.35, verb: far ? 'hall' : 'room', send: 0.3, filters: far ? [['lowpass', 3000]] : [] });
+      st.play(clockTick(k % 2 === 1), t, { gain: db(far ? -32 : -25), pan: far ? 0.2 : -0.35, verb: far ? 'hall' : 'room', send: 0.3, filters: far ? [['lowpass', 3000]] : [] });
     }
     for (const id of ['S11', 'S12', 'S13']) {
-      const lv = id === 'S13' ? db(-48) : db(-42);
+      const lv = id === 'S13' ? db(-46) : db(-40);
       const src = st.ctx.createGain();
       [[50, 1], [100, 0.5], [150, 0.25], [200, 0.1]].forEach(([f, g]) => { const o = st.osc(at(id) - 0.1, E(id) + 0.1, 'sine', f); const gg = st.ctx.createGain(); gg.gain.value = g; o.connect(gg); gg.connect(src); });
       const nz = st.filter(st.noise(at(id) - 0.1, E(id) + 0.1, 'pink'), 'bandpass', 180, 1); nz.connect(src);
       st.route(st.gainEnv(src, bedPts(at(id), E(id), 1)), { gain: lv, pan: 0.4 });
     }
     P('S11', 0.5, 'Letter paper handled', crinkle(0.6, 60), { gain: db(-36), pan: 0, verb: 'room', send: 0.2 });
-    P('S12', 0.6, 'Her breath out, slow', breathNoise(1.6, { s: 20 }), { gain: db(-37), verb: 'room', send: 0.2 });
-    P('S12', 2.5, 'Shaky breath in (hand to mouth)', breathNoise(1.0, { inhale: true, tremble: 0.5, s: 21 }), { gain: db(-35), verb: 'room', send: 0.2 });
-    P('S12', 3.8, 'Held breath released', breathNoise(1.1, { s: 22 }), { gain: db(-39), verb: 'room', send: 0.2 });
+    P('S12', 0.6, 'Her breath out, slow', breathNoise(1.6, { s: 20 }), { gain: db(-33), verb: 'room', send: 0.2 });
+    P('S12', 2.5, 'Shaky breath in (hand to mouth)', breathNoise(1.0, { inhale: true, tremble: 0.5, s: 21 }), { gain: db(-31), verb: 'room', send: 0.2 });
+    P('S12', 3.8, 'Held breath released', breathNoise(1.1, { s: 22 }), { gain: db(-35), verb: 'room', send: 0.2 });
     const tr = cue('sfx', 'S13', 1.2, 'Rain begins on the window (noise + droplet ticks), building');
     playBed(st, rainBuf(E('S13') - tr + 0.1, 4.0), tr, E('S13'), { gain: db(-22), verb: 'hall', send: 0.2, pts: [[tr, 1], [E('S13') - 0.04, 1], [E('S13') + 0.04, 0]] });
   }
@@ -565,7 +568,7 @@ function buildSfx(st) {
     P('S26', 1.4, 'Nell: a breath-laugh breaking', breathNoise(0.5, { s: 50 }), { gain: db(-36), pan: -0.15, verb: 'night', send: 0.3 });
     P('S26', 1.75, 'Nell: second breath of the laugh', breathNoise(0.4, { s: 51 }), { gain: db(-38), pan: -0.15, verb: 'night', send: 0.3 });
     const sam = laugh(samLaughBursts(), { inhale: { t: 1.25, dur: 0.38, amp: 0.22 } });
-    P('S26', 3.8, "Sam (11) laughs out loud: 5 'ha' bursts, 455 -> 362 Hz, open-vowel formants, inhale", sam, { gain: db(-15), pan: 0.2, verb: 'night', send: 0.3 });
+    P('S26', 3.8, "Sam (11) laughs out loud: 5 'ha' bursts, 455 -> 362 Hz, open-vowel formants, inhale", sam, { gain: db(-8), pan: 0.2, verb: 'night', send: 0.3 });
   }
   // S27-S31: opening up
   {

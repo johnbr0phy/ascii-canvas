@@ -1,6 +1,6 @@
 # After Work: a short film, and how it was made
 
-**Running time:** 3:52. No dialogue. Hand-drawn 2D, 12 drawings a second.
+**Running time:** 3:54. No dialogue. Hand-drawn 2D, 12 drawings a second.
 **Files:** `out/after_work_1080p.mp4` (1920×1080, 24 fps, AAC stereo) and `out/after_work_square_1080.mp4` (1080×1080 crop for X).
 
 ## What I made

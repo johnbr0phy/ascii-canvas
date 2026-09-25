@@ -42,3 +42,11 @@ Assumptions and choices I made while working alone, in roughly the order I made 
 - **Stillness:** most shots are locked off, with one thing moving (the kettle steam, a single twinkling star, the launch line).
 - **Nell's identifiers:** a low bun, a side parting on her right, a small mole under her left eye, a rust jumper or cardigan, and a loose strand at the temple. Her grey arrives at the temple first (a streak in her fifties), then all through.
 - **The telescope canon:** brass tube with a wide dew shield, two bands, a small finder on top, a wooden tripod with a leather strap wrapped three times round one leg, and a triangular tray. **The dent sits on top of the tube just behind the front band** and notches the silhouette, so it reads even in silhouette. Every appearance comes from one function, so it's on the same side in every shot by construction. The eyepiece is cracked until she fixes it. The dent is never fixed.
+
+## 3. Sound and music
+
+- **Sound and music split:** a subagent built the synthesis engine and sound design to a spec I wrote: melody, harmony, cue sheet, mix targets. I composed the theme and set every cue. Both follow the same shot table.
+- **The theme:** a lullaby waltz in D major, 3/4, about 72 to 74 bpm, whistleable, and "her father's tune". It appears in fragments only: four unresolved notes in the cupboard, her hum at work, her father's hum in the memory, the D-minor version in the winter, the first phrase at Saturn, and pieces of phrase B while the town opens up. It plays in full exactly once, at the end. An automated check confirms the full melody appears only once in the note log.
+- **Silence as a choice:** there is no music under the layoff letter, only a clock and a fridge. The first warm chord since the title comes on the second letter's exhale.
+- **The picture changed for the music, not the other way round:** at first the full tune couldn't land its final note inside the dedication shot, even at the top of its tempo range. Rather than rush the tune, I lengthened the launch (S33, +1.5 s) and the pull-back (S35, +1 s). Both shots are better for the extra stillness. The film is now 3:54.
+- **Loudness:** the mix is about -16 LUFS integrated with -1 dBTP peaks, which suits a phone speaker on X. The launch rumble is deliberately very low: on laptop speakers it will be felt more than heard.

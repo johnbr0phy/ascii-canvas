@@ -1,6 +1,6 @@
 # After Work: shot list
 
-Generated from `src/shots.js`, which is the single source of truth for the renderer, the score and this file. Total running time: **3:52.0** (232.0 s). 37 shots. Drawings at 12 per second, output at 24 fps.
+Generated from `src/shots.js`, which is the single source of truth for the renderer, the score and this file. Total running time: **3:54.5** (234.5 s). 37 shots. Drawings at 12 per second, output at 24 fps.
 
 
 ## Cold open
@@ -84,9 +84,9 @@ Generated from `src/shots.js`, which is the single source of truth for the rende
 | # | In | Dur | Shot | Camera | Characters | Beat | Audio |
 |---|---|---|---|---|---|---|---|
 | **S32** | 3:05.5 | 7s | **The back step, 2047.** Night. Nell (69) in a chair under a blanket beside the telescope. Sam (29) and his daughter at the eyepiece. "2047". Crickets. | Eye level, slow tilt up | Nell (69), Sam (29), granddaughter (7) | Full circle. | Crickets. Nell hums the tune; the full score begins. |
-| **S33** | 3:12.5 | 7s | **The launch.** Wide: rooftops in silhouette, indigo sky. On the horizon a thin bright line climbs slowly. Only the line moves, and one star. | Locked, mostly sky | - | Outward. | Crickets, the tune. Nothing from the launch yet. |
-| **S34** | 3:19.5 | 6.5s | **Her eyes.** Nell in profile, watching with her own eyes, the line reflected small in them. She smiles. The telescope creaks as the girl swings it. The rumble arrives late. | Locked, eye level | Nell (69) | She does not need the telescope. | The late rumble, low and soft. Creak of the tripod. |
-| **S35** | 3:26.0 | 13s | **Pull back.** From the glint on the telescope lens, out: the back step, the house, the lit street, the town, the curve of the night planet, and out into space where small warm lights drift outward among the stars. | Continuous pull back and up | - | Not small, not alone. | The tune in full, piano and strings, to the last note. |
-| **S36** | 3:39.0 | 5s | **One line.** Held stars. One line lettered small: "For everyone who ever worked nights." | Locked | - | The room goes quiet. | The last note decays. Crickets fade. |
-| **S37** | 3:44.0 | 8s | **Credits.** Hand-lettered credits on indigo, the telescope silhouette small at the bottom. | Locked | - | - | The tune once more, just the first phrase, whistled-sounding. |
+| **S33** | 3:12.5 | 8.5s | **The launch.** Wide: rooftops in silhouette, indigo sky. On the horizon a thin bright line climbs slowly. Only the line moves, and one star. | Locked, mostly sky | - | Outward. | Crickets, the tune. Nothing from the launch yet. |
+| **S34** | 3:21.0 | 6.5s | **Her eyes.** Nell in profile, watching with her own eyes, the line reflected small in them. She smiles. The telescope creaks as the girl swings it. The rumble arrives late. | Locked, eye level | Nell (69) | She does not need the telescope. | The late rumble, low and soft. Creak of the tripod. |
+| **S35** | 3:27.5 | 14s | **Pull back.** From the glint on the telescope lens, out: the back step, the house, the lit street, the town, the curve of the night planet, and out into space where small warm lights drift outward among the stars. | Continuous pull back and up | - | Not small, not alone. | The tune in full, piano and strings, to the last note. |
+| **S36** | 3:41.5 | 5s | **One line.** Held stars. One line lettered small: "For everyone who ever worked nights." | Locked | - | The room goes quiet. | The last note decays. Crickets fade. |
+| **S37** | 3:46.5 | 8s | **Credits.** Hand-lettered credits on indigo, the telescope silhouette small at the bottom. | Locked | - | - | The tune once more, just the first phrase, whistled-sounding. |
 
