@@ -3,3 +3,7 @@ frames/
 out/snaps/
 out/tmp/
 *.wav
+out/rough_silent.mp4
+out/final_check/
+out/*.png
+out/*.log

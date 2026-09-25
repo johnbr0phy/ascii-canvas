@@ -1,7 +1,7 @@
 {
- "filmDur": 232,
- "lufs": -16.02467880361917,
- "masterGainDb": 12.960947663313384,
+ "filmDur": 234.5,
+ "lufs": -16.03256527447619,
+ "masterGainDb": 13.071419833124093,
  "meta": {
   "ostinato": {
    "start": 118.4,
@@ -17,11 +17,11 @@
   },
   "fullTune": {
    "start": 185.8,
-   "bar": 2.4324324324324325,
-   "bpm": 74,
-   "finalNote": 222.2864864864865,
+   "bar": 2.446666666666666,
+   "bpm": 73.56948228882837,
+   "finalNote": 222.5,
    "finalShot": "S36",
-   "finalOffset": 3.2864864864864956
+   "finalOffset": 1
   }
  },
  "cues": [
@@ -163,34 +163,34 @@
    "shot": "S32",
    "off": 0.3,
    "t": 185.8,
-   "what": "FULL TUNE bar 1 (Nell hums bars 1-2, piano accompaniment), 74.0 bpm"
+   "what": "FULL TUNE bar 1 (Nell hums bars 1-2, piano accompaniment), 73.6 bpm"
   },
   {
    "stem": "music",
    "shot": "S32",
-   "off": 5.165,
-   "t": 190.665,
+   "off": 5.193,
+   "t": 190.693,
    "what": "Piano takes the melody (bar 3)"
   },
   {
    "stem": "music",
    "shot": "S34",
-   "off": 5.759,
-   "t": 205.259,
+   "off": 4.373,
+   "t": 205.373,
    "what": "Strings join for phrase B (bar 9)"
   },
   {
    "stem": "music",
    "shot": "S36",
-   "off": 3.286,
-   "t": 222.286,
+   "off": 1,
+   "t": 222.5,
    "what": "FULL TUNE final D (bar 16) lands and decays"
   },
   {
    "stem": "music",
    "shot": "S37",
    "off": 0.35,
-   "t": 224.35,
+   "t": 226.85,
    "what": "Whistled first phrase (bars 1-4), sine + breath noise with vibrato"
   },
   {
@@ -1016,21 +1016,21 @@
    "stem": "sfx",
    "shot": "S36",
    "off": 0.5,
-   "t": 219.5,
+   "t": 222,
    "what": "Crickets fade out"
   },
   {
    "stem": "sfx",
    "shot": "S34",
    "off": 1,
-   "t": 200.5,
+   "t": 202,
    "what": "Telescope creaks as the girl swings it"
   },
   {
    "stem": "sfx",
    "shot": "S34",
    "off": 2,
-   "t": 201.5,
+   "t": 203,
    "what": "Launch rumble arrives late: 20-80 Hz + filtered noise, swells 4 s, fades"
   }
  ],
@@ -3229,285 +3229,285 @@
   {
    "t": 185.8,
    "midi": 62,
-   "dur": 0.811,
+   "dur": 0.816,
    "inst": "hum-nell-old",
    "tag": "melody:full"
   },
   {
-   "t": 186.6108,
+   "t": 186.6156,
    "midi": 69,
-   "dur": 0.811,
+   "dur": 0.816,
    "inst": "hum-nell-old",
    "tag": "melody:full"
   },
   {
-   "t": 187.4216,
+   "t": 187.4311,
    "midi": 71,
-   "dur": 0.405,
+   "dur": 0.408,
    "inst": "hum-nell-old",
    "tag": "melody:full"
   },
   {
-   "t": 187.827,
+   "t": 187.8389,
    "midi": 69,
-   "dur": 0.405,
+   "dur": 0.408,
    "inst": "hum-nell-old",
    "tag": "melody:full"
   },
   {
-   "t": 188.2324,
+   "t": 188.2467,
    "midi": 66,
-   "dur": 2.311,
+   "dur": 2.324,
    "inst": "hum-nell-old",
    "tag": "melody:full"
   },
   {
-   "t": 190.6662,
+   "t": 190.6983,
    "midi": 67,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 191.4754,
+   "t": 191.5124,
    "midi": 71,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 192.2864,
+   "t": 192.3244,
    "midi": 69,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 192.6908,
+   "t": 192.7311,
    "midi": 67,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 193.097,
+   "t": 193.1397,
    "midi": 64,
-   "dur": 4.432,
+   "dur": 4.447,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 195.5345,
+   "t": 195.5915,
    "midi": 62,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 196.3415,
+   "t": 196.4032,
    "midi": 69,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 197.1502,
+   "t": 197.2166,
    "midi": 71,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 197.5567,
+   "t": 197.6255,
    "midi": 69,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 197.9602,
+   "t": 198.0313,
    "midi": 74,
-   "dur": 3.622,
+   "dur": 3.631,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 199.5876,
+   "t": 199.6682,
    "midi": 73,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 200.395,
+   "t": 200.4804,
    "midi": 71,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 201.2019,
+   "t": 201.2921,
    "midi": 69,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 201.609,
+   "t": 201.7015,
    "midi": 67,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 202.0115,
+   "t": 202.1064,
    "midi": 64,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 202.8247,
+   "t": 202.9244,
    "midi": 62,
-   "dur": 4.432,
+   "dur": 4.447,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 205.2604,
+   "t": 205.3743,
    "midi": 66,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 206.0756,
+   "t": 206.1942,
    "midi": 67,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 206.8846,
+   "t": 207.0053,
    "midi": 69,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 207.6999,
+   "t": 207.8159,
    "midi": 71,
-   "dur": 3.622,
+   "dur": 3.631,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 209.3189,
+   "t": 209.4476,
    "midi": 74,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 210.1281,
+   "t": 210.2688,
    "midi": 73,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 210.9367,
+   "t": 211.0838,
    "midi": 71,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 211.7521,
+   "t": 211.9039,
    "midi": 69,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 212.5593,
+   "t": 212.7158,
    "midi": 66,
-   "dur": 4.432,
+   "dur": 4.447,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 214.9962,
+   "t": 215.167,
    "midi": 67,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 215.7984,
+   "t": 215.9739,
    "midi": 69,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 216.6078,
+   "t": 216.7881,
    "midi": 71,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 217.4198,
+   "t": 217.6048,
    "midi": 69,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 218.2377,
+   "t": 218.4275,
    "midi": 66,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 219.0408,
+   "t": 219.2353,
    "midi": 62,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 219.8571,
+   "t": 220.0564,
    "midi": 64,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 220.6697,
+   "t": 220.8737,
    "midi": 66,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 221.0678,
+   "t": 221.2742,
    "midi": 64,
    "dur": 2.5,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 221.4805,
+   "t": 221.6892,
    "midi": 61,
-   "dur": 2.811,
+   "dur": 2.816,
    "inst": "piano",
    "tag": "melody:full"
   },
   {
-   "t": 222.2877,
+   "t": 222.5012,
    "midi": 62,
    "dur": 9,
    "inst": "piano",
@@ -3516,768 +3516,768 @@
   {
    "t": 185.807,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 186.6228,
+   "t": 186.6276,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 186.6178,
+   "t": 186.6225,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 186.6172,
+   "t": 186.6219,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 187.4362,
+   "t": 187.4457,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 187.4462,
+   "t": 187.4557,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 187.4248,
+   "t": 187.4343,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 188.2295,
+   "t": 188.2438,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.0476,
+   "t": 189.0666,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.0663,
+   "t": 189.0853,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.0535,
+   "t": 189.0725,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.8589,
+   "t": 189.8826,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.8676,
+   "t": 189.8913,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 189.8685,
+   "t": 189.8922,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 190.6716,
+   "t": 190.7001,
    "midi": 43,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 191.4816,
+   "t": 191.5148,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 191.4954,
+   "t": 191.5286,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 191.4781,
+   "t": 191.5113,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 192.3017,
+   "t": 192.3397,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 192.2941,
+   "t": 192.332,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 192.3052,
+   "t": 192.3431,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 193.0916,
+   "t": 193.1343,
    "midi": 45,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 193.9177,
+   "t": 193.9651,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 193.912,
+   "t": 193.9595,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 193.9245,
+   "t": 193.972,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 194.7273,
+   "t": 194.7795,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 194.7336,
+   "t": 194.7858,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 194.7314,
+   "t": 194.7835,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 195.5269,
+   "t": 195.5838,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 196.3557,
+   "t": 196.4174,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 196.3412,
+   "t": 196.4029,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 196.3555,
+   "t": 196.4172,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 197.1683,
+   "t": 197.2347,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 197.1644,
+   "t": 197.2308,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 197.151,
+   "t": 197.2174,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 197.9676,
+   "t": 198.0388,
    "midi": 47,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 198.7807,
+   "t": 198.8566,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 198.7803,
+   "t": 198.8562,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 198.7733,
+   "t": 198.8493,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 199.5845,
+   "t": 199.6652,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 199.5896,
+   "t": 199.6703,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 199.6058,
+   "t": 199.6864,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 200.397,
+   "t": 200.4824,
    "midi": 43,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 201.2252,
+   "t": 201.3154,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 201.2113,
+   "t": 201.3015,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 201.2282,
+   "t": 201.3184,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 202.0241,
+   "t": 202.119,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 202.0306,
+   "t": 202.1255,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 202.0214,
+   "t": 202.1163,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 202.8268,
+   "t": 202.9265,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 203.6601,
+   "t": 203.7644,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 203.6428,
+   "t": 203.7472,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 203.6388,
+   "t": 203.7432,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 204.4468,
+   "t": 204.556,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 204.4636,
+   "t": 204.5728,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 204.4631,
+   "t": 204.5722,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 205.2661,
+   "t": 205.38,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.0746,
+   "t": 206.1932,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.0773,
+   "t": 206.1959,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.074,
+   "t": 206.1926,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.8886,
+   "t": 207.0119,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.8844,
+   "t": 207.0078,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 206.8864,
+   "t": 207.0098,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 207.6894,
+   "t": 207.8175,
    "midi": 43,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 208.5154,
+   "t": 208.6482,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 208.5072,
+   "t": 208.6401,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 208.5102,
+   "t": 208.643,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 209.3264,
+   "t": 209.464,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 209.3184,
+   "t": 209.456,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 209.3155,
+   "t": 209.4531,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 210.1268,
+   "t": 210.2692,
    "midi": 45,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 210.9415,
+   "t": 211.0886,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 210.9421,
+   "t": 211.0892,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 210.9453,
+   "t": 211.0924,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 211.7625,
+   "t": 211.9143,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 211.7601,
+   "t": 211.912,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 211.7529,
+   "t": 211.9047,
    "midi": 61,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 212.5598,
+   "t": 212.7164,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 213.3776,
+   "t": 213.5389,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 213.3817,
+   "t": 213.5431,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 213.3824,
+   "t": 213.5437,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 214.193,
+   "t": 214.359,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 214.1903,
+   "t": 214.3563,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 214.2006,
+   "t": 214.3667,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 214.985,
+   "t": 215.1558,
    "midi": 43,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 215.8085,
+   "t": 215.9841,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 215.8192,
+   "t": 215.9947,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 215.8011,
+   "t": 215.9767,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 216.636,
+   "t": 216.8163,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 216.6138,
+   "t": 216.7941,
    "midi": 59,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 216.6192,
+   "t": 216.7995,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 217.4173,
+   "t": 217.6023,
    "midi": 38,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 218.2476,
+   "t": 218.4374,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 218.2452,
+   "t": 218.435,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 218.243,
+   "t": 218.4328,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 219.0617,
+   "t": 219.2562,
    "midi": 54,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 219.048,
+   "t": 219.2425,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 219.0398,
+   "t": 219.2343,
    "midi": 62,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 219.8618,
+   "t": 220.0611,
    "midi": 45,
-   "dur": 3.892,
+   "dur": 3.915,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 220.672,
+   "t": 220.8761,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 220.6801,
+   "t": 220.8841,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 220.68,
+   "t": 220.884,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 221.4745,
+   "t": 221.6833,
    "midi": 52,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 221.4788,
+   "t": 221.6876,
    "midi": 55,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 221.4793,
+   "t": 221.6881,
    "midi": 57,
-   "dur": 1.297,
+   "dur": 1.305,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.1668,
+   "t": 222.3803,
    "midi": 38,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.2121,
+   "t": 222.4256,
    "midi": 45,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.2605,
+   "t": 222.474,
    "midi": 50,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.3149,
+   "t": 222.5284,
    "midi": 54,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.3631,
+   "t": 222.5766,
    "midi": 57,
    "dur": 9,
    "inst": "piano",
@@ -4286,355 +4286,355 @@
   {
    "t": 185.8,
    "midi": 50,
-   "dur": 4.865,
+   "dur": 4.893,
    "inst": "strings",
    "tag": "acc"
   },
   {
    "t": 185.8,
    "midi": 57,
-   "dur": 4.865,
+   "dur": 4.893,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 205.2595,
+   "t": 205.3733,
    "midi": 54,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 205.2595,
+   "t": 205.3733,
    "midi": 57,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 205.2595,
+   "t": 205.3733,
    "midi": 62,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 205.2595,
+   "t": 205.3733,
    "midi": 38,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 207.6919,
+   "t": 207.82,
    "midi": 55,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 207.6919,
+   "t": 207.82,
    "midi": 59,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 207.6919,
+   "t": 207.82,
    "midi": 62,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 207.6919,
+   "t": 207.82,
    "midi": 43,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 210.1243,
+   "t": 210.2667,
    "midi": 57,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 210.1243,
+   "t": 210.2667,
    "midi": 61,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 210.1243,
+   "t": 210.2667,
    "midi": 64,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 210.1243,
+   "t": 210.2667,
    "midi": 45,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 212.5568,
+   "t": 212.7133,
    "midi": 54,
-   "dur": 1.742,
+   "dur": 1.751,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 212.5568,
+   "t": 212.7133,
    "midi": 57,
-   "dur": 1.742,
+   "dur": 1.751,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 212.5568,
+   "t": 212.7133,
    "midi": 62,
-   "dur": 1.742,
+   "dur": 1.751,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 212.5568,
+   "t": 212.7133,
    "midi": 38,
-   "dur": 1.742,
+   "dur": 1.751,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 214.1784,
+   "t": 214.3444,
    "midi": 54,
-   "dur": 0.931,
+   "dur": 0.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.1784,
+   "t": 214.3444,
    "midi": 59,
-   "dur": 0.931,
+   "dur": 0.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.1784,
+   "t": 214.3444,
    "midi": 62,
-   "dur": 0.931,
+   "dur": 0.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.1784,
+   "t": 214.3444,
    "midi": 47,
-   "dur": 0.931,
+   "dur": 0.936,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 214.9892,
+   "t": 215.16,
    "midi": 55,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.9892,
+   "t": 215.16,
    "midi": 59,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.9892,
+   "t": 215.16,
    "midi": 62,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 214.9892,
+   "t": 215.16,
    "midi": 43,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 217.4216,
+   "t": 217.6067,
    "midi": 54,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 217.4216,
+   "t": 217.6067,
    "midi": 57,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 217.4216,
+   "t": 217.6067,
    "midi": 62,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 217.4216,
+   "t": 217.6067,
    "midi": 38,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 219.8541,
+   "t": 220.0533,
    "midi": 55,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 219.8541,
+   "t": 220.0533,
    "midi": 57,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 219.8541,
+   "t": 220.0533,
    "midi": 61,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 219.8541,
+   "t": 220.0533,
    "midi": 45,
-   "dur": 2.552,
+   "dur": 2.567,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 222.2865,
+   "t": 222.5,
    "midi": 54,
-   "dur": 2.919,
+   "dur": 2.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 222.2865,
+   "t": 222.5,
    "midi": 57,
-   "dur": 2.919,
+   "dur": 2.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 222.2865,
+   "t": 222.5,
    "midi": 62,
-   "dur": 2.919,
+   "dur": 2.936,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 222.2865,
+   "t": 222.5,
    "midi": 38,
-   "dur": 2.919,
+   "dur": 2.936,
    "inst": "cello",
    "tag": "acc"
   },
   {
-   "t": 214.9892,
+   "t": 215.16,
    "midi": 74,
-   "dur": 2.432,
+   "dur": 2.447,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 217.4216,
+   "t": 217.6067,
    "midi": 74,
-   "dur": 1.216,
+   "dur": 1.223,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 218.6378,
+   "t": 218.83,
    "midi": 78,
-   "dur": 1.216,
+   "dur": 1.223,
    "inst": "strings",
    "tag": "acc"
   },
   {
-   "t": 224.35,
+   "t": 226.85,
    "midi": 74,
    "dur": 0.675,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 225.1,
+   "t": 227.6,
    "midi": 81,
    "dur": 0.675,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 225.85,
+   "t": 228.35,
    "midi": 83,
    "dur": 0.338,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 226.225,
+   "t": 228.725,
    "midi": 81,
    "dur": 0.338,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 226.6,
+   "t": 229.1,
    "midi": 78,
    "dur": 1.725,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 228.475,
+   "t": 230.975,
    "midi": 79,
    "dur": 0.675,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 229.225,
+   "t": 231.725,
    "midi": 83,
    "dur": 0.675,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 229.975,
+   "t": 232.475,
    "midi": 81,
    "dur": 0.338,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 230.35,
+   "t": 232.85,
    "midi": 79,
    "dur": 0.338,
    "inst": "whistle",
    "tag": "melody:S37"
   },
   {
-   "t": 230.725,
+   "t": 233.225,
    "midi": 76,
    "dur": 1.125,
    "inst": "whistle",
