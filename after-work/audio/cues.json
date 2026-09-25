@@ -1,0 +1,4650 @@
+{
+ "filmDur": 232,
+ "lufs": -16.027119790613728,
+ "masterGainDb": 7.708031395489576,
+ "meta": {
+  "ostinato": {
+   "start": 118.4,
+   "bar": 2.0199999999999987,
+   "bpm": 89.10891089108917
+  },
+  "saturnResolve": 147.6,
+  "gold": {
+   "start": 150.7,
+   "bar": 2.2866666666666675,
+   "bpm": 78.71720116618073
+  },
+  "fullTune": {
+   "start": 185.8,
+   "bar": 2.4324324324324325,
+   "bpm": 74,
+   "finalNote": 222.2864864864865,
+   "finalShot": "S36",
+   "finalOffset": 3.2864864864864956
+  }
+ },
+ "cues": [
+  {
+   "stem": "music",
+   "shot": "S01",
+   "off": 1.5,
+   "t": 1.5,
+   "what": "Motif D4 A4 B4 A4, detuned plucked piano / music box, unresolved"
+  },
+  {
+   "stem": "music",
+   "shot": "S02",
+   "off": 0,
+   "t": 6,
+   "what": "Last note (A4) rings out under the title"
+  },
+  {
+   "stem": "music",
+   "shot": "S06",
+   "off": 1,
+   "t": 28,
+   "what": "Nell hums D4 A4 B4 A4 (glottal pulse + nasal formants), barely audible"
+  },
+  {
+   "stem": "music",
+   "shot": "S13",
+   "off": 1.6,
+   "t": 66.1,
+   "what": "One low cello D2, bowed, very soft (rain has started)"
+  },
+  {
+   "stem": "music",
+   "shot": "S14",
+   "off": 1.4,
+   "t": 71.9,
+   "what": "Motif in D minor, low piano: D3 A3 Bb3 A3 F3"
+  },
+  {
+   "stem": "music",
+   "shot": "S14",
+   "off": 0.5,
+   "t": 71,
+   "what": "Cold open fifth D2/A2 strings, sul tasto"
+  },
+  {
+   "stem": "music",
+   "shot": "S15",
+   "off": 0.8,
+   "t": 78.3,
+   "what": "Minor motif continues: G3 Bb3 A3 G3 E3"
+  },
+  {
+   "stem": "music",
+   "shot": "S16",
+   "off": 3.1,
+   "t": 85.6,
+   "what": "Warmer open pad D3 A3 E4 (sus2, no third) as the hall door opens"
+  },
+  {
+   "stem": "music",
+   "shot": "S17",
+   "off": 1.2,
+   "t": 89.2,
+   "what": "Soft piano D4 + A4 (open), under the murmur"
+  },
+  {
+   "stem": "music",
+   "shot": "S18",
+   "off": 1.3,
+   "t": 95.3,
+   "what": "First warm major chord: D major (strings pad + rolled piano) on the exhale"
+  },
+  {
+   "stem": "music",
+   "shot": "S19",
+   "off": 3.1,
+   "t": 102.6,
+   "what": "Motif again (box piano) and the fifth note F#4 arrives on bar 2 downbeat"
+  },
+  {
+   "stem": "music",
+   "shot": "S20",
+   "off": 0.1,
+   "t": 105.6,
+   "what": "Held soft pad A3 D4 F#4"
+  },
+  {
+   "stem": "music",
+   "shot": "S21",
+   "off": 0.6,
+   "t": 112.1,
+   "what": "Father hums bars 1-2 an octave down (male hum, wobbly, memory-filtered)"
+  },
+  {
+   "stem": "music",
+   "shot": "S22",
+   "off": 0.4,
+   "t": 118.4,
+   "what": "Plucked ostinato (KS guitar) + harp melody: variations on bars 1-4"
+  },
+  {
+   "stem": "music",
+   "shot": "S24",
+   "off": 0.8,
+   "t": 131.8,
+   "what": "Almost nothing: high string A5/E6 harmonic, expectant"
+  },
+  {
+   "stem": "music",
+   "shot": "S25",
+   "off": 1.6,
+   "t": 137.6,
+   "what": "Piano: phrase bars 1-4, tender"
+  },
+  {
+   "stem": "music",
+   "shot": "S26",
+   "off": 3.6,
+   "t": 147.6,
+   "what": "Phrase resolves to D (piano D major + strings), just before the laugh"
+  },
+  {
+   "stem": "music",
+   "shot": "S27",
+   "off": 0.2,
+   "t": 150.7,
+   "what": "Opening up: KS guitar ostinato + piano, phrase-B fragments (never the whole tune)"
+  },
+  {
+   "stem": "music",
+   "shot": "S30",
+   "off": 0,
+   "t": 171,
+   "what": "Clock-like pulse (woodblock tick) on the beat"
+  },
+  {
+   "stem": "music",
+   "shot": "S32",
+   "off": 0.3,
+   "t": 185.8,
+   "what": "FULL TUNE bar 1 (Nell hums bars 1-2, piano accompaniment), 74.0 bpm"
+  },
+  {
+   "stem": "music",
+   "shot": "S32",
+   "off": 5.165,
+   "t": 190.665,
+   "what": "Piano takes the melody (bar 3)"
+  },
+  {
+   "stem": "music",
+   "shot": "S34",
+   "off": 5.759,
+   "t": 205.259,
+   "what": "Strings join for phrase B (bar 9)"
+  },
+  {
+   "stem": "music",
+   "shot": "S36",
+   "off": 3.286,
+   "t": 222.286,
+   "what": "FULL TUNE final D (bar 16) lands and decays"
+  },
+  {
+   "stem": "music",
+   "shot": "S37",
+   "off": 0.35,
+   "t": 224.35,
+   "what": "Whistled first phrase (bars 1-4), sine + breath noise with vibrato"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S01",
+   "off": 0,
+   "t": 0,
+   "what": "Room tone on every shot (pink noise, per-location filtering), 80 ms crossfades"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S01",
+   "off": 0,
+   "t": 0,
+   "what": "Distant clock in another room (muffled ticks)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S02",
+   "off": 3.5,
+   "t": 9.5,
+   "what": "Conveyor hum pre-laps under the last second of the title"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S07",
+   "off": 2.3,
+   "t": 34.3,
+   "what": "Warehouse hum cut as the door opens"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S05",
+   "off": 0,
+   "t": 22,
+   "what": "Hum muffled and pitched down (inside her head)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S03",
+   "off": 0.7,
+   "t": 11.2,
+   "what": "Distant scanner beeps, cage rattle (3.2 s), clatter (5.2 s), cardboard slides"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S04",
+   "off": 1,
+   "t": 18,
+   "what": "Scan beep 1 (2.8 kHz)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S04",
+   "off": 2.6,
+   "t": 19.6,
+   "what": "Scan beep 2 (2.8 kHz)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S04",
+   "off": 4.2,
+   "t": 21.2,
+   "what": "Scan beep 3 (2.8 kHz)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S05",
+   "off": 1.2,
+   "t": 23.2,
+   "what": "Her slow tired breath (exhale)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S07",
+   "off": 1.15,
+   "t": 33.15,
+   "what": "Time card slides in"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S07",
+   "off": 1.6,
+   "t": 33.6,
+   "what": "Time card CLUNK (thump + stamp click + metal)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S07",
+   "off": 2.2,
+   "t": 34.2,
+   "what": "Door (push bar) opening"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S07",
+   "off": 2.3,
+   "t": 34.3,
+   "what": "Outdoor dawn air + early birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 0,
+   "t": 36,
+   "what": "Kettle boiling, whistle rising to 3.0 s then clicks off"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 3,
+   "t": 39,
+   "what": "Kettle switch click"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 3.1,
+   "t": 39.1,
+   "what": "Chair scrape"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 3.8,
+   "t": 39.8,
+   "what": "Coat rustle as she sits"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 4.7,
+   "t": 40.7,
+   "what": "A tired sigh"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 1.1,
+   "t": 37.1,
+   "what": "Blackbird outside the window"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S08",
+   "off": 4.4,
+   "t": 40.4,
+   "what": "Blackbird outside the window"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S09",
+   "off": 0,
+   "t": 42.5,
+   "what": "Warehouse hum returns thinner (new machines)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S09",
+   "off": 0.4,
+   "t": 42.9,
+   "what": "Pneumatic hisses + servo whirs in a gentle rhythm, clean high beeps, footsteps"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 0.6,
+   "t": 49.6,
+   "what": "Gripper scan beep 1"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 1.4,
+   "t": 50.4,
+   "what": "Gripper scan beep 2"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 2.2,
+   "t": 51.2,
+   "what": "Gripper scan beep 3"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 3,
+   "t": 52,
+   "what": "Gripper scan beep 4"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 3.8,
+   "t": 52.8,
+   "what": "Gripper scan beep 5"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 4.6,
+   "t": 53.6,
+   "what": "Gripper scan beep 6"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 2.3,
+   "t": 51.3,
+   "what": "Her glove enters, hesitates (rustle)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S10",
+   "off": 3.5,
+   "t": 52.5,
+   "what": "Glove withdraws (rustle)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S11",
+   "off": 0.35,
+   "t": 54.35,
+   "what": "Kitchen clock tick 1 Hz (S11-S13), fridge hum"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S11",
+   "off": 0.5,
+   "t": 54.5,
+   "what": "Letter paper handled"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S12",
+   "off": 0.6,
+   "t": 60.1,
+   "what": "Her breath out, slow"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S12",
+   "off": 2.5,
+   "t": 62,
+   "what": "Shaky breath in (hand to mouth)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S12",
+   "off": 3.8,
+   "t": 63.3,
+   "what": "Held breath released"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S13",
+   "off": 1.2,
+   "t": 65.7,
+   "what": "Rain begins on the window (noise + droplet ticks), building"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S14",
+   "off": 0,
+   "t": 70.5,
+   "what": "Winter wind (gusting filtered noise), footsteps crunching every 0.55 s, distant dog"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S14",
+   "off": 4.3,
+   "t": 74.8,
+   "what": "Distant dog, once"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S14",
+   "off": 1.5,
+   "t": 72,
+   "what": "Her breath fogging"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S15",
+   "off": 0,
+   "t": 77.5,
+   "what": "Wind at the window (moaning), pencil scratch on sums, radiator ticks (off)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S15",
+   "off": 0.5,
+   "t": 78,
+   "what": "Pencil scratch (sums)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S15",
+   "off": 1.7,
+   "t": 79.2,
+   "what": "Radiator tick"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S15",
+   "off": 3.9,
+   "t": 81.4,
+   "what": "Radiator tick"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S16",
+   "off": 0,
+   "t": 82.5,
+   "what": "Wind; muffled murmur behind the hall door"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S16",
+   "off": 3,
+   "t": 85.5,
+   "what": "Hall door opens (latch + creak)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S16",
+   "off": 3,
+   "t": 85.5,
+   "what": "Warm crowd murmur spills out (14 babble voices, formant-filtered, no words)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S17",
+   "off": 0,
+   "t": 88,
+   "what": "Murmur, cups clinking, tea urn, one soft laugh (3.6 s)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S17",
+   "off": 3.6,
+   "t": 91.6,
+   "what": "One soft laugh in the crowd"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S18",
+   "off": 0.2,
+   "t": 94.2,
+   "what": "Thaw drips outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S18",
+   "off": 0.8,
+   "t": 94.8,
+   "what": "A long breath out"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S19",
+   "off": 2.5,
+   "t": 102,
+   "what": "Cupboard door creak (stick-slip friction through wood resonances)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S20",
+   "off": 0.4,
+   "t": 105.9,
+   "what": "Case latch"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S20",
+   "off": 1.5,
+   "t": 107,
+   "what": "Paper note unfolding (crinkle)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S20",
+   "off": 0.6,
+   "t": 106.1,
+   "what": "Morning birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S20",
+   "off": 2.8,
+   "t": 108.3,
+   "what": "Morning birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S20",
+   "off": 4.6,
+   "t": 110.1,
+   "what": "Morning birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S21",
+   "off": 0.3,
+   "t": 111.8,
+   "what": "Evening birds (memory-filtered)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S21",
+   "off": 2.9,
+   "t": 114.4,
+   "what": "Evening birds (memory-filtered)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S21",
+   "off": 3.6,
+   "t": 115.1,
+   "what": "Watch (tiny tick) + lunch tin picked up"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S21",
+   "off": 6,
+   "t": 117.5,
+   "what": "A door closes (he leaves for his shift)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 0.8,
+   "t": 118.8,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 2.4,
+   "t": 120.4,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 4,
+   "t": 122,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 5.6,
+   "t": 123.6,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 7.2,
+   "t": 125.2,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 0.2,
+   "t": 118.2,
+   "what": "Pencil drawing"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 1.3,
+   "t": 119.3,
+   "what": "Birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 3.4,
+   "t": 121.4,
+   "what": "Birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S22",
+   "off": 6.1,
+   "t": 124.1,
+   "what": "Birds outside"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S23",
+   "off": 0.3,
+   "t": 126.3,
+   "what": "Eyepiece thread turning (small ticks)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S23",
+   "off": 2.5,
+   "t": 128.5,
+   "what": "New eyepiece clicks home"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S23",
+   "off": 3,
+   "t": 129,
+   "what": "Cloth polishing brass"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S24",
+   "off": 0,
+   "t": 131,
+   "what": "Night air, distant town, tripod set down, far dog (3.1 s)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S24",
+   "off": 0.9,
+   "t": 131.9,
+   "what": "Tripod legs set down on the step"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S24",
+   "off": 1.6,
+   "t": 132.6,
+   "what": "Tripod clamp"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S24",
+   "off": 3.1,
+   "t": 134.1,
+   "what": "Far dog"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S24",
+   "off": 3.45,
+   "t": 134.45,
+   "what": "Far dog"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S26",
+   "off": 1.4,
+   "t": 145.4,
+   "what": "Nell: a breath-laugh breaking"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S26",
+   "off": 1.75,
+   "t": 145.75,
+   "what": "Nell: second breath of the laugh"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S26",
+   "off": 3.8,
+   "t": 147.8,
+   "what": "Sam (11) laughs out loud: 5 'ha' bursts, 455 -> 362 Hz, open-vowel formants, inhale"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 0,
+   "t": 150.5,
+   "what": "Chalk on the step, birds, door open to the street"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 0.3,
+   "t": 150.8,
+   "what": "Chalk scratching"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 2.2,
+   "t": 152.7,
+   "what": "Second chalk (Sam)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 0.5,
+   "t": 151,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 2.6,
+   "t": 153.1,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S27",
+   "off": 4.2,
+   "t": 154.7,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 0,
+   "t": 155.5,
+   "what": "Rooftop: a few neighbours murmuring, chalk, swifts"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 2,
+   "t": 157.5,
+   "what": "Chalk on the small board"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 0.9,
+   "t": 156.4,
+   "what": "Swifts screaming overhead"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 1.4,
+   "t": 156.9,
+   "what": "Swifts screaming overhead"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 3.2,
+   "t": 158.7,
+   "what": "Swifts screaming overhead"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 5,
+   "t": 160.5,
+   "what": "Swifts screaming overhead"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S28",
+   "off": 5.4,
+   "t": 160.9,
+   "what": "Swifts screaming overhead"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 0,
+   "t": 162,
+   "what": "Street across years: children playing, birds, bicycle bell (4.0 s), radio through a window"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 0.4,
+   "t": 162.4,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 1.3,
+   "t": 163.3,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 2.2,
+   "t": 164.2,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 3.1,
+   "t": 165.1,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 5.2,
+   "t": 167.2,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 6.3,
+   "t": 168.3,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 7.4,
+   "t": 169.4,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 8.2,
+   "t": 170.2,
+   "what": "Children playing (distant laughs, squeals)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 4,
+   "t": 166,
+   "what": "Bicycle bell"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 1,
+   "t": 163,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 5.8,
+   "t": 167.8,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S29",
+   "off": 7.8,
+   "t": 169.8,
+   "what": "Birds"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S30",
+   "off": 1.5,
+   "t": 172.5,
+   "what": "Birds outside the kitchen"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S30",
+   "off": 5.5,
+   "t": 176.5,
+   "what": "Birds outside the kitchen"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S30",
+   "off": 2.8,
+   "t": 173.8,
+   "what": "Page turn"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 0,
+   "t": 179,
+   "what": "Hush of a listening room, chalk on the big board, a chair creak (4.2 s)"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 0.5,
+   "t": 179.5,
+   "what": "Chalk on the big board"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 4.2,
+   "t": 183.2,
+   "what": "Chair creak"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 1.2,
+   "t": 180.2,
+   "what": "Room rustle"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 3.5,
+   "t": 182.5,
+   "what": "Room rustle"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S31",
+   "off": 5.6,
+   "t": 184.6,
+   "what": "Room rustle"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S32",
+   "off": 0,
+   "t": 185.5,
+   "what": "Crickets (6 individuals, pulsed 4.2-5 kHz chirps, stereo spread) through S36"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S36",
+   "off": 0.5,
+   "t": 219.5,
+   "what": "Crickets fade out"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S34",
+   "off": 1,
+   "t": 200.5,
+   "what": "Telescope creaks as the girl swings it"
+  },
+  {
+   "stem": "sfx",
+   "shot": "S34",
+   "off": 2,
+   "t": 201.5,
+   "what": "Launch rumble arrives late: 20-80 Hz + filtered noise, swells 4 s, fades"
+  }
+ ],
+ "notes": [
+  {
+   "t": 1.5,
+   "midi": 62,
+   "dur": 7,
+   "inst": "box-piano",
+   "tag": "melody:S01"
+  },
+  {
+   "t": 2.3333,
+   "midi": 69,
+   "dur": 7,
+   "inst": "box-piano",
+   "tag": "melody:S01"
+  },
+  {
+   "t": 3.1667,
+   "midi": 71,
+   "dur": 7,
+   "inst": "box-piano",
+   "tag": "melody:S01"
+  },
+  {
+   "t": 3.5833,
+   "midi": 69,
+   "dur": 10,
+   "inst": "box-piano",
+   "tag": "melody:S01"
+  },
+  {
+   "t": 28,
+   "midi": 62,
+   "dur": 0.8,
+   "inst": "hum-nell",
+   "tag": "melody:S06"
+  },
+  {
+   "t": 28.92,
+   "midi": 69,
+   "dur": 0.8,
+   "inst": "hum-nell",
+   "tag": "melody:S06"
+  },
+  {
+   "t": 29.84,
+   "midi": 71,
+   "dur": 0.4,
+   "inst": "hum-nell",
+   "tag": "melody:S06"
+  },
+  {
+   "t": 30.3,
+   "midi": 69,
+   "dur": 1.5,
+   "inst": "hum-nell",
+   "tag": "melody:S06"
+  },
+  {
+   "t": 66.1,
+   "midi": 38,
+   "dur": 5.9,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 71.908,
+   "midi": 50,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S14"
+  },
+  {
+   "t": 72.9978,
+   "midi": 57,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S14"
+  },
+  {
+   "t": 74.0991,
+   "midi": 58,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S14"
+  },
+  {
+   "t": 74.6475,
+   "midi": 57,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S14"
+  },
+  {
+   "t": 75.2068,
+   "midi": 53,
+   "dur": 6,
+   "inst": "piano-low",
+   "tag": "melody:S14"
+  },
+  {
+   "t": 71,
+   "midi": 38,
+   "dur": 14.5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 71,
+   "midi": 45,
+   "dur": 14.5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 71,
+   "midi": 57,
+   "dur": 14.5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 78.3078,
+   "midi": 55,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S15"
+  },
+  {
+   "t": 79.4054,
+   "midi": 58,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S15"
+  },
+  {
+   "t": 80.495,
+   "midi": 57,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S15"
+  },
+  {
+   "t": 81.0493,
+   "midi": 55,
+   "dur": 4,
+   "inst": "piano-low",
+   "tag": "melody:S15"
+  },
+  {
+   "t": 81.6071,
+   "midi": 52,
+   "dur": 6,
+   "inst": "piano-low",
+   "tag": "melody:S15"
+  },
+  {
+   "t": 85.6,
+   "midi": 50,
+   "dur": 5.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 85.6,
+   "midi": 57,
+   "dur": 5.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 85.6,
+   "midi": 64,
+   "dur": 5.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 89.1954,
+   "midi": 62,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 90.1054,
+   "midi": 69,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3,
+   "midi": 50,
+   "dur": 3.3,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3,
+   "midi": 54,
+   "dur": 3.3,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3,
+   "midi": 57,
+   "dur": 3.3,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3,
+   "midi": 62,
+   "dur": 3.3,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3036,
+   "midi": 38,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3481,
+   "midi": 45,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 95.3961,
+   "midi": 54,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 95.4492,
+   "midi": 62,
+   "dur": 5,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 102.6,
+   "midi": 62,
+   "dur": 6,
+   "inst": "box-piano",
+   "tag": "melody:S19"
+  },
+  {
+   "t": 103.4333,
+   "midi": 69,
+   "dur": 6,
+   "inst": "box-piano",
+   "tag": "melody:S19"
+  },
+  {
+   "t": 104.2667,
+   "midi": 71,
+   "dur": 6,
+   "inst": "box-piano",
+   "tag": "melody:S19"
+  },
+  {
+   "t": 104.6833,
+   "midi": 69,
+   "dur": 6,
+   "inst": "box-piano",
+   "tag": "melody:S19"
+  },
+  {
+   "t": 105.1,
+   "midi": 66,
+   "dur": 9,
+   "inst": "box-piano",
+   "tag": "melody:S19"
+  },
+  {
+   "t": 105.1175,
+   "midi": 50,
+   "dur": 8,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 105.6,
+   "midi": 57,
+   "dur": 5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 105.6,
+   "midi": 62,
+   "dur": 5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 105.6,
+   "midi": 66,
+   "dur": 5,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 112.1,
+   "midi": 50,
+   "dur": 0.765,
+   "inst": "hum-arthur",
+   "tag": "melody:S21"
+  },
+  {
+   "t": 113.0091,
+   "midi": 57,
+   "dur": 0.765,
+   "inst": "hum-arthur",
+   "tag": "melody:S21"
+  },
+  {
+   "t": 113.9182,
+   "midi": 59,
+   "dur": 0.378,
+   "inst": "hum-arthur",
+   "tag": "melody:S21"
+  },
+  {
+   "t": 114.3727,
+   "midi": 57,
+   "dur": 0.378,
+   "inst": "hum-arthur",
+   "tag": "melody:S21"
+  },
+  {
+   "t": 114.8273,
+   "midi": 54,
+   "dur": 2.4,
+   "inst": "hum-arthur",
+   "tag": "melody:S21"
+  },
+  {
+   "t": 118.4,
+   "midi": 50,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 118.7367,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 119.0733,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 119.41,
+   "midi": 66,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 119.7467,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 120.0833,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 118.4,
+   "midi": 74,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 119.0733,
+   "midi": 81,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 119.7467,
+   "midi": 83,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 120.0833,
+   "midi": 81,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 120.42,
+   "midi": 50,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 120.7567,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 121.0933,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 121.43,
+   "midi": 66,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 121.7667,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 122.1033,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 120.42,
+   "midi": 78,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 121.0933,
+   "midi": 76,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 121.43,
+   "midi": 78,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 121.7667,
+   "midi": 81,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 122.44,
+   "midi": 55,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 122.7767,
+   "midi": 59,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 123.1133,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 123.45,
+   "midi": 67,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 123.7867,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 124.1233,
+   "midi": 59,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 122.44,
+   "midi": 79,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 123.1133,
+   "midi": 83,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 123.7867,
+   "midi": 81,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 124.1233,
+   "midi": 79,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 124.46,
+   "midi": 45,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 124.7967,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 125.1333,
+   "midi": 61,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 125.47,
+   "midi": 64,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 125.8067,
+   "midi": 61,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 126.1433,
+   "midi": 57,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 124.46,
+   "midi": 76,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 125.8067,
+   "midi": 73,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 126.1433,
+   "midi": 74,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 126.48,
+   "midi": 47,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 126.8167,
+   "midi": 59,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 127.1533,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 127.49,
+   "midi": 66,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 127.8267,
+   "midi": 62,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.1633,
+   "midi": 59,
+   "dur": 1.6,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 126.48,
+   "midi": 71,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 127.1533,
+   "midi": 74,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 127.8267,
+   "midi": 73,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 128.5,
+   "midi": 50,
+   "dur": 3.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.535,
+   "midi": 57,
+   "dur": 3.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.57,
+   "midi": 62,
+   "dur": 3.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.605,
+   "midi": 66,
+   "dur": 3.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.64,
+   "midi": 69,
+   "dur": 3.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 128.5,
+   "midi": 74,
+   "dur": 2.5,
+   "inst": "harp",
+   "tag": "melody:S22"
+  },
+  {
+   "t": 131.8,
+   "midi": 81,
+   "dur": 3.8,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 131.8,
+   "midi": 88,
+   "dur": 3.8,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 137.602,
+   "midi": 62,
+   "dur": 2.833,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 138.4343,
+   "midi": 69,
+   "dur": 2.833,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 139.2621,
+   "midi": 71,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 139.6781,
+   "midi": 69,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 140.0954,
+   "midi": 66,
+   "dur": 4.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 142.5956,
+   "midi": 67,
+   "dur": 2.833,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 143.4369,
+   "midi": 71,
+   "dur": 2.833,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 144.2614,
+   "midi": 69,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 144.6872,
+   "midi": 67,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 145.0944,
+   "midi": 64,
+   "dur": 4.5,
+   "inst": "piano",
+   "tag": "melody:S25"
+  },
+  {
+   "t": 137.6048,
+   "midi": 38,
+   "dur": 4,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 138.4485,
+   "midi": 54,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 138.4403,
+   "midi": 57,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 138.4397,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 139.2812,
+   "midi": 54,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 139.2913,
+   "midi": 57,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 139.2699,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 140.0971,
+   "midi": 38,
+   "dur": 4,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 140.9454,
+   "midi": 54,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 140.9422,
+   "midi": 57,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 140.9403,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 141.7712,
+   "midi": 54,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 141.7837,
+   "midi": 59,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 141.7811,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 142.6068,
+   "midi": 43,
+   "dur": 4,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 143.4393,
+   "midi": 55,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 143.453,
+   "midi": 59,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 143.4358,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 144.2819,
+   "midi": 55,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 144.2743,
+   "midi": 59,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 144.2853,
+   "midi": 62,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 145.0943,
+   "midi": 45,
+   "dur": 4,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 145.9429,
+   "midi": 52,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 145.9372,
+   "midi": 57,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 145.9397,
+   "midi": 61,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 146.7751,
+   "midi": 52,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 146.7813,
+   "midi": 57,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 146.7791,
+   "midi": 61,
+   "dur": 1.333,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.5972,
+   "midi": 62,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "melody:S26"
+  },
+  {
+   "t": 147.5042,
+   "midi": 38,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.5431,
+   "midi": 45,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.5861,
+   "midi": 50,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6373,
+   "midi": 54,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6792,
+   "midi": 57,
+   "dur": 6,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6,
+   "midi": 50,
+   "dur": 2.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6,
+   "midi": 54,
+   "dur": 2.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6,
+   "midi": 57,
+   "dur": 2.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 147.6,
+   "midi": 66,
+   "dur": 2.4,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 150.7,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 151.0811,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 151.4622,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 151.8433,
+   "midi": 66,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 152.2244,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 152.6056,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 152.9867,
+   "midi": 55,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 153.3678,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 153.7489,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 154.13,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 154.5111,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 154.8922,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 155.2733,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 155.6544,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 156.0356,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 156.4167,
+   "midi": 66,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 156.7978,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 157.1789,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 155.2733,
+   "midi": 38,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 155.2718,
+   "midi": 66,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 156.0311,
+   "midi": 67,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 156.8013,
+   "midi": 69,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 157.56,
+   "midi": 55,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 157.9411,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 158.3222,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 158.7033,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 159.0844,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 159.4656,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 157.56,
+   "midi": 43,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 157.5653,
+   "midi": 71,
+   "dur": 3.024,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 159.081,
+   "midi": 74,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 159.8467,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 160.2278,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 160.6089,
+   "midi": 61,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 160.99,
+   "midi": 64,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 161.3711,
+   "midi": 61,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 161.7522,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 159.8467,
+   "midi": 45,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 159.8452,
+   "midi": 73,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 160.6093,
+   "midi": 71,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 161.3676,
+   "midi": 69,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 162.1333,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 162.5144,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 162.8956,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 163.2767,
+   "midi": 66,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 163.6578,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 164.0389,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 162.1333,
+   "midi": 38,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 162.1333,
+   "midi": 57,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 162.1333,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 162.1333,
+   "midi": 66,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 162.1375,
+   "midi": 66,
+   "dur": 3.787,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 164.42,
+   "midi": 55,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 164.8011,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 165.1822,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 165.5633,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 165.9444,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 166.3256,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 164.42,
+   "midi": 43,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 165.1822,
+   "midi": 74,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 165.3728,
+   "midi": 79,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 165.5633,
+   "midi": 83,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 165.7539,
+   "midi": 86,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 164.42,
+   "midi": 55,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 164.42,
+   "midi": 59,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 164.42,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 164.4155,
+   "midi": 71,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 165.1822,
+   "midi": 72,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 165.9397,
+   "midi": 74,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 166.7067,
+   "midi": 60,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 167.0878,
+   "midi": 60,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 167.4689,
+   "midi": 64,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 167.85,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 168.2311,
+   "midi": 64,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 168.6122,
+   "midi": 60,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 166.7067,
+   "midi": 36,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 167.4689,
+   "midi": 76,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 167.6594,
+   "midi": 79,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 167.85,
+   "midi": 84,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 168.0406,
+   "midi": 88,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 166.7067,
+   "midi": 55,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 166.7067,
+   "midi": 60,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 166.7067,
+   "midi": 64,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 166.7043,
+   "midi": 76,
+   "dur": 3.024,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 168.2283,
+   "midi": 79,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 168.9933,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 169.3744,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 169.7556,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 170.1367,
+   "midi": 66,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 170.5178,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 170.8989,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 168.9933,
+   "midi": 38,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 169.7556,
+   "midi": 74,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 169.9461,
+   "midi": 78,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 170.1367,
+   "midi": 81,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 170.3272,
+   "midi": 86,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 168.9933,
+   "midi": 57,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 168.9933,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 168.9933,
+   "midi": 66,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 168.9975,
+   "midi": 78,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 169.7621,
+   "midi": 76,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 170.515,
+   "midi": 74,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 171.28,
+   "midi": 55,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 171.6611,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 172.0422,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 172.4233,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 172.8044,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 173.1856,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 171.28,
+   "midi": 43,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 172.0422,
+   "midi": 74,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 172.2328,
+   "midi": 79,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 172.4233,
+   "midi": 83,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 172.6139,
+   "midi": 86,
+   "dur": 2,
+   "inst": "harp",
+   "tag": "acc"
+  },
+  {
+   "t": 171.28,
+   "midi": 55,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 171.28,
+   "midi": 59,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 171.28,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 171.2755,
+   "midi": 71,
+   "dur": 3.787,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 173.5667,
+   "midi": 55,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 173.9478,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 174.3289,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 174.71,
+   "midi": 67,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 175.0911,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 175.4722,
+   "midi": 59,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 173.5667,
+   "midi": 43,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 173.5667,
+   "midi": 55,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 173.5667,
+   "midi": 59,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 173.5667,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 173.5621,
+   "midi": 67,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 174.3286,
+   "midi": 69,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 175.0932,
+   "midi": 71,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 175.8533,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 176.2344,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 176.6156,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 176.9967,
+   "midi": 66,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 177.3778,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 177.7589,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 175.8533,
+   "midi": 38,
+   "dur": 1.8,
+   "inst": "pizz",
+   "tag": "acc"
+  },
+  {
+   "t": 175.8533,
+   "midi": 57,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 175.8533,
+   "midi": 62,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 175.8533,
+   "midi": 66,
+   "dur": 2.241,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 175.8575,
+   "midi": 69,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 176.6181,
+   "midi": 66,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 177.3753,
+   "midi": 62,
+   "dur": 2.262,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 178.14,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 178.5211,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 178.9022,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 179.2833,
+   "midi": 64,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 179.6644,
+   "midi": 62,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 180.0456,
+   "midi": 57,
+   "dur": 1.5,
+   "inst": "guitar",
+   "tag": "acc"
+  },
+  {
+   "t": 178.1476,
+   "midi": 64,
+   "dur": 3.787,
+   "inst": "piano",
+   "tag": "melody:gold"
+  },
+  {
+   "t": 180.4244,
+   "midi": 50,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 180.4928,
+   "midi": 55,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 180.5537,
+   "midi": 57,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 180.6135,
+   "midi": 59,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 180.425,
+   "midi": 43,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 182.7093,
+   "midi": 50,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 182.7769,
+   "midi": 52,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 182.8373,
+   "midi": 57,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 182.8927,
+   "midi": 62,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 182.7104,
+   "midi": 45,
+   "dur": 4.116,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 185.8,
+   "midi": 62,
+   "dur": 0.811,
+   "inst": "hum-nell-old",
+   "tag": "melody:full"
+  },
+  {
+   "t": 186.6108,
+   "midi": 69,
+   "dur": 0.811,
+   "inst": "hum-nell-old",
+   "tag": "melody:full"
+  },
+  {
+   "t": 187.4216,
+   "midi": 71,
+   "dur": 0.405,
+   "inst": "hum-nell-old",
+   "tag": "melody:full"
+  },
+  {
+   "t": 187.827,
+   "midi": 69,
+   "dur": 0.405,
+   "inst": "hum-nell-old",
+   "tag": "melody:full"
+  },
+  {
+   "t": 188.2324,
+   "midi": 66,
+   "dur": 2.311,
+   "inst": "hum-nell-old",
+   "tag": "melody:full"
+  },
+  {
+   "t": 190.6662,
+   "midi": 67,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 191.4754,
+   "midi": 71,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 192.2864,
+   "midi": 69,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 192.6908,
+   "midi": 67,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 193.097,
+   "midi": 64,
+   "dur": 4.432,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 195.5345,
+   "midi": 62,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 196.3415,
+   "midi": 69,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 197.1502,
+   "midi": 71,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 197.5567,
+   "midi": 69,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 197.9602,
+   "midi": 74,
+   "dur": 3.622,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 199.5876,
+   "midi": 73,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 200.395,
+   "midi": 71,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 201.2019,
+   "midi": 69,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 201.609,
+   "midi": 67,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 202.0115,
+   "midi": 64,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 202.8247,
+   "midi": 62,
+   "dur": 4.432,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 205.2604,
+   "midi": 66,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 206.0756,
+   "midi": 67,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 206.8846,
+   "midi": 69,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 207.6999,
+   "midi": 71,
+   "dur": 3.622,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 209.3189,
+   "midi": 74,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 210.1281,
+   "midi": 73,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 210.9367,
+   "midi": 71,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 211.7521,
+   "midi": 69,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 212.5593,
+   "midi": 66,
+   "dur": 4.432,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 214.9962,
+   "midi": 67,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 215.7984,
+   "midi": 69,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 216.6078,
+   "midi": 71,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 217.4198,
+   "midi": 69,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 218.2377,
+   "midi": 66,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 219.0445,
+   "midi": 62,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 219.8571,
+   "midi": 64,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 220.6642,
+   "midi": 66,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 221.0678,
+   "midi": 64,
+   "dur": 2.5,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 221.4805,
+   "midi": 61,
+   "dur": 2.811,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 222.2877,
+   "midi": 62,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "melody:full"
+  },
+  {
+   "t": 185.801,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 186.6228,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 186.6178,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 186.6172,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 187.4362,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 187.4462,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 187.4248,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 188.2295,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.0476,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.0663,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.0535,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.8589,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.8676,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 189.8685,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 190.6716,
+   "midi": 43,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 191.4816,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 191.4954,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 191.4781,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 192.3017,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 192.2941,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 192.3052,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 193.0916,
+   "midi": 45,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 193.9177,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 193.912,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 193.9245,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 194.7273,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 194.7336,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 194.7314,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 195.5269,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 196.3557,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 196.3412,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 196.3555,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 197.1683,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 197.1644,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 197.151,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 197.9676,
+   "midi": 47,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 198.7807,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 198.7803,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 198.7733,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 199.5845,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 199.5896,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 199.6058,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 200.397,
+   "midi": 43,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 201.2252,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 201.2113,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 201.2282,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 202.0241,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 202.0306,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 202.0214,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 202.8268,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 203.6601,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 203.6428,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 203.6388,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 204.4468,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 204.4636,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 204.4631,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 205.2661,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.0746,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.0773,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.074,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.8886,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.8844,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 206.8864,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 207.6894,
+   "midi": 43,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 208.5154,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 208.5072,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 208.5102,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 209.3264,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 209.3184,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 209.3155,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 210.1268,
+   "midi": 45,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 210.9415,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 210.9421,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 210.9453,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 211.7625,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 211.7601,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 211.7529,
+   "midi": 61,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 212.5598,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 213.3776,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 213.3817,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 213.3824,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 214.193,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 214.1903,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 214.2006,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 214.985,
+   "midi": 43,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 215.8085,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 215.8192,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 215.8011,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 216.636,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 216.6138,
+   "midi": 59,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 216.6192,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4173,
+   "midi": 38,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 218.2476,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 218.2452,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 218.243,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 219.0617,
+   "midi": 54,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 219.048,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 219.0398,
+   "midi": 62,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 219.8618,
+   "midi": 45,
+   "dur": 3.892,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 220.6802,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 220.6705,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 220.6719,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 221.4964,
+   "midi": 52,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 221.4829,
+   "midi": 55,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 221.493,
+   "midi": 57,
+   "dur": 1.297,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.1703,
+   "midi": 26,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2193,
+   "midi": 38,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2646,
+   "midi": 45,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.3126,
+   "midi": 50,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.3688,
+   "midi": 54,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 222.4155,
+   "midi": 57,
+   "dur": 9,
+   "inst": "piano",
+   "tag": "acc"
+  },
+  {
+   "t": 185.8,
+   "midi": 50,
+   "dur": 4.865,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 185.8,
+   "midi": 57,
+   "dur": 4.865,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 205.2595,
+   "midi": 54,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 205.2595,
+   "midi": 57,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 205.2595,
+   "midi": 62,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 205.2595,
+   "midi": 38,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 207.6919,
+   "midi": 55,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 207.6919,
+   "midi": 59,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 207.6919,
+   "midi": 62,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 207.6919,
+   "midi": 43,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 210.1243,
+   "midi": 57,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 210.1243,
+   "midi": 61,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 210.1243,
+   "midi": 64,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 210.1243,
+   "midi": 45,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 212.5568,
+   "midi": 54,
+   "dur": 1.742,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 212.5568,
+   "midi": 57,
+   "dur": 1.742,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 212.5568,
+   "midi": 62,
+   "dur": 1.742,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 212.5568,
+   "midi": 38,
+   "dur": 1.742,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 214.1784,
+   "midi": 54,
+   "dur": 0.931,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.1784,
+   "midi": 59,
+   "dur": 0.931,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.1784,
+   "midi": 62,
+   "dur": 0.931,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.1784,
+   "midi": 47,
+   "dur": 0.931,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 214.9892,
+   "midi": 55,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.9892,
+   "midi": 59,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.9892,
+   "midi": 62,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 214.9892,
+   "midi": 43,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4216,
+   "midi": 54,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4216,
+   "midi": 57,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4216,
+   "midi": 62,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4216,
+   "midi": 38,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 219.8541,
+   "midi": 55,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 219.8541,
+   "midi": 57,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 219.8541,
+   "midi": 61,
+   "dur": 2.552,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 219.8541,
+   "midi": 45,
+   "dur": 2.552,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2865,
+   "midi": 54,
+   "dur": 2.919,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2865,
+   "midi": 57,
+   "dur": 2.919,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2865,
+   "midi": 62,
+   "dur": 2.919,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 222.2865,
+   "midi": 38,
+   "dur": 2.919,
+   "inst": "cello",
+   "tag": "acc"
+  },
+  {
+   "t": 214.9892,
+   "midi": 74,
+   "dur": 2.432,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 217.4216,
+   "midi": 74,
+   "dur": 1.216,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 218.6378,
+   "midi": 78,
+   "dur": 1.216,
+   "inst": "strings",
+   "tag": "acc"
+  },
+  {
+   "t": 224.35,
+   "midi": 74,
+   "dur": 0.675,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 225.1,
+   "midi": 81,
+   "dur": 0.675,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 225.85,
+   "midi": 83,
+   "dur": 0.338,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 226.225,
+   "midi": 81,
+   "dur": 0.338,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 226.6,
+   "midi": 78,
+   "dur": 1.725,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 228.475,
+   "midi": 79,
+   "dur": 0.675,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 229.225,
+   "midi": 83,
+   "dur": 0.675,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 229.975,
+   "midi": 81,
+   "dur": 0.338,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 230.35,
+   "midi": 79,
+   "dur": 0.338,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  },
+  {
+   "t": 230.725,
+   "midi": 76,
+   "dur": 1.125,
+   "inst": "whistle",
+   "tag": "melody:S37"
+  }
+ ]
+}

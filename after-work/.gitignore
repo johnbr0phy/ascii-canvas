@@ -1,0 +1,5 @@
+tools/node_modules
+frames/
+out/snaps/
+out/tmp/
+*.wav
