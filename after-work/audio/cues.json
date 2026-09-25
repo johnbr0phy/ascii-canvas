@@ -1,7 +1,7 @@
 {
  "filmDur": 232,
- "lufs": -16.027119790613728,
- "masterGainDb": 7.708031395489576,
+ "lufs": -16.03667812473178,
+ "masterGainDb": 9.098969934797108,
  "meta": {
   "ostinato": {
    "start": 118.4,
@@ -1259,21 +1259,21 @@
    "tag": "acc"
   },
   {
-   "t": 95.3481,
+   "t": 95.3456,
    "midi": 45,
    "dur": 5,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 95.3961,
+   "t": 95.394,
    "midi": 54,
    "dur": 5,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 95.4492,
+   "t": 95.4454,
    "midi": 62,
    "dur": 5,
    "inst": "piano",
@@ -2050,28 +2050,28 @@
    "tag": "acc"
   },
   {
-   "t": 147.5431,
+   "t": 147.5406,
    "midi": 45,
    "dur": 6,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 147.5861,
+   "t": 147.584,
    "midi": 50,
    "dur": 6,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 147.6373,
+   "t": 147.6295,
    "midi": 54,
    "dur": 6,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 147.6792,
+   "t": 147.6832,
    "midi": 57,
    "dur": 6,
    "inst": "piano",
@@ -4249,41 +4249,34 @@
   },
   {
    "t": 222.1703,
-   "midi": 26,
-   "dur": 9,
-   "inst": "piano",
-   "tag": "acc"
-  },
-  {
-   "t": 222.2193,
    "midi": 38,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.2646,
+   "t": 222.221,
    "midi": 45,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.3126,
+   "t": 222.265,
    "midi": 50,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.3688,
+   "t": 222.3226,
    "midi": 54,
    "dur": 9,
    "inst": "piano",
    "tag": "acc"
   },
   {
-   "t": 222.4155,
+   "t": 222.3697,
    "midi": 57,
    "dur": 9,
    "inst": "piano",
