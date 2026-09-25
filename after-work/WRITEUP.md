@@ -71,6 +71,7 @@ Would a sixty-year-old who has never used AI finish this feeling hopeful rather 
 | `DECISIONS.md` | Assumptions made while working alone |
 | `LOG.md` | Verification log: what worked, what didn't |
 | `RESEARCH.md` | Sources, including the curiosity quotes with links |
+| `review/*.png` | Contact sheets from the verification passes (start, middle and end of every shot) |
 | `sheets/*.png` | Style sheet, character sheets, telescope turnaround, ten-times sheet, aging sheet |
 | `film.html` | The film itself, live in a browser (`?t=SECONDS` to hold a frame) |
 | `src/`, `audio/`, `tools/` | Everything that draws, sounds and renders it |
